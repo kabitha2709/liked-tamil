@@ -40,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['subscribe'])) {
 
 // Get search term
 $searchTerm = $_GET['q'] ?? '';
+$category_id = isset($_GET['category']) ? intval($_GET['category']) : 0;
 
 // Get page for pagination
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
@@ -48,13 +49,33 @@ $offset = ($page - 1) * $limit;
 
 // Fetch search results
 if (!empty($searchTerm)) {
+    // Prepare search pattern
+    $searchPattern = "%{$searchTerm}%";
+
+    // Optional category filter
+    $categoryFilterSqlCount = '';
+    $categoryFilterSqlNews = '';
+    $countParams = [$searchPattern, $searchPattern, $searchPattern];
+    $newsParams = [$searchPattern, $searchPattern, $searchPattern];
+    if ($category_id > 0) {
+        $categoryPattern = '%' . $category_id . '%';
+        // For the COUNT query the table is not aliased, so use plain column name
+        $categoryFilterSqlCount = " AND (categories LIKE ? OR categories LIKE ? )";
+        // For the main news query we alias the table as `n`, so use `n.categories`
+        $categoryFilterSqlNews = " AND (n.categories LIKE ? OR n.categories LIKE ? )";
+        // Append pattern for both param lists
+        $countParams[] = $categoryPattern;
+        $countParams[] = $categoryPattern;
+        $newsParams[] = $categoryPattern;
+        $newsParams[] = $categoryPattern;
+    }
+
     // Count total results
     $countQuery = "SELECT COUNT(*) as total FROM news 
                    WHERE status = 'published' 
-                   AND (title LIKE ? OR content LIKE ? OR excerpt LIKE ?)";
+                   AND (title LIKE ? OR content LIKE ? OR excerpt LIKE ?)" . $categoryFilterSqlCount;
     $countStmt = $db->prepare($countQuery);
-    $searchPattern = "%{$searchTerm}%";
-    $countStmt->execute([$searchPattern, $searchPattern, $searchPattern]);
+    $countStmt->execute($countParams);
     $totalResult = $countStmt->fetch(PDO::FETCH_ASSOC);
     $totalNews = $totalResult['total'];
     $totalPages = ceil($totalNews / $limit);
@@ -69,12 +90,13 @@ if (!empty($searchTerm)) {
         (SELECT GROUP_CONCAT(c.name SEPARATOR ', ') FROM categories c WHERE FIND_IN_SET(c.id, n.categories) > 0) as category_names
         FROM news n 
         WHERE n.status = 'published' 
-        AND (n.title LIKE ? OR n.content LIKE ? OR n.excerpt LIKE ?)
+        AND (n.title LIKE ? OR n.content LIKE ? OR n.excerpt LIKE ?)" . $categoryFilterSqlNews . "
         ORDER BY n.published_at DESC 
         LIMIT $limit OFFSET $offset";
-    
+
     $newsStmt = $db->prepare($newsQuery);
-    $newsStmt->execute([$searchPattern, $searchPattern, $searchPattern]);
+    // execute with the assembled params
+    $newsStmt->execute($newsParams);
     $news = $newsStmt->fetchAll(PDO::FETCH_ASSOC);
 } else {
     $news = [];

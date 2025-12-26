@@ -670,12 +670,15 @@ function getNewsCategories($news) {
       <img src="Liked-tamil-news-logo-1 (2).png" alt="Portal Logo" class="logo" />
       <span class="title">Liked தமிழ்</span>
     </a>
-    <!-- Search Form -->
-    <form method="GET" action="search.php" class="search" role="search">
+        <!-- Search Form -->
+        <form method="GET" action="search.php" class="search" role="search">
       <svg class="icon" viewBox="0 0 24 24" fill="none">
         <path d="M11 5a6 6 0 016 6c0 1.3-.41 2.5-1.11 3.48l4.32 4.32-1.41 1.41-4.32-4.32A6 6 0 1111 5z" stroke="currentColor" stroke-width="1.5"/>
       </svg>
       <input type="search" name="q" placeholder="தேடல்…" aria-label="தேடல்" value="<?php echo isset($_GET['q']) ? htmlspecialchars($_GET['q']) : ''; ?>" />
+            <?php if (!empty($category_id) && $category_id > 0): ?>
+                <input type="hidden" name="category" value="<?php echo (int)$category_id; ?>" />
+            <?php endif; ?>
     </form>
     <div class="actions">
       <button class="btn primary" onclick="openSubscription()">

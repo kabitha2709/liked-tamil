@@ -1457,22 +1457,27 @@ require 'config/config.php'; // To get $base_url
                             const categories = item.category_names ? item.category_names.split(', ') : [];
                             const firstCategory = categories.length > 0 ? categories[0] : 'செய்தி';
                             
-                            // Get proper image URL with fallback - FIXED HERE
+                            // Get proper image URL with fallback
                             let imageUrl = '';
                             if (item.image_path) {
-                                // If image_path starts with http or https, use as-is
-                                if (item.image_path.startsWith('http')) {
-                                    imageUrl = item.image_path;
-                                } else {
-                                    // Otherwise, prepend the base URL
-                                    imageUrl = '<?php echo $base_url; ?>' + item.image_path;
-                                }
+                              if (item.image_path.startsWith('http')) {
+                                imageUrl = item.image_path;
+                              } else {
+                                // normalize leading slash
+                                const path = item.image_path.startsWith('/') ? item.image_path.slice(1) : item.image_path;
+                                imageUrl = '<?php echo $base_url; ?>' + path;
+                              }
                             } else if (item.image) {
-                                // Use the news.image field
+                              if (item.image.startsWith('http')) {
+                                imageUrl = item.image;
+                              } else if (item.image.indexOf('uploads/news/') !== -1) {
+                                const path = item.image.startsWith('/') ? item.image.slice(1) : item.image;
+                                imageUrl = '<?php echo $base_url; ?>' + path;
+                              } else {
                                 imageUrl = '<?php echo $base_url; ?>uploads/news/' + item.image;
+                              }
                             } else {
-                                // Fallback image
-                                imageUrl = 'https://picsum.photos/id/' + Math.floor(Math.random() * 1000) + 1000 + '/800/500';
+                              imageUrl = 'https://picsum.photos/800/500?random=' + Math.floor(Math.random() * 10000);
                             }
                             
                             html += `
