@@ -121,21 +121,95 @@ if ($news) {
     }
 }
 
-// Split content into paragraphs for image insertion
-$contentParagraphs = [];
+// Function to get image path with base_url
+function getImagePath($imagePath) {
+    global $base_url;
+    
+    if (empty($imagePath)) {
+        return 'https://picsum.photos/id/1011/1200/600';
+    }
+    
+    // Check if it's already a full URL
+    if (filter_var($imagePath, FILTER_VALIDATE_URL)) {
+        return $imagePath;
+    }
+    
+    // Prepend base_url for relative paths
+    return $base_url . ltrim($imagePath, '/');
+}
+
+// Determine main image - prefer top position, then feature image
+$mainImagePath = '';
+$skipTopInContent = false;
+
+// Check for top-positioned images first
+if (!empty($imagesByPosition['top'][0]['image_path'])) {
+    // Use first top image as main image
+    $mainImagePath = getImagePath($imagesByPosition['top'][0]['image_path']);
+    $skipTopInContent = true;
+} elseif (!empty($news['image'])) {
+    // If no top image, use feature image
+    $mainImagePath = getImagePath($news['image']);
+} else {
+    // Fallback to default image
+    $mainImagePath = 'https://picsum.photos/id/1011/1200/600';
+}
+
+// Process content with positioned images
 $contentWithImages = '';
 if (!empty($news['content'])) {
-    // Split content by paragraphs (using double newlines as paragraph separator)
-    $contentParagraphs = preg_split('/\n\s*\n/', $news['content']);
+    // Remove top image from content if it's being used as main image
+    if ($skipTopInContent && !empty($imagesByPosition['top'][0])) {
+        // Remove the first top image since it's already displayed as main
+        array_shift($imagesByPosition['top']);
+    }
     
-    // Calculate content length for image placement decisions
-    $contentLength = mb_strlen($news['content']);
-    $paragraphCount = count($contentParagraphs);
+    // Safely split content into two parts without breaking HTML tags.
+    // Previously we split by character index which could cut HTML tags
+    // (producing fragments like 'yle="...') — instead split by paragraphs.
+    $paragraphs = [];
+
+    // Capture full <p>...</p> blocks first
+    if (preg_match_all('/<p\b[^>]*>.*?<\/p>/siu', $news['content'], $matches)) {
+        $paragraphs = $matches[0];
+    } else {
+        // Fallback: split on <br> or treat whole content as single block
+        $parts = preg_split('/(<br\s*\/?\s*>)/i', $news['content']);
+        // Merge delimiters back with text so we keep markup in the pieces
+        if ($parts && count($parts) > 1) {
+            $recombined = [];
+            $buf = '';
+            foreach ($parts as $p) {
+                if (preg_match('/^<br/i', trim($p))) {
+                    $buf .= $p;
+                    $recombined[] = $buf;
+                    $buf = '';
+                } else {
+                    $buf .= $p;
+                }
+            }
+            if ($buf !== '') $recombined[] = $buf;
+            $paragraphs = $recombined ?: [$news['content']];
+        } else {
+            $paragraphs = [$news['content']];
+        }
+    }
+
+    // Determine split index (near the middle paragraph)
+    $count = count($paragraphs);
+    if ($count <= 1) {
+        $part1 = $news['content'];
+        $part2 = '';
+    } else {
+        $mid = floor($count / 2);
+        $part1 = implode('', array_slice($paragraphs, 0, $mid));
+        $part2 = implode('', array_slice($paragraphs, $mid));
+    }
     
-    // Initialize content with images
+    // Build content with images
     $contentWithImages = '';
     
-    // Add top images before content if they exist
+    // Add remaining top images at the beginning
     if (!empty($imagesByPosition['top'])) {
         foreach ($imagesByPosition['top'] as $image) {
             $imagePath = getImagePath($image['image_path']);
@@ -149,34 +223,50 @@ if (!empty($news['content'])) {
         }
     }
     
-    // Process content paragraphs and insert center images at appropriate positions
-    if ($paragraphCount > 0) {
-        // Determine where to insert center images based on content length
-        $centerInsertionPoint = floor($paragraphCount / 2);
-        
-        for ($i = 0; $i < $paragraphCount; $i++) {
-            // Add the paragraph (preserve HTML)
-            $contentWithImages .= '<p>' . trim($contentParagraphs[$i]) . '</p>';
-            
-            // Insert center images after the middle paragraph
-            if ($i == $centerInsertionPoint && !empty($imagesByPosition['center'])) {
-                foreach ($imagesByPosition['center'] as $image) {
-                    $imagePath = getImagePath($image['image_path']);
-                    $caption = !empty($image['caption']) ? htmlspecialchars($image['caption']) : '';
-                    $contentWithImages .= '<div class="position-image center-position">';
-                    $contentWithImages .= '<img src="' . $imagePath . '" alt="' . htmlspecialchars($news['title']) . '">';
-                    if ($caption) {
-                        $contentWithImages .= '<div class="image-caption">' . $caption . '</div>';
-                    }
-                    $contentWithImages .= '</div>';
+    // Add first part of content
+    $contentWithImages .= '<div class="content-part">' . $part1 . '</div>';
+
+    // Add center images between parts — place the first center image side-by-side
+    if (!empty($imagesByPosition['center'])) {
+        // Use the first center image inline with the following text
+        $firstCenter = array_shift($imagesByPosition['center']);
+        $imagePath = getImagePath($firstCenter['image_path']);
+        $caption = !empty($firstCenter['caption']) ? htmlspecialchars($firstCenter['caption']) : '';
+
+        $contentWithImages .= '<div class="img-text-row">';
+        $contentWithImages .= '<div class="position-image center-position inline-center">';
+        $contentWithImages .= '<img src="' . $imagePath . '" alt="' . htmlspecialchars($news['title']) . '">';
+        if ($caption) {
+            $contentWithImages .= '<div class="image-caption">' . $caption . '</div>';
+        }
+        $contentWithImages .= '</div>'; // .position-image
+
+        $contentWithImages .= '<div class="img-text-content">' . $part2 . '</div>';
+        $contentWithImages .= '</div>'; // .img-text-row
+
+        // Render any remaining center images stacked after the inline block
+        if (!empty($imagesByPosition['center'])) {
+            foreach ($imagesByPosition['center'] as $image) {
+                $imagePath = getImagePath($image['image_path']);
+                $caption = !empty($image['caption']) ? htmlspecialchars($image['caption']) : '';
+                $contentWithImages .= '<div class="position-image center-position">';
+                $contentWithImages .= '<img src="' . $imagePath . '" alt="' . htmlspecialchars($news['title']) . '">';
+                if ($caption) {
+                    $contentWithImages .= '<div class="image-caption">' . $caption . '</div>';
                 }
+                $contentWithImages .= '</div>';
             }
         }
+
+        // Prevent adding part2 again below
+        $part2 = '';
+    } else {
+        // No center images, just add second part normally
+        $contentWithImages .= '<div class="content-part">' . $part2 . '</div>';
     }
     
-    // Add bottom images after content if they exist
+    // Add bottom images at the end
     if (!empty($imagesByPosition['bottom'])) {
-        $contentWithImages .= '<div class="bottom-images-container">';
         foreach ($imagesByPosition['bottom'] as $image) {
             $imagePath = getImagePath($image['image_path']);
             $caption = !empty($image['caption']) ? htmlspecialchars($image['caption']) : '';
@@ -187,7 +277,36 @@ if (!empty($news['content'])) {
             }
             $contentWithImages .= '</div>';
         }
-        $contentWithImages .= '</div>';
+    }
+
+    // If there is an embedded video URL field in news, render it after the content
+    if (!empty($news['embedded_video_url'])) {
+        $embedUrl = trim($news['embedded_video_url']);
+        // Basic server-side embed detection (YouTube, Vimeo, Facebook)
+        $embedHtml = '';
+        if (preg_match('/(?:youtube\.com|youtu\.be)/i', $embedUrl)) {
+            // extract video id
+            if (preg_match('/(?:v=|\/)([a-zA-Z0-9_-]{11})/i', $embedUrl, $m)) {
+                $vid = $m[1];
+                $embedHtml = '<div class="video-container"><iframe src="https://www.youtube.com/embed/' . htmlspecialchars($vid) . '" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>';
+            } else {
+                $embedHtml = '<div class="video-container"><iframe src="' . htmlspecialchars($embedUrl) . '" frameborder="0" allowfullscreen></iframe></div>';
+            }
+        } elseif (preg_match('/vimeo\.com/i', $embedUrl)) {
+            if (preg_match('/(\d+)/', $embedUrl, $m)) {
+                $vid = $m[1];
+                $embedHtml = '<div class="video-container"><iframe src="https://player.vimeo.com/video/' . htmlspecialchars($vid) . '" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>';
+            } else {
+                $embedHtml = '<div class="video-container"><iframe src="' . htmlspecialchars($embedUrl) . '" frameborder="0" allowfullscreen></iframe></div>';
+            }
+        } elseif (preg_match('/facebook\.com/i', $embedUrl)) {
+            $embedHtml = '<div class="video-container"><iframe src="https://www.facebook.com/plugins/video.php?href=' . urlencode($embedUrl) . '&show_text=0&width=560" width="560" height="315" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true" allowFullScreen="true"></iframe></div>';
+        } else {
+            // Generic iframe or link
+            $embedHtml = '<div class="video-container"><iframe src="' . htmlspecialchars($embedUrl) . '" frameborder="0" allowfullscreen></iframe></div>';
+        }
+
+        $contentWithImages .= $embedHtml;
     }
 }
 
@@ -208,8 +327,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_comment'])) {
         $insertStmt = $db->prepare($insertQuery);
         $insertStmt->execute([$newsId, $parent_id, $cleanName, $email, $cleanComment]);
         
-        // Redirect to prevent form resubmission
-        header("Location: news-detail.php?id=" . $newsId . "#comments");
+        // Redirect to prevent form resubmission and show pending message
+        header("Location: news-detail.php?id=" . $newsId . "&comment_submitted=true#comments");
         exit();
     }
 }
@@ -309,39 +428,14 @@ function getInitials($name) {
     return mb_substr($initials, 0, 2, 'UTF-8');
 }
 
-// Function to get image path with base_url
-function getImagePath($imagePath) {
-    global $base_url;
-    
-    if (empty($imagePath)) {
-        return 'https://picsum.photos/id/1011/1200/600';
-    }
-    
-    // Check if it's already a full URL
-    if (filter_var($imagePath, FILTER_VALIDATE_URL)) {
-        return $imagePath;
-    }
-    
-    // Prepend base_url for relative paths
-    return $base_url . ltrim($imagePath, '/');
-}
+// Count total comments
+$totalComments = count($allComments);
 
-// Get main article image (from news table if exists, otherwise from images)
-$mainImagePath = '';
-if (!empty($news['image'])) {
-    $mainImagePath = getImagePath($news['image']);
-} else {
-    // Try to use top image as fallback
-    if (!empty($imagesByPosition['top'][0]['image_path'])) {
-        $mainImagePath = getImagePath($imagesByPosition['top'][0]['image_path']);
-    } else {
-        $mainImagePath = 'https://picsum.photos/id/1011/1200/600';
-    }
-}
-
-// Get current URL for sharing
+// Get current URL for sharing and build share text (title + excerpt + link) in Tamil
 $currentUrl = "http://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-$shareTitle = urlencode($news['title']);
+$excerpt = trim(strip_tags(mb_substr($news['content'], 0, 220)));
+$shareText = $news['title'] . "\n\n" . $excerpt . "\n\n" . $currentUrl;
+$shareTextEncoded = urlencode($shareText);
 $shareUrl = urlencode($currentUrl);
 ?>
 
@@ -726,23 +820,11 @@ $shareUrl = urlencode($currentUrl);
         }
         
         /* Image Position Styles */
-        .top-images-container,
-        .center-images-container,
-        .bottom-images-container {
-            margin: 30px 0;
-        }
-        
-        .position-images {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        
         .position-image {
             width: 100%;
             border-radius: 12px;
             overflow: hidden;
-            margin: 20px 0;
+            margin: 30px 0;
         }
         
         .position-image.top-position {
@@ -751,11 +833,12 @@ $shareUrl = urlencode($currentUrl);
         }
         
         .position-image.center-position {
-            margin: 30px 0;
+            margin: 40px 0;
+            text-align: center;
         }
         
         .position-image.bottom-position {
-            margin-top: 30px;
+            margin-top: 40px;
             margin-bottom: 0;
         }
         
@@ -765,78 +848,35 @@ $shareUrl = urlencode($currentUrl);
             max-height: 500px;
             object-fit: cover;
             display: block;
-        }
-
-        /* Make first positioned image slightly larger,
-           second and third images smaller and allow text wrapping */
-        .article-content .position-image:nth-of-type(1) img,
-        .position-image.top-position img {
-            max-height: 520px; /* slightly bigger */
-        }
-
-        /* second positioned image: float the container so text wraps around it */
-        .article-content .position-image:nth-of-type(2),
-        .position-image.center-position {
-            float: left;
-            width: 42%;
-            margin: 0 24px 18px 0;
-        }
-
-        .article-content .position-image:nth-of-type(2) img,
-        .position-image.center-position img {
-            max-height: 240px;
-            width: 100%;
-            display: block;
-            object-fit: cover;
             border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.45);
         }
 
-        /* Try to vertically center the center image with the adjacent paragraph on desktop */
-        @media (min-width: 769px) {
-            .position-image.center-position {
-                display: inline-block;
-                vertical-align: middle;
-            }
-
-            .position-image.center-position + p {
-                display: inline-block;
-                vertical-align: middle;
-                width: calc(58% - 24px);
-                margin-top: 0;
-            }
-
-            /* If there is a preceding paragraph, allow it to sit above so the image centers against the following paragraph block */
-            p + .position-image.center-position {
-                margin-top: 8px;
-            }
+        /* Inline image + text row for center images */
+        .img-text-row {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+            margin: 24px 0;
         }
 
-        /* third positioned image: also floated and smaller */
-        .article-content .position-image:nth-of-type(3),
-        .position-image.bottom-position {
-            float: left;
-            width: 36%;
-            margin: 0 24px 18px 0;
+        .img-text-row .img-text-content {
+            flex: 1;
         }
 
-        .article-content .position-image:nth-of-type(3) img,
-        .position-image.bottom-position img {
-            max-height: 180px;
+        .position-image.center-position.inline-center {
+            width: 48%;
+            margin: 0;
+        }
+
+        .position-image.center-position.inline-center img {
             width: 100%;
-            display: block;
+            height: auto;
+            max-height: 360px;
             object-fit: cover;
+            display: block;
             border-radius: 12px;
-            box-shadow: 0 8px 22px rgba(0,0,0,0.38);
         }
 
-        /* Clear floats after content blocks so subsequent blocks don't wrap */
-        .article-content:after {
-            content: "";
-            display: block;
-            clear: both;
-        }
-        
         .image-caption {
             text-align: center;
             font-size: 14px;
@@ -844,6 +884,10 @@ $shareUrl = urlencode($currentUrl);
             margin-top: 8px;
             font-style: italic;
             padding: 0 10px;
+        }
+        
+        .content-part {
+            margin-bottom: 20px;
         }
         
         /* Sidebar Styles */
@@ -856,7 +900,7 @@ $shareUrl = urlencode($currentUrl);
         .share-section {
             background: var(--card);
             border-radius: var(--radius);
-            padding: 24px;
+            padding: 14px;
             margin-bottom: 30px;
             border: var(--border);
         }
@@ -875,7 +919,7 @@ $shareUrl = urlencode($currentUrl);
         .share-buttons {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
+            gap: 12px;
         }
 
         @media (max-width: 768px) {
@@ -930,23 +974,18 @@ $shareUrl = urlencode($currentUrl);
         }
 
         .share-label {
-            font-size: 12px;
-            font-weight: 600;
+            font-size: 14px;
+            font-weight: 700;
             color: var(--text);
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all var(--trans);
-            position: absolute;
-            bottom: 8px;
-            left: 0;
-            right: 0;
-            text-align: center;
-        }
-
-        /* Show label only on hover */
-        .share-button:hover .share-label {
             opacity: 1;
-            transform: translateY(0);
+            transform: none;
+            position: relative;
+            bottom: auto;
+            left: auto;
+            right: auto;
+            text-align: left;
+            margin-top: 6px;
+            font-family: 'Noto Sans Tamil', sans-serif;
         }
 
         /* Hide default SVG path and show custom ones */
@@ -1289,6 +1328,9 @@ $shareUrl = urlencode($currentUrl);
             text-align: center;
             padding: 40px 20px;
             color: var(--muted);
+            background: var(--card);
+            border-radius: var(--radius);
+            border: var(--border);
         }
         
         .no-comments-icon {
@@ -1336,6 +1378,31 @@ $shareUrl = urlencode($currentUrl);
             margin-left: 10px;
         }
         
+        .feedback-success {
+            background: linear-gradient(45deg, rgba(0, 200, 0, 0.2), rgba(0, 150, 0, 0.1));
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            color: #00ff00;
+            padding: 16px;
+            border-radius: var(--radius-xs);
+            margin-bottom: 25px;
+            text-align: center;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .feedback-success-icon {
+            font-size: 24px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
         @media (max-width: 768px) {
             .article-title {
                 font-size: 24px;
@@ -1361,6 +1428,19 @@ $shareUrl = urlencode($currentUrl);
                 float: none;
                 margin: 16px 0;
             }
+
+            /* Ensure inline center image stacks on mobile */
+            .img-text-row {
+                flex-direction: column;
+            }
+
+            .position-image.center-position.inline-center {
+                width: 100%;
+            }
+
+            .img-text-row .img-text-content {
+                width: 100%;
+            }
             
             .article-content {
                 font-size: 16px;
@@ -1379,8 +1459,8 @@ $shareUrl = urlencode($currentUrl);
             }
         }
         .title {
-      font-weight: 800; font-size: clamp(18px, 2.4vw, 28px); letter-spacing: .2px;
-    }
+            font-weight: 800; font-size: clamp(18px, 2.4vw, 28px); letter-spacing: .2px;
+        }
         
     </style>
 </head>
@@ -1447,10 +1527,9 @@ $shareUrl = urlencode($currentUrl);
                             ?>
                         </span>
                         <span>•</span>
+
                         <span id="commentCount">
                             <?php 
-                            // Count total comments
-                            $totalComments = count($allComments);
                             echo $totalComments . ' கருத்துகள்';
                             ?>
                         </span>
@@ -1478,9 +1557,10 @@ $shareUrl = urlencode($currentUrl);
                 <!-- Comment Form -->
                 <div class="comment-form">
                     <h3 class="comment-form-title">கருத்தைப் பதிவிடுக</h3>
-                    <?php if (isset($_GET['success']) && $_GET['success'] == 'true'): ?>
-                        <div class="pending-message">
-                            உங்கள் கருத்து வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது. நிர்வாகியால் அனுமதிக்கப்பட்ட பிறகு காட்டப்படும்.
+                    <?php if (isset($_GET['comment_submitted']) && $_GET['comment_submitted'] == 'true'): ?>
+                        <div class="feedback-success">
+                            <span class="feedback-success-icon">✓</span>
+                            உங்கள் கருத்து வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது! நிர்வாகியால் அனுமதிக்கப்பட்ட பிறகு காட்டப்படும்.
                         </div>
                     <?php endif; ?>
                     <form method="POST" action="" id="commentForm">
@@ -1511,9 +1591,10 @@ $shareUrl = urlencode($currentUrl);
                 <!-- Comments List -->
                 <div class="comments-list" id="commentsList">
                     <?php if (empty($comments)): ?>
-                        <div class="no-comments" id="noComments">
+                        <div class="no-comments">
                             <div class="no-comments-icon">💬</div>
-                            <p>இதுவரை கருத்துகள் எதுவும் இல்லை. முதலாவதாக கருத்து தெரிவியுங்கள்!</p>
+                            <h3>இன்னும் கருத்துகள் இல்லை</h3>
+                            <p>முதல் கருத்தைப் பதிவிட நீங்கள் தயாரா?</p>
                         </div>
                     <?php else: ?>
                         <?php foreach ($comments as $comment): ?>
@@ -1605,15 +1686,15 @@ $shareUrl = urlencode($currentUrl);
             <div class="share-section">
                 <h3 class="share-title">பகிர்</h3>
                 <div class="share-buttons">
-                    <a href="https://api.whatsapp.com/send?text=<?php echo urlencode($news['title'] . ' - ' . $currentUrl); ?>" 
+                    <a href="https://api.whatsapp.com/send?text=<?php echo $shareTextEncoded; ?>" 
                        target="_blank" class="share-button whatsapp" title="WhatsApp இல் பகிரவும்">
                         <svg class="share-icon" viewBox="0 0 24 24">
-                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.76.982.998-3.677-.236-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.826 9.826 0 012.9 6.994c-.004 5.45-4.438 9.88-9.888 9.88m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.333.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.333 11.893-11.893 0-3.18-1.24-6.162-3.495-8.411"/>
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.76.982.998-3.677-.236-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.826 9.826 0 012.9 6.994c-.004 5.45-4.438 9.88-9.888 9.88m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.333 .157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.333 11.893-11.893 0-3.18-1.24-6.162-3.495-8.411"/>
                         </svg>
                         <span class="share-label">WhatsApp</span>
                     </a>
                     
-                    <a href="https://www.facebook.com/sharer/sharer.php?u=<?php echo urlencode($currentUrl); ?>&quote=<?php echo urlencode($news['title']); ?>" 
+                    <a href="https://www.facebook.com/sharer/sharer.php?u=<?php echo $shareUrl; ?>&quote=<?php echo $shareTextEncoded; ?>" 
                        target="_blank" class="share-button facebook" title="Facebook இல் பகிரவும்">
                         <svg class="share-icon" viewBox="0 0 24 24">
                             <path d="M18.77 7.46H14.5v-1.9c0-.9.6-1.1 1-1.1h3V.5h-4.33C10.24.5 9.5 3.44 9.5 5.32v2.15h-3v4h3v12h5v-12h3.85l.42-4z"/>
@@ -1621,7 +1702,7 @@ $shareUrl = urlencode($currentUrl);
                         <span class="share-label">Facebook</span>
                     </a>
                     
-                    <a href="https://twitter.com/intent/tweet?text=<?php echo urlencode($news['title'] . ' - ' . $currentUrl); ?>" 
+                    <a href="https://twitter.com/intent/tweet?text=<?php echo $shareTextEncoded; ?>" 
                        target="_blank" class="share-button twitter" title="Twitter இல் பகிரவும்">
                         <svg class="share-icon" viewBox="0 0 24 24">
                             <path d="M23.44 4.83c-.8.37-1.5.38-2.22.02.93-.56.98-.96 1.32-2.02-.88.52-1.86.9-2.9 1.1-.82-.88-2-1.43-3.3-1.43-2.5 0-4.55 2.04-4.55 4.54 0 .36.03.7.1 1.04-3.77-.2-7.12-2-9.36-4.75-.4.67-.6 1.45-.6 2.3 0 1.56.8 2.95 2 3.77-.74-.03-1.44-.23-2.05-.57v.06c0 2.2 1.56 4.03 3.64 4.44-.67.2-1.37.2-2.06.08.58 1.8 2.26 3.12 4.25 3.16C5.78 18.1 3.37 18.74 1 18.46c2 1.3 4.4 2.04 6.97 2.04 8.35 0 12.92-6.92 12.92-12.93 0-.2 0-.4-.02-.6.9-.63 1.96-1.22 2.56-2.14z"/>
@@ -1629,7 +1710,7 @@ $shareUrl = urlencode($currentUrl);
                         <span class="share-label">Twitter</span>
                     </a>
                     
-                    <a href="https://www.linkedin.com/shareArticle?mini=true&url=<?php echo urlencode($currentUrl); ?>&title=<?php echo urlencode($news['title']); ?>&summary=<?php echo urlencode(substr(strip_tags($news['content']), 0, 200)); ?>" 
+                    <a href="https://www.linkedin.com/shareArticle?mini=true&url=<?php echo $shareUrl; ?>&title=<?php echo $shareTextEncoded; ?>&summary=<?php echo $shareTextEncoded; ?>" 
                        target="_blank" class="share-button linkedin" title="LinkedIn இல் பகிரவும்">
                         <svg class="share-icon" viewBox="0 0 24 24">
                             <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
@@ -1637,7 +1718,7 @@ $shareUrl = urlencode($currentUrl);
                         <span class="share-label">LinkedIn</span>
                     </a>
                     
-                    <a href="https://t.me/share/url?url=<?php echo urlencode($currentUrl); ?>&text=<?php echo urlencode($news['title']); ?>" 
+                    <a href="https://t.me/share/url?url=<?php echo $shareUrl; ?>&text=<?php echo $shareTextEncoded; ?>" 
                        target="_blank" class="share-button telegram" title="Telegram இல் பகிரவும்">
                         <svg class="share-icon" viewBox="0 0 24 24">
                             <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.295-.605.295l.213-3.054 5.56-5.022c.242-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.135-.954l11.57-4.461c.538-.196 1.006.128.832.941z"/>
@@ -1645,7 +1726,7 @@ $shareUrl = urlencode($currentUrl);
                         <span class="share-label">Telegram</span>
                     </a>
                     
-                    <a href="https://pinterest.com/pin/create/button/?url=<?php echo urlencode($currentUrl); ?>&media=<?php echo urlencode($mainImagePath); ?>&description=<?php echo urlencode($news['title']); ?>" 
+                    <a href="https://pinterest.com/pin/create/button/?url=<?php echo $shareUrl; ?>&media=<?php echo urlencode($mainImagePath); ?>&description=<?php echo $shareTextEncoded; ?>" 
                        target="_blank" class="share-button pinterest" title="Pinterest இல் பகிரவும்">
                         <svg class="share-icon" viewBox="0 0 24 24">
                             <path d="M12.14.5C5.86.5 2.7 5 2.7 8.75c0 2.27.86 4.3 2.7 5.05.3.12.57 0 .66-.33l.27-1.06c.1-.32.06-.44-.2-.73-.52-.62-.86-1.44-.86-2.6 0-3.33 2.5-6.32 6.5-6.32 3.55 0 5.5 2.17 5.5 5.07 0 3.8-1.7 7.02-4.2 7.02-1.37 0-2.4-1.14-2.07-2.54.4-1.68 1.16-3.48 1.16-4.7 0-1.07-.58-1.98-1.78-1.98-1.4 0-2.55 1.47-2.55 3.42 0 1.25.43 2.1.43 2.1l-1.7 7.2c-.5 2.13-.08 4.75-.04 5 .02.17.22.2.3.1.14-.18 1.82-2.26 2.4-4.33.16-.58.93-3.63.93-3.63.45.88 1.8 1.65 3.22 1.65 4.25 0 7.13-3.87 7.13-9.05C20.5 4.15 17.18.5 12.14.5z"/>
@@ -1747,7 +1828,7 @@ $shareUrl = urlencode($currentUrl);
             
             // Auto-hide success messages after 5 seconds
             setTimeout(function() {
-                const successMessages = document.querySelectorAll('.success-message');
+                const successMessages = document.querySelectorAll('.feedback-success');
                 successMessages.forEach(msg => {
                     msg.style.display = 'none';
                 });

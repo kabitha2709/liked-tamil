@@ -578,14 +578,6 @@ require 'config/config.php';
             </svg>
             <input type="search" name="q" placeholder="தேடல்…" aria-label="தேடல்" value="<?php echo htmlspecialchars($searchTerm); ?>" />
         </form>
-        <div class="actions">
-            <button class="btn primary" onclick="openSubscription()">
-                <svg class="icon" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 3l9 6-9 6-9-6 9-6zM3 15l9 6 9-6" stroke="currentColor" stroke-width="1.5"/>
-                </svg>
-                Subscribe
-            </button>
-        </div>
     </div>
 </header>
 
@@ -623,14 +615,14 @@ require 'config/config.php';
                         <div class="news-thumb">
                             <?php
                             // Get image URL
-                            if (!empty($item['image_path'])) {
+                            if (!empty($item['image'])) {
+                                $imageSrc = $base_url . 'uploads/news/' . htmlspecialchars($item['image']);
+                            } elseif (!empty($item['image_path'])) {
                                 if (strpos($item['image_path'], 'http') === 0) {
                                     $imageSrc = $item['image_path'];
                                 } else {
                                     $imageSrc = $base_url . $item['image_path'];
                                 }
-                            } elseif (!empty($item['image'])) {
-                                $imageSrc = $base_url . 'uploads/news/' . htmlspecialchars($item['image']);
                             } else {
                                 $imageSrc = 'https://picsum.photos/id/' . rand(1000, 1100) . '/800/500';
                             }
@@ -661,12 +653,7 @@ require 'config/config.php';
                                     echo $interval->i . ' நி';
                                 }
                                 ?> முன்
-                                <span>•</span>
-                                <?php 
-                                $wordCount = str_word_count(strip_tags($item['content']));
-                                $readingTime = ceil($wordCount / 200);
-                                echo max(1, $readingTime); 
-                                ?> நிமிடம்
+                               
                             </div>
                             <div class="readmore">மேலும் படிக்க</div>
                         </div>

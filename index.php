@@ -894,14 +894,6 @@ require 'config/config.php'; // To get $base_url
       </svg>
       <input type="search" name="q" placeholder="தேடல்…" aria-label="தேடல்" value="<?php echo isset($_GET['q']) ? htmlspecialchars($_GET['q']) : ''; ?>" />
     </form>
-    <div class="actions">
-      <button class="btn primary" onclick="openSubscription()">
-        <svg class="icon" viewBox="0 0 24 24" fill="none">
-          <path d="M12 3l9 6-9 6-9-6 9-6zM3 15l9 6 9-6" stroke="currentColor" stroke-width="1.5"/>
-        </svg>
-        Subscribe
-      </button>
-    </div>
   </div>
 </header>
 
@@ -997,7 +989,7 @@ require 'config/config.php'; // To get $base_url
           <img src="https://images.unsplash.com/photo-1504711434964-1e0193031639?q=80&w=1600&auto=format&fit=crop" alt="உலக நகரங்கள்" />
           <div class="slide-grad"></div>
           <div class="slide-info">
-            <div class="slide-cat"><span class="pill">செய்தி</span></div>
+            
             <h2 class="slide-title">Liked தமிழ் - உங்கள் நம்பகமான செய்தி மூலம்</h2>
             <div class="slide-meta">இப்போது • 3 நிமிடம் வாசிப்பு</div>
           </div>
@@ -1114,12 +1106,7 @@ require 'config/config.php'; // To get $base_url
                     echo $interval->i . ' நி';
                   }
                   ?> முன்
-                  <span>•</span>
-                  <?php 
-                  $wordCount = str_word_count(strip_tags($item['content']));
-                  $readingTime = ceil($wordCount / 200);
-                  echo max(1, $readingTime); 
-                  ?> நிமிடம்
+                  
                 </div>
                 <div class="readmore">மேலும் படிக்க</div>
               </div>
@@ -1147,9 +1134,7 @@ require 'config/config.php'; // To get $base_url
       <a href="https://www.facebook.com/liked.tamil/" target="_blank" class="follow-btn">Follow</a>
     </div>
     
-    <div class="fb-feed-content" id="facebookFeed">
-      <!-- Facebook posts will be loaded here -->
-    </div>
+    
   </div>
 </div>
 
@@ -1366,14 +1351,13 @@ require 'config/config.php'; // To get $base_url
                 <a class="news-card" href="news-detail.php?id=${item.id}">
                   <div class="news-thumb">
                     <img src="${imageSrc}" alt="${item.title}" />
-                    <span class="badge">${item.category_name || 'செய்தி'}</span>
+                    
                   </div>
                   <div class="news-content">
                     <div class="news-title">${item.title}</div>
                     <div class="news-meta">
                       <span>${timeAgo}</span>
-                      <span>•</span>
-                      <span>${readingTime} நிமிடம்</span>
+                      
                     </div>
                   </div>
                 </a>
@@ -1491,8 +1475,7 @@ require 'config/config.php'; // To get $base_url
                                             <h3 class="news-title">${item.title}</h3>
                                             <div class="news-meta">
                                                 <span>${timeAgo}</span>
-                                                <span>•</span>
-                                                <span>${readingTime} நிமிடம்</span>
+                                                
                                             </div>
                                         </div>
                                     </a>

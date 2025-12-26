@@ -680,14 +680,6 @@ function getNewsCategories($news) {
                 <input type="hidden" name="category" value="<?php echo (int)$category_id; ?>" />
             <?php endif; ?>
     </form>
-    <div class="actions">
-      <button class="btn primary" onclick="openSubscription()">
-        <svg class="icon" viewBox="0 0 24 24" fill="none">
-          <path d="M12 3l9 6-9 6-9-6 9-6zM3 15l9 6 9-6" stroke="currentColor" stroke-width="1.5"/>
-        </svg>
-        Subscribe
-      </button>
-    </div>
   </div>
 </header>
 
