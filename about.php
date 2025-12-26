@@ -637,6 +637,10 @@ $tickerNews = $tickerStmt->fetchAll(PDO::FETCH_ASSOC);
 }
 /* Mobile responsiveness */
 @media (max-width: 640px) {
+  body {
+    padding-bottom: 90px; /* Add padding for mobile footer */
+  }
+  
   .appbar-wrap {
     grid-template-columns: auto 1fr;
     gap: 12px;
@@ -686,7 +690,7 @@ $tickerNews = $tickerStmt->fetchAll(PDO::FETCH_ASSOC);
   
   .pagination {
     gap: 6px;
-    margin: 18px 0 80px;
+    margin: 18px 0 100px; /* Extra margin for mobile footer */
   }
   .page {
     padding: 8px 12px;
@@ -866,15 +870,25 @@ $tickerNews = $tickerStmt->fetchAll(PDO::FETCH_ASSOC);
 @media (max-width: 640px) {
   .about-section {
     margin: 16px auto;
+    padding-bottom: 20px; /* Extra padding for mobile */
   }
   
   .about-card {
     padding: 14px;
+    margin-bottom: 16px;
   }
   
   .about-content p {
     font-size: 14px;
     text-align: center;
+  }
+  
+  .about-features {
+    margin: 20px 0;
+  }
+  
+  .feature-item {
+    padding: 14px;
   }
 }
   </style>

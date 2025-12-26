@@ -432,8 +432,11 @@ require 'config/config.php'; // To get $base_url
     }
     @media (max-width: 740px) {
       .mobile-footer { display:block }
-      body { padding-bottom: 82px }
+      body { padding-bottom: 90px }
       .search { display:none }
+    }
+    .video-grid{
+      padding-bottom: 100px;
     }
     .foot-wrap { max-width: 1200px; margin: 0 auto; padding: 10px clamp(12px, 4vw, 18px); display:flex; justify-content: space-between; gap: 6px }
     .foot-item {

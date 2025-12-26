@@ -15,27 +15,18 @@ $selectedDate = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d');
 $dateObj = new DateTime($selectedDate);
 $formattedDate = $dateObj->format('Y-m-d');
 
-// Build WHERE clause based on filter
-$filterWhere = '';
-if (!empty($filter) && isset($categoryMap[$filter])) {
-    $categoryName = $categoryMap[$filter];
-    $filterWhere = " AND FIND_IN_SET('" . $categoryName . "', n.categories) > 0";
-}
-
 // Get page number for pagination
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
-$limit = 60; // News per page
+$limit = 20; // News per page
 $offset = ($page - 1) * $limit;
 
-// Fetch total news count for selected date with filter
+// Fetch total news count for selected date
 if ($selectedDate == date('Y-m-d')) {
-    // Today's news count with filter
-    $countQuery = "SELECT COUNT(*) as total FROM news WHERE status = 'published'" . $filterWhere;
+    $countQuery = "SELECT COUNT(*) as total FROM news WHERE status = 'published'";
     $countStmt = $db->prepare($countQuery);
     $countStmt->execute();
 } else {
-    // Specific date news count with filter
-    $countQuery = "SELECT COUNT(*) as total FROM news WHERE DATE(published_at) = ? AND status = 'published'" . $filterWhere;
+    $countQuery = "SELECT COUNT(*) as total FROM news WHERE DATE(published_at) = ? AND status = 'published'";
     $countStmt = $db->prepare($countQuery);
     $countStmt->execute([$formattedDate]);
 }
@@ -43,25 +34,21 @@ $totalResult = $countStmt->fetch(PDO::FETCH_ASSOC);
 $totalNews = $totalResult['total'];
 $totalPages = ceil($totalNews / $limit);
 
-// Fetch news for the selected date with subcategories and filter
+// Fetch news for the selected date
 if ($selectedDate == date('Y-m-d')) {
-    // Today's news with filter
     $newsQuery = "SELECT n.*, 
-                  (SELECT GROUP_CONCAT(c.name SEPARATOR ', ') FROM categories c WHERE FIND_IN_SET(c.id, n.categories) > 0) as category_names,
-                  (SELECT GROUP_CONCAT(c.subcategories SEPARATOR ', ') FROM categories c WHERE FIND_IN_SET(c.id, n.categories) > 0) as subcategories_list
+                  (SELECT GROUP_CONCAT(c.name SEPARATOR ', ') FROM categories c WHERE FIND_IN_SET(c.id, n.categories) > 0) as category_names
                   FROM news n 
-                  WHERE n.status = 'published'" . $filterWhere . "
+                  WHERE n.status = 'published'
                   ORDER BY n.published_at DESC 
                   LIMIT $limit OFFSET $offset";
     $newsStmt = $db->prepare($newsQuery);
     $newsStmt->execute();
 } else {
-    // Specific date news with filter
     $newsQuery = "SELECT n.*, 
-                  (SELECT GROUP_CONCAT(c.name SEPARATOR ', ') FROM categories c WHERE FIND_IN_SET(c.id, n.categories) > 0) as category_names,
-                  (SELECT GROUP_CONCAT(c.subcategories SEPARATOR ', ') FROM categories c WHERE FIND_IN_SET(c.id, n.categories) > 0) as subcategories_list
+                  (SELECT GROUP_CONCAT(c.name SEPARATOR ', ') FROM categories c WHERE FIND_IN_SET(c.id, n.categories) > 0) as category_names
                   FROM news n 
-                  WHERE DATE(n.published_at) = ? AND n.status = 'published'" . $filterWhere . "
+                  WHERE DATE(n.published_at) = ? AND n.status = 'published'
                   ORDER BY n.published_at DESC 
                   LIMIT $limit OFFSET $offset";
     $newsStmt = $db->prepare($newsQuery);
@@ -80,1752 +67,1807 @@ $featuredStmt = $db->prepare($featuredQuery);
 $featuredStmt->execute();
 $featuredNews = $featuredStmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Fetch today's highlights (news from today) with filter
-$highlightsQuery = "SELECT n.*, 
-                    (SELECT name FROM categories WHERE FIND_IN_SET(id, n.categories) > 0 LIMIT 1) as category_name
-                    FROM news n 
-                    WHERE DATE(n.published_at) = ? AND n.status = 'published'" . $filterWhere . "
-                    ORDER BY n.published_at DESC 
-                    LIMIT 2";
-$highlightsStmt = $db->prepare($highlightsQuery);
-$highlightsStmt->execute([$formattedDate]);
-$highlights = $highlightsStmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Fetch breaking news for ticker (recent 4 news)
+// Fetch breaking news for ticker (recent 5 news)
 $tickerQuery = "SELECT * FROM news 
                 WHERE status = 'published' 
                 ORDER BY published_at DESC 
-                LIMIT 4";
+                LIMIT 5";
 $tickerStmt = $db->prepare($tickerQuery);
 $tickerStmt->execute();
 $tickerNews = $tickerStmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Handle subscription form
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['subscribe'])) {
-    $email = $_POST['email'] ?? '';
-    
-    // Save to database (create subscribers table first)
-    // CREATE TABLE subscribers (id INT AUTO_INCREMENT PRIMARY KEY, email VARCHAR(255), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-    
-    $subscribeQuery = "INSERT INTO subscribers (email) VALUES (?)";
-    $subscribeStmt = $db->prepare($subscribeQuery);
-    $subscribeStmt->execute([$email]);
-    
-    $subscriptionSuccess = true;
-}
-
-// Function to check if a date has news
-function hasNewsForDate($db, $date) {
-    $query = "SELECT COUNT(*) as count FROM news WHERE DATE(published_at) = ? AND status = 'published'";
-    $stmt = $db->prepare($query);
-    $stmt->execute([$date]);
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $result['count'] > 0;
-}
-
-require 'config/config.php'; // To get $base_url
+require 'config/config.php';
 ?>
 
 <!DOCTYPE html>
 <html lang="ta">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Liked தமிழ்</title>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <title>Liked தமிழ் - உங்கள் நம்பகமான செய்தி மூலம்</title>
+  
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+Tamil:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Tamil:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <style>
+    /* ===== CSS Variables ===== */
     :root {
-      --red: #ff1111;        /* primary red */
-      --yellow: #fffc00;     /* accent yellow */
-      --black: #000000;      /* base black */
-      --fb-blue: #1877f2;    /* Facebook blue */
-
-      --bg: #0a0a0a;         /* deep black for background */
-      --text: #f5f7fa;       /* white-ish text */
-      --muted: #b8bfc8;      /* muted text */
-      --card: #121314;       /* card surface */
-      --card-hi: #16181a;    /* hover surface */
-      --border: 1px solid rgba(255,255,255,.06);
-      --glass: rgba(255,255,255,.06);
-      --shadow: 0 12px 32px rgba(0,0,0,.45);
-
-      --radius: 16px;
-      --radius-sm: 12px;
-      --radius-xs: 10px;
-      --trans: 240ms cubic-bezier(.2,.8,.2,1);
+      /* Colors */
+      --primary-red: #e63946;
+      --primary-dark-red: #c1121f;
+      --accent-yellow: #ffd166;
+      --black: #000000;
+      --white: #ffffff;
+      
+      /* UI Colors */
+      --bg-primary: #0a0a0a;
+      --bg-secondary: #121212;
+      --bg-card: #1a1a1a;
+      --bg-hover: #222222;
+      
+      --text-primary: #f8f9fa;
+      --text-secondary: #adb5bd;
+      --text-muted: #6c757d;
+      
+      --border-color: rgba(255, 255, 255, 0.1);
+      --glass-bg: rgba(255, 255, 255, 0.05);
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+      --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+      
+      /* Spacing */
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+      --space-2xl: 48px;
+      
+      /* Border Radius */
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --radius-full: 9999px;
+      
+      /* Transitions */
+      --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+      
+      /* Typography */
+      --font-heading: 'Noto Sans Tamil', 'Inter', system-ui, sans-serif;
+      --font-body: 'Noto Sans Tamil', 'Inter', system-ui, sans-serif;
     }
-
-    * { box-sizing: border-box }
-    html, body { height: 100%; width:100% }
-    body {
+    
+    /* ===== Reset & Base Styles ===== */
+    *, *::before, *::after {
+      box-sizing: border-box;
       margin: 0;
-      font-family: "Noto Sans Tamil", Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(800px 420px at 10% -10%, rgba(255,17,17,.12), transparent 42%),
-        radial-gradient(600px 380px at 95% 0%, rgba(255,252,0,.10), transparent 52%),
-        var(--bg);
-      background-attachment: fixed;
+      padding: 0;
+    }
+    
+    html {
+      -webkit-text-size-adjust: 100%;
+      -webkit-tap-highlight-color: transparent;
+      scroll-behavior: smooth;
+    }
+    
+    body {
+      font-family: var(--font-body);
+      color: var(--text-primary);
+      background: var(--bg-primary);
       line-height: 1.6;
-    }
-
-    /* App bar */
-    .logo {
-      width: 20%;       /* adjust size */
-      height: 20%;
-      border-radius: 8px; /* optional rounded corners */
-      object-fit: contain; /* keeps aspect ratio */
-    }
-
-    .appbar {
-      position: sticky; top: 0; z-index: 90;
-      backdrop-filter: saturate(1.25) blur(12px);
-      background: linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.25));
-      border-bottom: var(--border);
-    }
-    .appbar-wrap {
-      display: grid; grid-template-columns: auto 1fr auto; gap: 16px;
-      align-items: center; padding: 12px clamp(14px, 3vw, 24px);
-      max-width: 1200px; margin: 0 auto;
-    }
-    .brand {
-      display:flex; align-items:center; gap: 12px; text-decoration:none; color: var(--text);
-    }
-    .badge {
-      width: 40px; height: 40px; border-radius: 12px; overflow:hidden; position:relative;
-      box-shadow: var(--shadow);
-      background:
-        conic-gradient(from 220deg, var(--red), var(--yellow), var(--red));
-    }
-    .title {
-      font-weight: 800; font-size: clamp(18px, 2.4vw, 28px); letter-spacing: .2px;
-    }
-    .search {
-      display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px;
-      background: var(--glass); border: var(--border);
-    }
-    .search input {
-      flex:1; background:transparent; border:0; color: var(--text); outline:none;
-    }
-    .actions { display:flex; gap: 10px }
-    .btn {
-      display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:12px;
-      background: var(--card); border: var(--border); color: var(--text); cursor:pointer;
-      transition: transform var(--trans), box-shadow var(--trans), background var(--trans);
-      text-decoration: none;
-    }
-    .btn:hover { transform: translateY(-2px); box-shadow: var(--shadow) }
-    .btn.primary {
-      background: linear-gradient(180deg, var(--red), #cc0f0f);
-      color: #fff; border: 0;
-    }
-    .icon { width: 20px; height: 20px }
-
-    /* Category bar (chips) */
-    .catbar {
-      background: linear-gradient(180deg, rgba(255,252,0,.08), transparent);
-      border-top: var(--border);
-      border-bottom: var(--border);
-    }
-    .catbar-wrap {
-      max-width: 1200px; margin: 0 auto; padding: 10px clamp(14px, 3vw, 24px);
-      display:flex; gap: 8px; overflow-x: auto; scrollbar-width: thin;
-    }
-    .chip {
-      flex: 0 0 auto;
-      display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px;
-      background: var(--glass); border: var(--border); color: var(--text); font-weight:600; font-size: 13px;
-      transition: background var(--trans), transform var(--trans), color var(--trans);
-      cursor: pointer;
-      text-decoration: none;
-      white-space: nowrap;
-    }
-    .chip:hover { transform: translateY(-2px); background: rgba(255,17,17,.18) }
-    .chip.active { background: linear-gradient(180deg, var(--red), #d10f0f); color: #fff; border: 0 }
-
-    /* Ticker */
-    .ticker {
-      background: var(--yellow); color: var(--black);
-      border-bottom: 2px solid rgba(0,0,0,.25);
-    }
-    .ticker-wrap {
-      max-width: 1200px; margin: 0 auto; padding: 8px clamp(14px, 3vw, 24px);
-      display:grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items:center;
-    }
-    .tag-chip {
-      background: var(--black); color: var(--yellow);
-      border-radius: 999px; padding:6px 10px; font-weight: 700; border: 1px solid rgba(255,255,255,.08)
-    }
-    .marquee { overflow: hidden; height: 28px; }
-    .marquee-track {
-      display:inline-flex; gap: 28px; white-space: nowrap;
-      animation: track 24s linear infinite;
-    }
-    .marquee:hover .marquee-track { animation-play-state: paused }
-    @keyframes track { from { transform: translateX(0) } to { transform: translateX(-50%) } }
-    .dot { width:6px; height:6px; border-radius:50%; display:inline-block; background: rgba(0,0,0,.5); margin: 0 10px }
-
-    /* Hero slider */
-    .hero {
-      max-width: 1200px; margin: 18px auto; padding: 0 clamp(14px, 3vw, 24px);
-      display:grid; grid-template-columns: 1.2fr .8fr; gap: 16px;
-    }
-    @media (max-width: 980px) { .hero { grid-template-columns: 1fr } }
-
-    .slider {
-      position: relative; border-radius: var(--radius); overflow: hidden;
-      background: var(--card); border: var(--border); box-shadow: var(--shadow);
-    }
-    .slide { position:absolute; inset:0; opacity:0; transform: scale(1.02); transition: opacity .6s ease, transform .8s ease }
-    .slide.active { opacity:1; transform: scale(1) }
-    .slide img { width:100%; height: 420px; object-fit: cover; display:block; filter: contrast(1.02) saturate(1.05) }
-    .slide-grad { position:absolute; inset:0; background: linear-gradient(180deg, rgba(0,0,0,.05), rgba(0,0,0,.65) 65%) }
-    .slide-info { position:absolute; left: 18px; right: 18px; bottom: 16px; color:#fff; display:flex; flex-direction:column; gap:8px }
-    .pill { padding:6px 10px; border-radius:999px; font-size:12px; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.22) }
-    .slide-title { font-size: clamp(20px, 2.2vw, 28px); font-weight:800; line-height:1.25 }
-    .slide-meta { font-size: 13px; opacity:.9 }
-    .slider-nav { position:absolute; right: 12px; bottom: 12px; display:flex; gap:8px }
-    .nav-btn { width:38px; height:38px; border-radius:12px; background: rgba(0,0,0,.5); color:#fff; border: 1px solid rgba(255,255,255,.25); display:grid; place-items:center; cursor:pointer; transition: transform var(--trans), background var(--trans) }
-    .nav-btn:hover { transform: translateY(-1px); background: rgba(0,0,0,.65) }
-
-    /* Side panel: calendar + highlights */
-    .panel { display:flex; flex-direction: column; gap: 16px }
-    .card {
-      background: var(--card); border: var(--border);
-      border-radius: var(--radius); box-shadow: var(--shadow);
-      padding: 14px;
-    }
-
-    /* Calendar */
-    .calendar { display:grid; gap: 10px }
-    .cal-head { display:flex; justify-content: space-between; align-items: center }
-    .cal-title { font-weight:800; color: var(--yellow) }
-    .cal-grid { display:grid; grid-template-columns: repeat(7, 1fr); gap: 6px }
-    .cal-day { text-align:center; font-size: 12px; color: var(--muted) }
-    .cal-date {
-      text-align:center; font-size: 13px; padding: 8px 0; border-radius: 10px; color: var(--text);
-      background: var(--glass); border: var(--border); cursor: pointer;
-      transition: background var(--trans), transform var(--trans), box-shadow var(--trans);
-      text-decoration: none;
-      display: block;
+      min-height: 100vh;
+      overflow-x: hidden;
       position: relative;
     }
-    .cal-date:hover { background: rgba(255,252,0,.14); transform: translateY(-2px); box-shadow: var(--shadow) }
-    .cal-date.today { outline: 0 0 0 2px var(--yellow); font-weight: 700 }
-    .cal-date.selected { background: linear-gradient(180deg, var(--red), #cc0f0f); color: #fff; border: 0 }
-    .cal-date.has-news::after {
+    
+    /* Remove default padding-bottom for desktop */
+    @media (min-width: 768px) {
+      body {
+        padding-bottom: 0;
+      }
+    }
+    
+    /* Background gradient */
+    body::before {
       content: '';
-      position: absolute;
-      bottom: 2px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 4px;
-      height: 4px;
-      background-color: var(--yellow);
-      border-radius: 50%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 100vh;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(230, 57, 70, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 209, 102, 0.1) 0%, transparent 50%);
+      z-index: -1;
+      pointer-events: none;
     }
-
-    /* Sections */
-    .section { max-width: 1200px; margin: 8px auto 20px; padding: 0 clamp(14px, 3vw, 24px) }
-    .section-head { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px }
-    .section-title { font-weight:800; font-size: clamp(18px, 2vw, 22px) }
-
-    /* Grid (desktop 3+, mobile 2-per-row) */
-    .grid-news {
-      display:grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+    
+    /* ===== Typography ===== */
+    h1, h2, h3, h4, h5, h6 {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      line-height: 1.2;
     }
-    @media (max-width: 1120px) { .grid-news { grid-template-columns: repeat(3, 1fr) } }
-    @media (max-width: 980px)  { .grid-news { grid-template-columns: repeat(2, 1fr) } } /* two per row on tablets */
-    @media (max-width: 640px)  { .grid-news { grid-template-columns: 1fr 1fr } }       /* strictly 2 per row on mobile */
-
-    .news-card {
-      display:flex; flex-direction: column; overflow:hidden;
-      border-radius: var(--radius-sm); background: var(--card); border: var(--border);
-      box-shadow: var(--shadow);
-      transition: transform var(--trans), box-shadow var(--trans), background var(--trans);
-      text-decoration: none;
+    
+    a {
       color: inherit;
-    }
-    .news-card:hover { transform: translateY(-4px); box-shadow: 0 14px 40px rgba(0,0,0,.50); background: var(--card-hi) }
-    .news-thumb { position:relative; aspect-ratio: 16/10; overflow:hidden }
-    .news-thumb img { width:100%; height:100%; object-fit:cover; transform: scale(1.02); transition: transform .7s ease }
-    .news-card:hover .news-thumb img { transform: scale(1.06) }
-    .badge {
-      position:absolute; top:10px; left:10px; display:inline-flex; gap:6px; align-items:center;
-      padding:6px 10px; border-radius:999px; background: rgba(0,0,0,.55); color:#fff; font-size:12px; border: 1px solid rgba(255,255,255,.25)
-    }
-    .news-content { padding: 12px 12px 14px }
-    .news-title { font-weight:700; font-size: 16px; line-height:1.4; margin: 4px 0 6px }
-    .news-meta { font-size: 12px; color: var(--muted); display:flex; gap:8px; align-items:center }
-    .readmore { margin-top: 10px; display:inline-flex; align-items:center; gap:8px; color: var(--yellow); font-weight:700; text-decoration:none }
-    .readmore::after { content:'→'; transition: transform var(--trans) }
-    .news-card:hover .readmore::after { transform: translateX(3px) }
-
-    .page[style*="background: transparent"] {
-  background: transparent !important;
-  border: none !important;
-  color: var(--muted) !important;
-  cursor: default !important;
-}
-
-    /* Pagination */
-    .pagination {
-      display:flex; gap: 8px; justify-content: center; margin: 18px 0 100px;
-      flex-wrap: wrap;
-    }
-    .page {
-      padding:10px 14px; border-radius:999px; background: var(--glass); border: var(--border); cursor:pointer;
-      transition: background var(--trans), transform var(--trans);
       text-decoration: none;
-      color: var(--text);
-      min-width: 40px;
-      text-align: center;
-      font-family: "Noto Sans Tamil", Inter, sans-serif;
+      transition: color var(--transition-fast);
     }
-    .page.active { background: linear-gradient(180deg, var(--red), #cc0f0f); color: #fff; border: 0 }
-    .page:hover { transform: translateY(-2px); background: rgba(255,17,17,.18) }
-
-    /* Facebook Feed Section */
-    .facebook-feed-main {
-      margin: 40px 0 30px;
+    
+    a:hover {
+      color: var(--accent-yellow);
+    }
+    
+    /* ===== Utility Classes ===== */
+    .container {
       width: 100%;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 var(--space-md);
     }
     
-    .fb-feed-header {
+    @media (min-width: 640px) {
+      .container {
+        padding: 0 var(--space-lg);
+      }
+    }
+    
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    
+    /* ===== Header Fixes ===== */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(10, 10, 10, 0.98);
+      backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid var(--border-color);
+      padding: var(--space-sm) 0;
+    }
+    
+    .header-content {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 14px 16px;
-      background: linear-gradient(90deg, rgba(24,119,242,0.12), rgba(24,119,242,0.03));
-      border-radius: var(--radius) var(--radius) 0 0;
-      border-bottom: var(--border);
+      justify-content: space-between;
+      gap: var(--space-md);
+      height: 60px;
     }
     
-    .fb-logo {
-      width: 36px;
-      height: 36px;
-      background: linear-gradient(135deg, var(--fb-blue), #0A5BC4);
-      border-radius: 50%;
+    .logo-container {
       display: flex;
       align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: 700;
-      font-size: 16px;
-      box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);
-    }
-    
-    .fb-header-info {
+      gap: var(--space-sm);
       flex: 1;
+      min-width: 0;
     }
     
-    .fb-page-name {
-      font-weight: 700;
-      font-size: 16px;
-      margin-bottom: 2px;
-      color: var(--text);
-    }
-    
-    .fb-follower-count {
-      font-size: 13px;
-      color: var(--muted);
-    }
-    
-    .follow-btn {
-      background: var(--fb-blue);
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 13px;
-      cursor: pointer;
-      transition: transform var(--trans), opacity var(--trans), box-shadow var(--trans);
-      text-decoration: none;
-      display: inline-block;
-    }
-    
-    .follow-btn:hover {
-      opacity: 0.9;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);
-    }
-    
-    .fb-feed-content {
-      padding: 16px;
-      max-height: 400px;
-      overflow-y: auto;
-      scrollbar-width: thin;
-      scrollbar-color: var(--glass) transparent;
-    }
-    
-    .fb-feed-content::-webkit-scrollbar {
-      width: 6px;
-    }
-    
-    .fb-feed-content::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    
-    .fb-feed-content::-webkit-scrollbar-thumb {
-      background-color: var(--glass);
-      border-radius: 20px;
-    }
-    
-    .fb-post {
-      background: var(--card);
+    .logo {
+      height: 40px;
+      width: auto;
+      object-fit: contain;
       border-radius: var(--radius-sm);
-      border: var(--border);
-      padding: 14px;
-      margin-bottom: 14px;
-      transition: transform var(--trans), box-shadow var(--trans), background var(--trans);
+      max-width: 150px;
     }
     
-    .fb-post:hover {
-      transform: translateY(-3px);
-      box-shadow: var(--shadow);
-      background: var(--card-hi);
+    @media (min-width: 640px) {
+      .logo {
+        height: 48px;
+        max-width: 200px;
+      }
     }
     
-    .fb-post-header {
+    .site-title {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 1;
+    }
+    
+    @media (min-width: 640px) {
+      .site-title {
+        font-size: 1.5rem;
+      }
+    }
+    
+    .header-actions {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 12px;
+      gap: var(--space-sm);
+      flex-shrink: 0;
     }
     
-    .fb-avatar {
-      width: 36px;
-      height: 36px;
-      background: linear-gradient(135deg, var(--red), var(--yellow));
-      border-radius: 50%;
+    .search-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: all var(--transition-fast);
+    }
+    
+    .search-btn:hover {
+      color: var(--text-primary);
+      background: var(--glass-bg);
+    }
+    
+    .subscribe-btn {
+      display: none;
+    }
+    
+    @media (min-width: 768px) {
+      .subscribe-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-xs);
+        padding: var(--space-sm) var(--space-md);
+        background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red));
+        color: var(--white);
+        border: none;
+        border-radius: var(--radius-md);
+        font-family: var(--font-body);
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all var(--transition-base);
+      }
+      
+      .subscribe-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+      }
+    }
+    
+    /* ===== Category Navigation Fixes ===== */
+    .category-nav {
+      position: sticky;
+      top: 60px; /* Match header height */
+      z-index: 900;
+      background: rgba(18, 18, 18, 0.98);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-color);
+      padding: var(--space-sm) 0;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    
+    .category-nav::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .category-list {
+      display: flex;
+      gap: var(--space-xs);
+      padding: 0 var(--space-md);
+      list-style: none;
+      min-width: max-content;
+    }
+    
+    @media (min-width: 640px) {
+      .category-list {
+        gap: var(--space-sm);
+        padding: 0 var(--space-lg);
+        justify-content: center;
+      }
+    }
+    
+    .category-link {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: var(--space-sm) var(--space-md);
+      background: var(--glass-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      color: var(--text-secondary);
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: 0.875rem;
+      white-space: nowrap;
+      transition: all var(--transition-base);
+    }
+    
+    .category-link:hover,
+    .category-link.active {
+      background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red));
+      color: var(--white);
+      border-color: transparent;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .news-count-badge {
+      background: var(--accent-yellow);
       color: var(--black);
+      font-size: 0.75rem;
       font-weight: 700;
-      font-size: 14px;
+      padding: 1px 6px;
+      border-radius: var(--radius-full);
+      min-width: 20px;
+      text-align: center;
     }
     
-    .fb-post-info {
+    /* ===== Breaking News Ticker ===== */
+    .breaking-news {
+      background: linear-gradient(135deg, var(--primary-dark-red), var(--primary-red));
+      padding: var(--space-sm) 0;
+      overflow: hidden;
+      position: sticky;
+      top: 110px; /* Header (60px) + Category Nav (50px) */
+      z-index: 800;
+    }
+    
+    .ticker-container {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      padding: 0 var(--space-md);
+    }
+    
+    @media (min-width: 640px) {
+      .ticker-container {
+        padding: 0 var(--space-lg);
+      }
+    }
+    
+    .breaking-label {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+      background: var(--black);
+      color: var(--accent-yellow);
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    
+    .ticker-content {
       flex: 1;
-    }
-    
-    .fb-post-author {
-      font-weight: 600;
-      font-size: 14px;
-      margin-bottom: 2px;
-    }
-    
-    .fb-post-time {
-      font-size: 11px;
-      color: var(--muted);
-    }
-    
-    .fb-post-text {
-      font-size: 14px;
-      line-height: 1.5;
-      margin-bottom: 12px;
-      color: var(--text);
-    }
-    
-    .fb-post-image {
-      width: 100%;
-      border-radius: 8px;
-      margin-bottom: 12px;
       overflow: hidden;
     }
     
-    .fb-post-image img {
+    .ticker-track {
+      display: inline-flex;
+      gap: var(--space-xl);
+      animation: ticker 30s linear infinite;
+      white-space: nowrap;
+      padding-right: var(--space-xl);
+    }
+    
+    .ticker-content:hover .ticker-track {
+      animation-play-state: paused;
+    }
+    
+    @keyframes ticker {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    
+    /* ===== Main Content Area - FIXED ===== */
+    .main-content {
+      padding-top: var(--space-lg);
+      padding-bottom: 100px; /* Space for mobile footer */
+      min-height: calc(100vh - 110px); /* Ensure content fills viewport */
+    }
+    
+    @media (min-width: 768px) {
+      .main-content {
+        padding-bottom: var(--space-xl);
+        min-height: calc(100vh - 110px);
+      }
+    }
+    
+    /* ===== Hero Section ===== */
+    .hero-section {
+      margin-bottom: var(--space-xl);
+    }
+    
+    .hero-grid {
+      display: grid;
+      gap: var(--space-lg);
+    }
+    
+    @media (min-width: 1024px) {
+      .hero-grid {
+        grid-template-columns: 2fr 1fr;
+        gap: var(--space-xl);
+      }
+    }
+    
+    /* Slider */
+    .slider-container {
+      position: relative;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: var(--bg-card);
+      box-shadow: var(--shadow-lg);
+      height: 300px;
       width: 100%;
-      height: auto;
-      border-radius: 8px;
-      transition: transform .5s ease;
     }
     
-    .fb-post:hover .fb-post-image img {
-      transform: scale(1.03);
+    @media (min-width: 640px) {
+      .slider-container {
+        height: 400px;
+      }
     }
     
-    .fb-post-stats {
+    .slider {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transform: translateX(30px);
+      transition: all var(--transition-slow);
+    }
+    
+    .slide.active {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    
+    .slide-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: brightness(0.8);
+    }
+    
+    .slide-content {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: var(--space-lg);
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+    }
+    
+    .slide-category {
+      display: inline-block;
+      padding: var(--space-xs) var(--space-sm);
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      border-radius: var(--radius-full);
+      color: var(--white);
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-bottom: var(--space-sm);
+    }
+    
+    .slide-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--white);
+      margin-bottom: var(--space-sm);
+      line-height: 1.3;
+    }
+    
+    @media (min-width: 640px) {
+      .slide-title {
+        font-size: 2rem;
+      }
+    }
+    
+    .slide-meta {
       display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+    
+    .slider-controls {
+      position: absolute;
+      bottom: var(--space-lg);
+      right: var(--space-lg);
+      display: flex;
+      gap: var(--space-sm);
+    }
+    
+    /* ===== Calendar Sidebar ===== */
+    .calendar-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      box-shadow: var(--shadow-md);
+      height: 100%;
+    }
+    
+    /* ===== News Grid ===== */
+    .news-grid {
+      display: grid;
+      gap: var(--space-lg);
+      margin-bottom: var(--space-xl);
+    }
+    
+    @media (min-width: 640px) {
+      .news-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    @media (min-width: 1024px) {
+      .news-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    
+    @media (min-width: 1280px) {
+      .news-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+    
+    .news-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      transition: all var(--transition-base);
+      border: 1px solid var(--border-color);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .news-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--primary-red);
+    }
+    
+    .news-image {
+      position: relative;
+      width: 100%;
+      height: 180px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    
+    .news-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform var(--transition-slow);
+    }
+    
+    .news-category {
+      position: absolute;
+      top: var(--space-sm);
+      left: var(--space-sm);
+      padding: var(--space-xs) var(--space-sm);
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(10px);
+      border-radius: var(--radius-full);
+      color: var(--white);
+      font-size: 0.75rem;
+      font-weight: 600;
+      z-index: 1;
+    }
+    
+    .news-content {
+      padding: var(--space-lg);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .news-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      line-height: 1.4;
+      margin-bottom: var(--space-sm);
+      color: var(--text-primary);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      flex: 1;
+    }
+    
+    .news-meta {
+      display: flex;
+      align-items: center;
       justify-content: space-between;
-      align-items: center;
-      padding-top: 10px;
-      border-top: var(--border);
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      margin-top: auto;
     }
     
-    .fb-likes {
+    .read-more {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      color: var(--primary-red);
+      font-weight: 600;
+      font-size: 0.875rem;
+      margin-top: var(--space-md);
+      transition: gap var(--transition-fast);
+    }
+    
+    /* ===== Facebook Section - IMPROVED MOBILE ===== */
+    .facebook-section {
+      margin: var(--space-xl) 0;
+    }
+    
+    .facebook-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-color);
+    }
+    
+    .facebook-header {
+      background: linear-gradient(135deg, #1877f2, #0a5bc4);
+      padding: var(--space-md);
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 13px;
-      color: var(--muted);
+      gap: var(--space-md);
     }
     
-    .fb-like-icon {
-      width: 16px;
-      height: 16px;
-      background: linear-gradient(135deg, var(--fb-blue), #0A5BC4);
-      border-radius: 50%;
+    @media (min-width: 768px) {
+      .facebook-header {
+        padding: var(--space-lg);
+      }
+    }
+    
+    .facebook-logo {
+      width: 40px;
+      height: 40px;
+      background: var(--white);
+      border-radius: var(--radius-full);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
-      font-size: 10px;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #1877f2;
+      flex-shrink: 0;
     }
     
-    .fb-view-link {
-      font-size: 12px;
-      color: var(--fb-blue);
-      text-decoration: none;
+    @media (min-width: 768px) {
+      .facebook-logo {
+        width: 48px;
+        height: 48px;
+        font-size: 1.5rem;
+      }
+    }
+    
+    .facebook-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .facebook-name {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: var(--space-xs);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    @media (min-width: 768px) {
+      .facebook-name {
+        font-size: 1.25rem;
+      }
+    }
+    
+    .facebook-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.75rem;
+    }
+    
+    @media (min-width: 768px) {
+      .facebook-stats {
+        font-size: 0.875rem;
+      }
+    }
+    
+    .facebook-follow-btn {
+      padding: var(--space-sm) var(--space-md);
+      background: var(--white);
+      color: #1877f2;
+      border: none;
+      border-radius: var(--radius-full);
       font-weight: 600;
-      transition: color var(--trans);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      font-size: 0.875rem;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
     
-    .fb-view-link:hover {
-      color: var(--yellow);
+    .facebook-follow-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
     }
     
-    .fb-no-posts {
+    .facebook-content {
+      padding: var(--space-lg);
       text-align: center;
-      padding: 20px;
-      color: var(--muted);
-      font-style: italic;
     }
     
-    /* Desktop Footer */
-    .likedtamil-footer {
-      display:  block;
-      background: #000000;
-      color: #fffc00;
-      text-align: center;
-      padding: 8px 10px;
-      font-size: 13px;
-      border-top: 2px solid #ff1111;
-      font-family: "Noto Sans Tamil", Inter, sans-serif;
-      margin-top: 20px;
+    .facebook-content p {
+      color: var(--text-secondary);
+      margin-bottom: var(--space-md);
+      font-size: 0.875rem;
     }
     
-    .likedtamil-footer-wrap {
-      max-width: 1200px;
-      margin: 0 auto;
+    @media (min-width: 768px) {
+      .facebook-content p {
+        font-size: 1rem;
+      }
     }
     
-    .likedtamil-footer a {
-      color: #ff1111;
-      text-decoration: none;
+    .facebook-link {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: var(--space-sm) var(--space-lg);
+      background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red));
+      color: var(--white);
+      border-radius: var(--radius-full);
       font-weight: 600;
-      transition: color 0.2s ease;
+      transition: all var(--transition-fast);
     }
     
-    .likedtamil-footer a:hover {
-      color: #fffc00;
+    .facebook-link:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      gap: var(--space-sm);
     }
     
-    @media (max-width: 740px) {
-      .likedtamil-footer {
+    /* ===== Pagination ===== */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: var(--space-xl) 0;
+      flex-wrap: wrap;
+    }
+    
+    /* ===== Desktop Footer ===== */
+    .desktop-footer {
+      display: none;
+    }
+    
+    @media (min-width: 768px) {
+      .desktop-footer {
+        display: block;
+        background: var(--black);
+        color: var(--accent-yellow);
+        padding: var(--space-lg) 0;
+        border-top: 3px solid var(--primary-red);
+        margin-top: var(--space-xl);
+      }
+    }
+    
+    /* ===== Mobile Footer - IMPROVED ===== */
+    .mobile-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      background: rgba(10, 10, 10, 0.98);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border-color);
+      padding: var(--space-sm) 0;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      height: 70px;
+    }
+    
+    @media (min-width: 768px) {
+      .mobile-footer {
         display: none;
       }
     }
-
-    /* Sticky mobile footer */
-    .mobile-footer {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 99;
-      backdrop-filter: blur(12px) saturate(1.1);
-      background: linear-gradient(180deg, rgba(255,17,17,.85), rgba(255,17,17,.98));
-      border-top: 2px solid rgba(255,252,0,.55);
-      display:none;
-    }
-    @media (max-width: 740px) {
-      .mobile-footer { display:block }
-      body { padding-bottom: 82px }
-      .search { display:none }
-    }
-    .foot-wrap { max-width: 1200px; margin: 0 auto; padding: 10px clamp(12px, 4vw, 18px); display:flex; justify-content: space-between; gap: 6px }
-    .foot-item {
-      flex:1; display:flex; flex-direction: column; align-items:center; gap: 6px;
-      color: #fff; text-decoration:none; padding:8px; border-radius: 12px;
-      transition: transform var(--trans), background var(--trans)
-    }
-    .foot-item:hover, .foot-item.active { background: rgba(0,0,0,.18); transform: translateY(-2px) }
-    .foot-icon { width: 22px; height: 22px }
-    .foot-label { font-size: 12px; font-weight:700 }
-
-    /* Subtle entrance */
-    .fade-in-up { opacity:0; transform: translateY(12px); animation: in .6s var(--trans) forwards }
-    @keyframes in { to { opacity:1; transform: translateY(0) } }
     
-    /* News Count Badge */
-    .news-count {
-      background: var(--yellow);
-      color: var(--black);
-      padding: 2px 6px;
-      border-radius: 10px;
-      font-size: 11px;
-      font-weight: 700;
-      margin-left: 5px;
+    .mobile-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-md);
+      transition: all var(--transition-fast);
+      flex: 1;
+      max-width: 80px;
+      text-decoration: none;
+      color: var(--text-secondary);
     }
     
-    /* No News Message */
-    .no-news {
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--muted);
+    .mobile-nav-item.active {
+      color: var(--primary-red);
+    }
+    
+    .mobile-nav-icon {
+      width: 22px;
+      height: 22px;
+    }
+    
+    .mobile-nav-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    /* ===== Search Modal ===== */
+    .search-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 1100;
+      align-items: flex-start;
+      justify-content: center;
+      padding: var(--space-xl) var(--space-md);
+      overflow-y: auto;
+    }
+    
+    .search-modal.active {
+      display: flex;
+    }
+    
+    /* ===== Responsive Adjustments ===== */
+    @media (max-width: 767px) {
+      /* Header adjustments */
+      .header {
+        height: 60px;
+      }
+      
+      .logo {
+        max-width: 120px;
+      }
+      
+      .site-title {
+        font-size: 1rem;
+      }
+      
+      /* Category nav */
+      .category-nav {
+        height: 50px;
+        top: 60px;
+      }
+      
+      /* Breaking news */
+      .breaking-news {
+        top: 110px;
+        height: 40px;
+      }
+      
+      .ticker-container {
+        padding: 0 var(--space-sm);
+        gap: var(--space-sm);
+      }
+      
+      .breaking-label {
+        font-size: 0.7rem;
+        padding: 2px 8px;
+      }
+      
+      /* Hero section mobile */
+      .slider-container {
+        height: 250px;
+      }
+      
+      .slide-content {
+        padding: var(--space-md);
+      }
+      
+      .slide-title {
+        font-size: 1.25rem;
+      }
+      
+      .slide-meta {
+        font-size: 0.75rem;
+        gap: var(--space-sm);
+      }
+      
+      /* Calendar mobile */
+      .calendar-card {
+        padding: var(--space-md);
+      }
+      
+      /* News grid mobile */
+      .news-grid {
+        gap: var(--space-md);
+      }
+      
+      .news-image {
+        height: 150px;
+      }
+      
+      .news-content {
+        padding: var(--space-md);
+      }
+      
+      .news-title {
+        font-size: 1rem;
+        -webkit-line-clamp: 2;
+      }
+      
+      /* Facebook mobile improvements */
+      .facebook-header {
+        flex-wrap: wrap;
+        gap: var(--space-sm);
+      }
+      
+      .facebook-name {
+        font-size: 1rem;
+        white-space: normal;
+        -webkit-line-clamp: 1;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      
+      .facebook-stats {
+        gap: var(--space-xs);
+        font-size: 0.7rem;
+      }
+      
+      .facebook-follow-btn {
+        padding: var(--space-xs) var(--space-sm);
+        font-size: 0.75rem;
+        margin-top: var(--space-xs);
+      }
+      
+      .facebook-content {
+        padding: var(--space-md);
+      }
+      
+      /* Mobile footer */
+      .mobile-footer {
+        height: 70px;
+      }
+      
+      .mobile-nav-icon {
+        width: 20px;
+        height: 20px;
+      }
+      
+      .mobile-nav-label {
+        font-size: 0.7rem;
+      }
+    }
+    
+    @media (max-width: 374px) {
+      /* Extra small devices */
+      .logo {
+        max-width: 100px;
+      }
+      
+      .site-title {
+        font-size: 0.9rem;
+      }
+      
+      .category-link {
+        padding: var(--space-xs) var(--space-sm);
+        font-size: 0.75rem;
+      }
+      
+      .slider-container {
+        height: 200px;
+      }
+      
+      .slide-title {
+        font-size: 1.1rem;
+      }
+      
+      .news-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    /* ===== Loading States ===== */
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: var(--space-2xl);
+      color: var(--text-secondary);
+      font-size: 0.875rem;
       grid-column: 1 / -1;
     }
     
-    /* Loading spinner */
-    .loading {
-      text-align: center;
-      padding: 20px;
-      color: var(--muted);
+    /* ===== Animation for mobile footer ===== */
+    @keyframes slideUp {
+      from {
+        transform: translateY(100%);
+      }
+      to {
+        transform: translateY(0);
+      }
     }
-
-    /* Pagination */
-    .pagination { display:flex; justify-content:center; gap:8px; margin:32px 0 }
-    .page { padding:8px 14px; border-radius:10px; background: var(--card); border: var(--border); color: var(--text); cursor:pointer; transition: transform var(--trans), background var(--trans) }
-    .page:hover { transform: translateY(-2px); background: var(--card-hi) }
-    .page.active { background: linear-gradient(180deg, var(--red), #cc0f0f); color: #fff; border: 0 }
-
-    /* Pagination */
-.pagination {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  margin: 18px 0 100px;
-  flex-wrap: wrap; /* Responsive */
-}
-.page {
-  padding: 10px 14px;
-  border-radius: 999px;
-  background: var(--glass);
-  border: var(--border);
-  cursor: pointer;
-  transition: background var(--trans), transform var(--trans);
-  text-decoration: none;
-  color: var(--text);
-  min-width: 40px;
-  text-align: center;
-  font-family: "Noto Sans Tamil", Inter, sans-serif;
-}
-.page.active {
-  background: linear-gradient(180deg, var(--red), #cc0f0f);
-  color: #fff;
-  border: 0;
-}
-.page:hover {
-  transform: translateY(-2px);
-  background: rgba(255,17,17,.18);
-}
-
-/* Mobile pagination */
-@media (max-width: 640px) {
-  .pagination {
-    gap: 6px;
-    margin: 18px 0 80px;
-  }
-  .page {
-    padding: 8px 12px;
-    font-size: 14px;
-    min-width: 36px;
-  }
-}
-/* Mobile responsiveness */
-@media (max-width: 640px) {
-  .appbar-wrap {
-    grid-template-columns: auto 1fr;
-    gap: 12px;
-  }
-  .search {
-    display: none; /* Hide search on mobile - use icon in footer */
-  }
-  .actions {
-    display: none; /* Hide subscribe button on mobile */
-  }
-  .title {
-    font-size: 18px;
-  }
-  
-  .catbar-wrap {
-    padding: 8px 12px;
-  }
-  .chip {
-    padding: 6px 10px;
-    font-size: 12px;
-  }
-  
-  .hero {
-    margin: 12px auto;
-    gap: 12px;
-  }
-  
-  .slide img {
-    height: 300px;
-  }
-  
-  .slide-info {
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
-  }
-  .slide-title {
-    font-size: 18px;
-  }
-  
-  .grid-news {
-    gap: 12px;
-  }
-  .news-title {
-    font-size: 15px;
-  }
-  
-  .pagination {
-    gap: 6px;
-    margin: 18px 0 80px;
-  }
-  .page {
-    padding: 8px 12px;
-    font-size: 14px;
-    min-width: 36px;
-  }
-}
-
-/* Subscription Modal */
-.subscription-modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.8);
-  z-index: 1000;
-  align-items: center;
-  justify-content: center;
-}
-
-.subscription-content {
-  background: var(--card);
-  border-radius: var(--radius);
-  padding: 30px;
-  width: 90%;
-  max-width: 500px;
-  border: var(--border);
-  box-shadow: var(--shadow);
-}
-
-.subscription-content h3 {
-  color: var(--yellow);
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-.subscription-form {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.subscription-form input {
-  flex: 1;
-  padding: 12px;
-  border-radius: var(--radius-sm);
-  background: var(--glass);
-  border: var(--border);
-  color: var(--text);
-  outline: none;
-}
-
-.subscription-form button {
-  background: linear-gradient(180deg, var(--red), #cc0f0f);
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.close-modal {
-  background: transparent;
-  border: none;
-  color: var(--muted);
-  cursor: pointer;
-  float: right;
-  font-size: 20px;
-}
-
-.subscription-success {
-  color: var(--yellow);
-  text-align: center;
-  padding: 10px;
-  display: none;
-}
-    .section-head { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px }
-
-    /* Filter buttons active state */
-    .filter-btn.active {
-      background: linear-gradient(180deg, var(--red), #cc0f0f);
-      color: #fff;
-      border: 0;
+    
+    .mobile-footer {
+      animation: slideUp 0.3s ease-out;
     }
-
+    
+    /* ===== Ensure content is not hidden ===== */
+    .main-content > .container {
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* ===== Fix for calendar grid on mobile ===== */
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: var(--space-xs);
+      margin-bottom: var(--space-lg);
+    }
+    
+    .calendar-date {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+    }
+    
+    @media (max-width: 640px) {
+      .calendar-date {
+        font-size: 0.75rem;
+      }
+    }
   </style>
 </head>
 <body>
-
-<!-- App bar -->
-<header class="appbar">
-  <div class="appbar-wrap">
-    <a href="index.php" class="brand">
-      <img src="Liked-tamil-news-logo-1 (2).png" alt="Portal Logo" class="logo" />
-      <span class="title">Liked தமிழ்</span>
-    </a>
-    <!-- Search Form -->
-    <form method="GET" action="search.php" class="search" role="search">
-      <svg class="icon" viewBox="0 0 24 24" fill="none">
-        <path d="M11 5a6 6 0 016 6c0 1.3-.41 2.5-1.11 3.48l4.32 4.32-1.41 1.41-4.32-4.32A6 6 0 1111 5z" stroke="currentColor" stroke-width="1.5"/>
-      </svg>
-      <input type="search" name="q" placeholder="தேடல்…" aria-label="தேடல்" value="<?php echo isset($_GET['q']) ? htmlspecialchars($_GET['q']) : ''; ?>" />
-    </form>
-  </div>
-</header>
+  <!-- Header -->
+  <header class="header" role="banner">
+    <div class="container">
+      <div class="header-content">
+        <a href="index.php" class="logo-container">
+          <img src="Liked-tamil-news-logo-1 (2).png" alt="Liked தமிழ்" class="logo" />
+          <h1 class="site-title">Liked தமிழ்</h1>
+        </a>
+        
+        <div class="header-actions">
+          <button class="search-btn" aria-label="தேடல்" id="searchToggle">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </button>
+          
+          <button class="subscribe-btn" onclick="openSubscription()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+              <polyline points="22,6 12,13 2,6" />
+            </svg>
+            சந்தா
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
 
   <!-- Category Navigation -->
-  <nav class="catbar" aria-label="Categories">
-    <div class="catbar-wrap">
-      <a href="index.php" class="chip <?php echo (!isset($_GET['category'])) ? 'active' : ''; ?>">முகப்பு</a>
-      <?php foreach ($categories as $category): ?>
-        <?php 
-        // Count news in this category using FIND_IN_SET
-        $countQuery = "SELECT COUNT(*) as count FROM news 
-                       WHERE FIND_IN_SET(?, categories) > 0 
-                       AND status = 'published'";
-        $countStmt = $db->prepare($countQuery);
-        $countStmt->execute([$category['id']]);
-        $count = $countStmt->fetch(PDO::FETCH_ASSOC);
-        ?>
-        <a href="categories.php?id=<?php echo $category['id']; ?>" class="chip <?php echo (isset($_GET['category']) && $_GET['category'] == $category['id']) ? 'active' : ''; ?>">
-          <?php echo htmlspecialchars($category['name']); ?>
-          <?php if ($count['count'] > 0): ?>
-            <span class="news-count"><?php echo $count['count']; ?></span>
-          <?php endif; ?>
-        </a>
-      <?php endforeach; ?>
-    </div>
-  </nav>
-
-  <!-- Breaking news ticker -->
-  <section class="ticker">
-    <div class="ticker-wrap">
-      <span class="tag-chip">Breaking</span>
-      <div class="marquee" aria-label="Breaking news">
-        <div class="marquee-track" id="tickerTrack">
-          <span>சிறப்பு: புதிய திட்டம் அறிவிப்பு வெளியீடு<span class="dot"></span></span>
-          <span>விளையாட்டு: கடைசி ஓவரில் த்ரில்லர் வெற்றி<span class="dot"></span></span>
-          <span>தொழில்நுட்பம்: AI கருவி வெளியீடு<span class="dot"></span></span>
-          <span>உலக செய்திகள்: வர்த்தக உடன்பாடு கையெழுத்து<span class="dot"></span></span>
-          <!-- duplicate for seamless loop -->
-          <span>சிறப்பு: புதிய திட்டம் அறிவிப்பு வெளியீடு<span class="dot"></span></span>
-          <span>விளையாட்டு: கடைசி ஓவரில் த்ரில்லர் வெற்றி<span class="dot"></span></span>
-          <span>தொழில்நுட்பம்: AI கருவி வெளியீடு<span class="dot"></span></span>
-          <span>உலக செய்திகள்: வர்த்தக உடன்பாடு கையெழுத்து<span class="dot"></span></span>
-        </div>
-      </div>
-      <span class="tag-chip">Live • 24/7</span>
-    </div>
-  </section>
-
-  <!-- Hero: slider + side panel -->
-  <section class="hero">
-    <!-- Slider -->
-    <div class="slider fade-in-up" id="slider">
-      <?php if (!empty($featuredNews)): ?>
-        <?php foreach ($featuredNews as $index => $featured): ?>
-          <article class="slide <?php echo $index === 0 ? 'active' : ''; ?>" data-index="<?php echo $index; ?>">
-            <img src="<?php echo !empty($featured['image']) ? $base_url . 'uploads/news/' . htmlspecialchars($featured['image']) : 'https://images.unsplash.com/photo-1504711434964-1e0193031639?q=80&w=1600&auto=format&fit=crop'; ?>" alt="<?php echo htmlspecialchars($featured['title']); ?>" />
-            <div class="slide-grad"></div>
-            <div class="slide-info">
-              <div class="slide-cat">
-              </div>
-              <h2 class="slide-title"><?php echo htmlspecialchars($featured['title']); ?></h2>
-              <div class="slide-meta">
-                <?php 
-                // CHANGED: Use published_at instead of created_at
-                $publishTime = new DateTime($featured['published_at'] ?: $featured['created_at']);
-                $now = new DateTime();
-                $interval = $now->diff($publishTime);
-                
-                if ($interval->days > 0) {
-                  echo $interval->days . ' நாட்கள் முன்';
-                } elseif ($interval->h > 0) {
-                  echo $interval->h . ' மணி முன்';
-                } else {
-                  echo $interval->i . ' நி முன்';
-                }
-                ?> • 
-                <?php 
-                $wordCount = str_word_count(strip_tags($featured['content']));
-                $readingTime = ceil($wordCount / 200);
-                echo max(1, $readingTime); 
-                ?> நிமிடம் வாசிப்பு
-              </div>
-            </div>
-            <div class="slider-nav">
-              <button class="nav-btn" data-dir="-1" aria-label="முந்தைய ஸ்லைடு">‹</button>
-              <button class="nav-btn" data-dir="1" aria-label="அடுத்த ஸ்லைடு">›</button>
-            </div>
-          </article>
-        <?php endforeach; ?>
-      <?php else: ?>
-        <!-- Default slides if no featured news -->
-        <article class="slide active" data-index="0">
-          <img src="https://images.unsplash.com/photo-1504711434964-1e0193031639?q=80&w=1600&auto=format&fit=crop" alt="உலக நகரங்கள்" />
-          <div class="slide-grad"></div>
-          <div class="slide-info">
-            
-            <h2 class="slide-title">Liked தமிழ் - உங்கள் நம்பகமான செய்தி மூலம்</h2>
-            <div class="slide-meta">இப்போது • 3 நிமிடம் வாசிப்பு</div>
-          </div>
-        </article>
-      <?php endif; ?>
-    </div>
-
-    <!-- Panel -->
-    <aside class="panel">
-      <!-- Calendar -->
-      <div class="card calendar" id="calendar">
-        <div class="cal-head">
-          <div class="cal-title" id="calendarTitle">செய்தி காலண்டர்</div>
-          <div style="display:flex; gap:6px">
-            <button class="btn" id="prevMonth" aria-label="முந்தைய மாதம்">‹</button>
-            <button class="btn" id="nextMonth" aria-label="அடுத்த மாதம்">›</button>
-          </div>
-        </div>
-        <div class="cal-grid">
-          <div class="cal-day">திங்கள்</div>
-          <div class="cal-day">செவ்வாய்</div>
-          <div class="cal-day">புதன்</div>
-          <div class="cal-day">வியாழன்</div>
-          <div class="cal-day">வெள்ளி</div>
-          <div class="cal-day">சனி</div>
-          <div class="cal-day">ஞாயிறு</div>
-        </div>
-        <div class="cal-grid" id="calDates" aria-label="காலண்டர் தேதிகள்"></div>
-        <div style="color: var(--muted); font-size: 12px">தேதியைத் தட்டவும் — தலைப்புகளை வடிகட்டி</div>
-      </div>
-    </aside>
-  </section>
-
-  <!-- Main News Grid -->
-  <section class="section">
-    <div class="section-head">
-      <div class="section-title">
-        <?php 
-        if ($selectedDate == date('Y-m-d')) {
-          echo 'இன்றைய செய்திகள்';
-        } else {
-          echo date('d/m/Y', strtotime($selectedDate)) . ' செய்திகள்';
-        }
-        ?>
-        <span style="font-size: 14px; color: var(--muted); margin-left: 10px;">
-          (<?php echo $totalNews; ?> செய்திகள்)
-        </span>
-      </div>
-      
-
-    </div>
-
-    <div class="grid-news" id="newsGrid">
-      <?php if (!empty($news)): ?>
-        <?php foreach ($news as $item): ?>
-          <article class="news-card">
-            <a href="news-detail.php?id=<?php echo $item['id']; ?>" style="text-decoration: none; color: inherit;">
-              <div class="news-thumb">
-                <?php
-                // Get image from news_images table if exists
-                $imageQuery = "SELECT image_path FROM news_images WHERE news_id = ? ORDER BY display_order LIMIT 1";
-                $imageStmt = $db->prepare($imageQuery);
-                $imageStmt->execute([$item['id']]);
-                $newsImage = $imageStmt->fetch(PDO::FETCH_ASSOC);
-                
-                require 'config/config.php'; // To get $base_url
-                $imageSrc = '';
-                if (!empty($item['image'])) {
-                  $imageSrc = $base_url . 'uploads/news/' . htmlspecialchars($item['image']);
-                } elseif ($newsImage && !empty($newsImage['image_path'])) {
-                  $imageSrc =  $base_url  . htmlspecialchars($newsImage['image_path']);
-                } else {
-                  $imageSrc = 'https://picsum.photos/id/' . rand(1000, 1100) . '/800/500';
-                }
-                ?>
-                <img src="<?php echo $imageSrc; ?>" alt="<?php echo htmlspecialchars($item['title']); ?>" />
-                <?php if (!empty($item['category_names'])): ?>
-                  <span class="badge"><?php 
-                    // Get first category name
-                    $categories = explode(', ', $item['category_names']);
-                    echo htmlspecialchars(trim($categories[0])); 
-                  ?></span>
-                <?php else: ?>
-                  
-                <?php endif; ?>
-              </div>
-              <div class="news-content">
-                <h3 class="news-title"><?php echo htmlspecialchars($item['title']); ?></h3>
-                <?php if (!empty($item['subcategories_list'])): ?>
-                  <div style="font-size: 11px; color: var(--muted); margin-bottom: 5px;">
-                    <?php 
-                    // Process subcategories
-                    $subcategories = explode(', ', $item['subcategories_list']);
-                    // Remove empty values and duplicates
-                    $filteredSubs = array_filter(array_unique($subcategories));
-                    if (!empty($filteredSubs)) {
-                      echo implode(' • ', $filteredSubs);
-                    }
-                    ?>
-                  </div>
-                <?php endif; ?>
-                <div class="news-meta">
-                  <?php 
-                  // CHANGED: Use published_at instead of created_at
-                  $publishTime = new DateTime($item['published_at'] ?: $item['created_at']);
-                  $now = new DateTime();
-                  $interval = $now->diff($publishTime);
-                  
-                  if ($interval->days > 0) {
-                    echo $interval->days . ' நாட்கள்';
-                  } elseif ($interval->h > 0) {
-                    echo $interval->h . ' மணி';
-                  } else {
-                    echo $interval->i . ' நி';
-                  }
-                  ?> முன்
-                  
-                </div>
-                <div class="readmore">மேலும் படிக்க</div>
-              </div>
+  <nav class="category-nav" aria-label="Main categories">
+    <div class="container">
+      <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+        <ul class="category-list">
+          <li style="display: inline-block;">
+            <a href="index.php" class="category-link <?php echo (!isset($_GET['category'])) ? 'active' : ''; ?>">
+              முகப்பு
             </a>
-          </article>
-        <?php endforeach; ?>
-      <?php else: ?>
-        <div class="no-news">
-          <h3>செய்திகள் இல்லை</h3>
-          <p><?php echo date('d/m/Y', strtotime($selectedDate)); ?> தேதிக்கு செய்திகள் இல்லை.</p>
-          <a href="index.php" class="btn primary">இன்றைய செய்திகளைப் பார்க்க</a>
-        </div>
-      <?php endif; ?>
-    </div>
-
-    <!-- Facebook Feed Section -->
-<div class="facebook-feed-main">
-  <div class="card">
-    <div class="fb-feed-header">
-      <div class="fb-logo">f</div>
-      <div class="fb-header-info">
-        <div class="fb-page-name">Liked தமிழ்</div>
-        <div class="fb-follower-count">12.5K பின்தொடர்பவர்கள் • 1,234 பதிவுகள்</div>
+          </li>
+          <?php foreach ($categories as $category): ?>
+            <?php 
+            $countQuery = "SELECT COUNT(*) as count FROM news 
+                           WHERE FIND_IN_SET(?, categories) > 0 
+                           AND status = 'published'";
+            $countStmt = $db->prepare($countQuery);
+            $countStmt->execute([$category['id']]);
+            $count = $countStmt->fetch(PDO::FETCH_ASSOC);
+            ?>
+            <li style="display: inline-block;">
+              <a href="categories.php?id=<?php echo $category['id']; ?>" 
+                 class="category-link <?php echo (isset($_GET['category']) && $_GET['category'] == $category['id']) ? 'active' : ''; ?>">
+                <?php echo htmlspecialchars($category['name']); ?>
+                <?php if ($count['count'] > 0): ?>
+                  <span class="news-count-badge"><?php echo $count['count']; ?></span>
+                <?php endif; ?>
+              </a>
+            </li>
+          <?php endforeach; ?>
+        </ul>
       </div>
-      <a href="https://www.facebook.com/liked.tamil/" target="_blank" class="follow-btn">Follow</a>
     </div>
-    
-    
-  </div>
-</div>
-
-<!-- Pagination -->
-<?php if ($totalPages > 1): ?>
-  <nav class="pagination" aria-label="பக்கமாற்றம்">
-    <?php if ($page > 1): ?>
-      <a href="index.php?date=<?php echo $selectedDate; ?>&filter=<?php echo $filter; ?>&page=<?php echo $page - 1; ?>" class="page" aria-label="முந்தைய பக்கம்">
-        ‹ முந்தைய
-      </a>
-    <?php endif; ?>
-    
-    <?php 
-    // Show limited page numbers
-    $startPage = max(1, $page - 2);
-    $endPage = min($totalPages, $page + 2);
-    
-    // Show first page if not in range
-    if ($startPage > 1): ?>
-      <a href="index.php?date=<?php echo $selectedDate; ?>&filter=<?php echo $filter; ?>&page=1" class="page">1</a>
-      <?php if ($startPage > 2): ?>
-        <span class="page" style="background: transparent; border: none; color: var(--muted); cursor: default;">...</span>
-      <?php endif; ?>
-    <?php endif; ?>
-    
-    <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
-      <a href="index.php?date=<?php echo $selectedDate; ?>&filter=<?php echo $filter; ?>&page=<?php echo $i; ?>" 
-         class="page <?php echo ($i == $page) ? 'active' : ''; ?>"
-         aria-label="பக்கம் <?php echo $i; ?>"
-         aria-current="<?php echo ($i == $page) ? 'page' : 'false'; ?>">
-        <?php echo $i; ?>
-      </a>
-    <?php endfor; ?>
-    
-    <?php if ($endPage < $totalPages): ?>
-      <?php if ($endPage < $totalPages - 1): ?>
-        <span class="page" style="background: transparent; border: none; color: var(--muted); cursor: default;">...</span>
-      <?php endif; ?>
-      <a href="index.php?date=<?php echo $selectedDate; ?>&filter=<?php echo $filter; ?>&page=<?php echo $totalPages; ?>" class="page">
-        <?php echo $totalPages; ?>
-      </a>
-    <?php endif; ?>
-    
-    <?php if ($page < $totalPages): ?>
-      <a href="index.php?date=<?php echo $selectedDate; ?>&filter=<?php echo $filter; ?>&page=<?php echo $page + 1; ?>" class="page" aria-label="அடுத்த பக்கம்">
-        அடுத்த ›
-      </a>
-    <?php endif; ?>
   </nav>
-<?php endif; ?>
+
+  <!-- Breaking News Ticker -->
+  <section class="breaking-news" aria-label="Breaking news">
+    <div class="container">
+      <div class="ticker-container">
+        <div class="breaking-label">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="12" r="10" />
+          </svg>
+          Breaking
+        </div>
+        
+        <div class="ticker-content">
+          <div class="ticker-track">
+            <?php foreach ($tickerNews as $item): ?>
+              <span style="display: inline-flex; align-items: center; gap: var(--space-sm); margin-right: var(--space-xl);">
+                <?php echo htmlspecialchars($item['title']); ?>
+                <span style="width: 4px; height: 4px; background: var(--accent-yellow); border-radius: 50%;"></span>
+              </span>
+            <?php endforeach; ?>
+            <?php foreach ($tickerNews as $item): ?>
+              <span style="display: inline-flex; align-items: center; gap: var(--space-sm); margin-right: var(--space-xl);">
+                <?php echo htmlspecialchars($item['title']); ?>
+                <span style="width: 4px; height: 4px; background: var(--accent-yellow); border-radius: 50%;"></span>
+              </span>
+            <?php endforeach; ?>
+          </div>
+        </div>
+        
+        <div class="breaking-label">
+          Live • 24/7
+        </div>
+      </div>
+    </div>
   </section>
 
-  <!-- Subscription Modal -->
-  <div class="subscription-modal" id="subscriptionModal">
-    <div class="subscription-content">
-      <button class="close-modal" onclick="closeSubscription()">&times;</button>
-      <h3>Subscribe to Liked தமிழ்</h3>
-      <form method="POST" class="subscription-form">
-        <input type="email" name="email" placeholder="உங்கள் மின்னஞ்சல்" required>
-        <input type="hidden" name="subscribe" value="1">
-        <button type="submit">Subscribe</button>
-      </form>
-      <div class="subscription-success" id="subscriptionSuccess">
-        நன்றி! உங்கள் சந்தா வெற்றிகரமாக பதிவு செய்யப்பட்டது.
-      </div>
-    </div>
-  </div>
-
-  <!-- Desktop Footer -->
-  <footer class="likedtamil-footer">
-    <div class="likedtamil-footer-wrap">
-      © <?php echo date('Y'); ?> All Rights Reserved by <a href="https://likedtamil.lk" target="_blank">Likedtamil.lk</a> | Developed by <a href="https://webbuilders.lk" target="_blank">Webbuilders.lk</a>
-    </div>
-  </footer>
-
-  <!-- Mobile Footer -->
-  <footer class="mobile-footer" role="navigation" aria-label="மொபைல் அடிக்குறிப்பு">
-    <div class="foot-wrap">
-      <a href="index.php" class="foot-item active">
-        <svg class="foot-icon" viewBox="0 0 24 24" fill="none"><path d="M3 10l9-7 9 7v9a2 2 0 01-2 2H5a2 2 0 01-2-2v-9z" stroke="#fff" stroke-width="1.6"/></svg>
-        <span class="foot-label">முகப்பு</span>
-      </a>
-      <a href="categories.php" class="foot-item">
-        <svg class="foot-icon" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="#fff" stroke-width="1.6"/></svg>
-        <span class="foot-label">பிரிவுகள்</span>
-      </a>
-      <a href="search.php" class="foot-item">
-        <svg class="foot-icon" viewBox="0 0 24 24" fill="none"><path d="M11 5a6 6 0 016 6c0 1.3-.41 2.5-1.11 3.48l4.32 4.32-1.41 1.41-4.32-4.32A6 6 0 1111 5z" stroke="#fff" stroke-width="1.6"/></svg>
-        <span class="foot-label">தேடல்</span>
-      </a>
-      <a href="about.php" class="foot-item">
-        <svg class="foot-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="6" stroke="#fff" stroke-width="1.6"/></svg>
-        <span class="foot-label">சுயவிவரம்</span>
-      </a>
-      <a href="video.php" class="foot-item">
-        <svg class="foot-icon" viewBox="0 0 24 24" fill="none"><path d="M6 19l6-6 6 6M6 12l6-6 6 6" stroke="#fff" stroke-width="1.6"/></svg>
-        <span class="foot-label">வீடியோ</span>
-      </a>
-    </div>
-  </footer>
-
-  <script>
-    // Slider autoplay
-    const slider = document.getElementById('slider');
-    const slides = Array.from(slider?.querySelectorAll('.slide') || []);
-    const navButtons = slider?.querySelectorAll('.nav-btn') || [];
-    let current = 0, timer = null;
-
-    if (slides.length > 0) {
-      function showSlide(i) {
-        slides.forEach(s => s.classList.remove('active'));
-        slides[i].classList.add('active');
-        current = i;
-      }
+  <!-- Main Content Area -->
+  <main class="main-content" role="main">
+    <div class="container">
       
-      function next(dir=1) {
-        const i = (current + dir + slides.length) % slides.length;
-        showSlide(i);
-      }
-      
-      function startAuto() { 
-        if (slides.length > 1) {
-          timer = setInterval(()=>next(1), 5500); 
-        }
-      }
-      
-      function stopAuto() { clearInterval(timer) }
-      
-      if (navButtons.length > 0) {
-        navButtons.forEach(b => b.addEventListener('click', e => { 
-          next(parseInt(e.currentTarget.dataset.dir,10)); 
-          stopAuto(); 
-          startAuto(); 
-        }));
-      }
-      
-      if (slider) {
-        slider.addEventListener('mouseenter', stopAuto);
-        slider.addEventListener('mouseleave', startAuto);
-        startAuto();
-      }
-    }
-
-    // Calendar render (Monday-first)
-    const calDates = document.getElementById('calDates');
-    const prevMonth = document.getElementById('prevMonth');
-    const nextMonth = document.getElementById('nextMonth');
-    const calTitleEl = document.getElementById('calendarTitle');
-
-    let viewDate = new Date('<?php echo $selectedDate; ?>');
-    let selectedDateObj = new Date('<?php echo $selectedDate; ?>');
-    const today = new Date();
-
-    // Function to get current filter from URL
-    function getCurrentFilter() {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get('filter') || '';
-    }
-
-    // Function to load highlights for selected date
-    function loadHighlightsForDate(date, filter = '') {
-      const highlightsContainer = document.getElementById('highlightsContainer');
-      const highlightsTitle = document.getElementById('highlightsTitle');
-      
-      // Show loading state
-      highlightsContainer.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">ஏற்றுகிறது...</div>';
-      
-      // Update title
-      const todayStr = new Date().toISOString().split('T')[0];
-      const selectedDate = new Date(date);
-      const dateFormatted = selectedDate.toLocaleDateString('ta-IN', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      });
-      
-      if (date === todayStr) {
-        highlightsTitle.textContent = 'இன்றைய முக்கியங்கள்';
-      } else {
-        highlightsTitle.textContent = dateFormatted + ' முக்கியங்கள்';
-      }
-      
-      // AJAX call to fetch highlights for selected date
-      fetch(`get-highlights.php?date=${date}&filter=${filter}`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.success && data.news.length > 0) {
-            let html = '';
-            data.news.forEach(item => {
-              // Format time ago - using published_at
-              const publishTime = new Date(item.published_at || item.created_at);
-              const now = new Date();
-              const diffMs = now - publishTime;
-              const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-              const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-              
-              let timeAgo = '';
-              if (diffDays > 0) {
-                timeAgo = diffDays + ' நாட்கள் முன்';
-              } else if (diffHours > 0) {
-                timeAgo = diffHours + ' மணி முன்';
-              } else {
-                timeAgo = Math.floor(diffMs / (1000 * 60)) + ' நி முன்';
-              }
-              
-              // Calculate reading time
-              const wordCount = item.content ? item.content.split(/\s+/).length : 0;
-              const readingTime = Math.max(1, Math.ceil(wordCount / 200));
-              
-              // Get image
-              const imageSrc = item.image || `https://picsum.photos/id/${Math.floor(Math.random() * 1000) + 1000}/800/500`;
-              
-              html += `
-                <a class="news-card" href="news-detail.php?id=${item.id}">
-                  <div class="news-thumb">
-                    <img src="${imageSrc}" alt="${item.title}" />
+      <!-- Hero Section -->
+      <section class="hero-section">
+        <div class="hero-grid">
+          <!-- Slider -->
+          <div class="slider-container">
+            <div class="slider" id="mainSlider">
+              <?php if (!empty($featuredNews)): ?>
+                <?php foreach ($featuredNews as $index => $featured): ?>
+                  <div class="slide <?php echo $index === 0 ? 'active' : ''; ?>" data-index="<?php echo $index; ?>">
+                    <?php
+                    $imageSrc = !empty($featured['image']) 
+                      ? $base_url . 'uploads/news/' . htmlspecialchars($featured['image'])
+                      : 'https://images.unsplash.com/photo-1588681664899-f142ff2dc9b1?q=80&w=1600&auto=format&fit=crop';
+                    ?>
+                    <img src="<?php echo $imageSrc; ?>" alt="<?php echo htmlspecialchars($featured['title']); ?>" class="slide-image" />
                     
-                  </div>
-                  <div class="news-content">
-                    <div class="news-title">${item.title}</div>
-                    <div class="news-meta">
-                      <span>${timeAgo}</span>
+                    <div class="slide-content">
+                      <?php if (!empty($featured['category_name'])): ?>
+                        <span class="slide-category"><?php echo htmlspecialchars($featured['category_name']); ?></span>
+                      <?php endif; ?>
                       
+                      <h2 class="slide-title"><?php echo htmlspecialchars($featured['title']); ?></h2>
+                      
+                      <div class="slide-meta">
+                        <?php
+                        $publishTime = new DateTime($featured['published_at'] ?: $featured['created_at']);
+                        $now = new DateTime();
+                        $interval = $now->diff($publishTime);
+                        
+                        if ($interval->days > 0) {
+                          echo $interval->days . ' நாட்கள் முன்';
+                        } elseif ($interval->h > 0) {
+                          echo $interval->h . ' மணி முன்';
+                        } else {
+                          echo $interval->i . ' நி முன்';
+                        }
+                        ?>
+                        
+                        <span>•</span>
+                        
+                        <?php
+                        $wordCount = str_word_count(strip_tags($featured['content']));
+                        $readingTime = ceil($wordCount / 200);
+                        echo max(1, $readingTime) . ' நிமிடம் வாசிப்பு';
+                        ?>
+                      </div>
                     </div>
                   </div>
-                </a>
-              `;
-            });
-            highlightsContainer.innerHTML = html;
-          } else {
-            const todayStr = new Date().toISOString().split('T')[0];
-            const displayDate = date === todayStr ? 'இன்றைய' : dateFormatted;
-            highlightsContainer.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">
-              ${displayDate} முக்கிய செய்திகள் இல்லை
-            </div>`;
-          }
-        })
-        .catch(error => {
-          console.error('Error loading highlights:', error);
-          highlightsContainer.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">பிழை ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்.</div>';
-        });
-    }
+                <?php endforeach; ?>
+              <?php else: ?>
+                <!-- Default slide -->
+                <div class="slide active">
+                  <img src="https://images.unsplash.com/photo-1588681664899-f142ff2dc9b1?q=80&w=1600&auto=format&fit=crop" 
+                       alt="Liked தமிழ்" class="slide-image" />
+                  
+                  <div class="slide-content">
+                    <span class="slide-category">வரவேற்பு</span>
+                    <h2 class="slide-title">Liked தமிழ் - உங்கள் நம்பகமான செய்தி மூலம்</h2>
+                    <div class="slide-meta">இப்போது • 3 நிமிடம் வாசிப்பு</div>
+                  </div>
+                </div>
+              <?php endif; ?>
+            </div>
+            
+            <div class="slider-controls">
+              <button class="slider-btn prev-slide" aria-label="முந்தைய செய்தி">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </button>
+              <button class="slider-btn next-slide" aria-label="அடுத்த செய்தி">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            </div>
+          </div>
 
-    // Function to load news grid for selected date
-    function loadNewsForDate(date, filter = '') {
-        const newsGrid = document.getElementById('newsGrid');
-        const sectionTitle = document.querySelector('.section .section-title');
-        
-        // Show loading state
-        newsGrid.innerHTML = '<div style="text-align:center; padding:40px; color:var(--muted); grid-column: 1/-1;">ஏற்றுகிறது...</div>';
-        
-        // AJAX call to fetch news for selected date
-        fetch(`get-news-for-date.php?date=${date}&filter=${filter}&page=1`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    // Update section title
-                    if (sectionTitle) {
-                        const dateObj = new Date(date);
-                        const todayStr = new Date().toISOString().split('T')[0];
-                        
-                        let titleText = '';
-                        if (date === todayStr) {
-                            titleText = 'இன்றைய செய்திகள்';
-                        } else {
-                            const day = dateObj.getDate().toString().padStart(2, '0');
-                            const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-                            const year = dateObj.getFullYear();
-                            titleText = `${day}/${month}/${year} செய்திகள்`;
-                        }
-                        
-                        sectionTitle.innerHTML = `${titleText} <span style="font-size: 14px; color: var(--muted); margin-left: 10px;">(${data.totalNews} செய்திகள்)</span>`;
-                    }
+          <!-- Calendar -->
+          <div class="calendar-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
+              <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--accent-yellow);" id="calendarTitle">செய்தி காலண்டர்</h3>
+              <div style="display: flex; gap: var(--space-xs);">
+                <button class="calendar-nav-btn prev-month" aria-label="முந்தைய மாதம்" style="width: 36px; height: 36px; background: var(--glass-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all var(--transition-fast);">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                </button>
+                <button class="calendar-nav-btn next-month" aria-label="அடுத்த மாதம்" style="width: 36px; height: 36px; background: var(--glass-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all var(--transition-fast);">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div class="calendar-grid" style="color: var(--text-muted); font-size: 0.75rem; font-weight: 600; text-align: center; margin-bottom: var(--space-sm);">
+              <div>தி</div>
+              <div>செ</div>
+              <div>பு</div>
+              <div>வி</div>
+              <div>வெ</div>
+              <div>ச</div>
+              <div>ஞா</div>
+            </div>
+            
+            <div class="calendar-grid" id="calendarDates"></div>
+            
+            <p style="color: var(--text-muted); font-size: 0.75rem; text-align: center; margin-top: var(--space-md);">
+              தேதியைத் தட்டவும் — செய்திகளை வடிகட்டவும்
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main News Section -->
+      <section>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
+          <div>
+            <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary);">
+              <?php 
+              if ($selectedDate == date('Y-m-d')) {
+                echo 'இன்றைய செய்திகள்';
+              } else {
+                echo date('d/m/Y', strtotime($selectedDate)) . ' செய்திகள்';
+              }
+              ?>
+            </h2>
+            <p style="color: var(--text-secondary); font-size: 0.875rem; margin-top: var(--space-xs);">
+              <?php echo $totalNews; ?> செய்திகள் கிடைக்கின்றன
+            </p>
+          </div>
+        </div>
+
+        <div class="news-grid">
+          <?php if (!empty($news)): ?>
+            <?php foreach ($news as $item): ?>
+              <article class="news-card">
+                <a href="news-detail.php?id=<?php echo $item['id']; ?>">
+                  <div class="news-image">
+                    <?php
+                    $imageQuery = "SELECT image_path FROM news_images WHERE news_id = ? ORDER BY display_order LIMIT 1";
+                    $imageStmt = $db->prepare($imageQuery);
+                    $imageStmt->execute([$item['id']]);
+                    $newsImage = $imageStmt->fetch(PDO::FETCH_ASSOC);
                     
-                    if (data.news.length > 0) {
-                        let html = '';
-                        data.news.forEach(item => {
-                            // Format time ago - using published_at
-                            const publishTime = new Date(item.published_at || item.created_at);
-                            const now = new Date();
-                            const diffMs = now - publishTime;
-                            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-                            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-                            
-                            let timeAgo = '';
-                            if (diffDays > 0) {
-                                timeAgo = diffDays + ' நாட்கள் முன்';
-                            } else if (diffHours > 0) {
-                                timeAgo = diffHours + ' மணி முன்';
-                            } else {
-                                timeAgo = Math.floor(diffMs / (1000 * 60)) + ' நி முன்';
-                            }
-                            
-                            // Calculate reading time
-                            const wordCount = item.content ? item.content.split(/\s+/).length : 0;
-                            const readingTime = Math.max(1, Math.ceil(wordCount / 200));
-                            
-                            // Get categories
-                            const categories = item.category_names ? item.category_names.split(', ') : [];
-                            const firstCategory = categories.length > 0 ? categories[0] : 'செய்தி';
-                            
-                            // Get proper image URL with fallback
-                            let imageUrl = '';
-                            if (item.image_path) {
-                              if (item.image_path.startsWith('http')) {
-                                imageUrl = item.image_path;
-                              } else {
-                                // normalize leading slash
-                                const path = item.image_path.startsWith('/') ? item.image_path.slice(1) : item.image_path;
-                                imageUrl = '<?php echo $base_url; ?>' + path;
-                              }
-                            } else if (item.image) {
-                              if (item.image.startsWith('http')) {
-                                imageUrl = item.image;
-                              } else if (item.image.indexOf('uploads/news/') !== -1) {
-                                const path = item.image.startsWith('/') ? item.image.slice(1) : item.image;
-                                imageUrl = '<?php echo $base_url; ?>' + path;
-                              } else {
-                                imageUrl = '<?php echo $base_url; ?>uploads/news/' + item.image;
-                              }
-                            } else {
-                              imageUrl = 'https://picsum.photos/800/500?random=' + Math.floor(Math.random() * 10000);
-                            }
-                            
-                            html += `
-                                <article class="news-card">
-                                    <a href="news-detail.php?id=${item.id}" style="text-decoration: none; color: inherit;">
-                                        <div class="news-thumb">
-                                            <img src="${imageUrl}" alt="${item.title}" />
-                                            <span class="badge">${firstCategory}</span>
-                                        </div>
-                                        <div class="news-content">
-                                            <h3 class="news-title">${item.title}</h3>
-                                            <div class="news-meta">
-                                                <span>${timeAgo}</span>
-                                                
-                                            </div>
-                                        </div>
-                                    </a>
-                                </article>
-                            `;
-                        });
-                        newsGrid.innerHTML = html;
+                    $imageSrc = '';
+                    if (!empty($item['image'])) {
+                      $imageSrc = $base_url . 'uploads/news/' . htmlspecialchars($item['image']);
+                    } elseif ($newsImage && !empty($newsImage['image_path'])) {
+                      $imageSrc = $base_url . htmlspecialchars($newsImage['image_path']);
                     } else {
-                        const dateObj = new Date(date);
-                        const day = dateObj.getDate().toString().padStart(2, '0');
-                        const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-                        const year = dateObj.getFullYear();
-                        
-                        newsGrid.innerHTML = `<div style="text-align:center; padding:40px; color:var(--muted); grid-column: 1/-1;">
-                            <h3>செய்திகள் இல்லை</h3>
-                            <p>${day}/${month}/${year} தேதிக்கு செய்திகள் இல்லை.</p>
-                            <a href="index.php" class="btn primary" style="margin-top: 10px;">இன்றைய செய்திகளைப் பார்க்க</a>
-                        </div>`;
+                      $imageSrc = 'https://picsum.photos/id/' . rand(1000, 1100) . '/800/500';
                     }
-                } else {
-                    newsGrid.innerHTML = '<div style="text-align:center; padding:40px; color:var(--muted); grid-column: 1/-1;">செய்திகளைப் பதிவிறக்க முடியவில்லை</div>';
-                }
-            })
-            .catch(error => {
-                console.error('Error loading news:', error);
-                newsGrid.innerHTML = '<div style="text-align:center; padding:40px; color:var(--muted); grid-column: 1/-1;">பிழை ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்.</div>';
-            });
+                    ?>
+                    <img src="<?php echo $imageSrc; ?>" alt="<?php echo htmlspecialchars($item['title']); ?>" />
+                    
+                    <?php if (!empty($item['category_names'])): ?>
+                      <span class="news-category">
+                        <?php 
+                        $categories = explode(', ', $item['category_names']);
+                        echo htmlspecialchars(trim($categories[0])); 
+                        ?>
+                      </span>
+                    <?php endif; ?>
+                  </div>
+                  
+                  <div class="news-content">
+                    <h3 class="news-title"><?php echo htmlspecialchars($item['title']); ?></h3>
+                    
+                    <div class="news-meta">
+                      <div style="display: flex; align-items: center; gap: var(--space-xs);">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                        <?php
+                        $publishTime = new DateTime($item['published_at'] ?: $item['created_at']);
+                        $now = new DateTime();
+                        $interval = $now->diff($publishTime);
+                        
+                        if ($interval->days > 0) {
+                          echo $interval->days . ' நாட்கள் முன்';
+                        } elseif ($interval->h > 0) {
+                          echo $interval->h . ' மணி முன்';
+                        } else {
+                          echo $interval->i . ' நி முன்';
+                        }
+                        ?>
+                      </div>
+                    </div>
+                    
+                    <a href="news-detail.php?id=<?php echo $item['id']; ?>" class="read-more">
+                      மேலும் படிக்க
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                        <polyline points="12 5 19 12 12 19" />
+                      </svg>
+                    </a>
+                  </div>
+                </a>
+              </article>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <div style="grid-column: 1 / -1; text-align: center; padding: var(--space-2xl) var(--space-lg); background: var(--bg-card); border-radius: var(--radius-lg); border: 2px dashed var(--border-color);">
+              <div style="font-size: 3rem; color: var(--text-muted); margin-bottom: var(--space-lg);">📰</div>
+              <h3 style="font-size: 1.5rem; color: var(--text-primary); margin-bottom: var(--space-sm);">செய்திகள் இல்லை</h3>
+              <p style="color: var(--text-secondary); margin-bottom: var(--space-lg);">
+                <?php echo date('d/m/Y', strtotime($selectedDate)); ?> தேதிக்கு செய்திகள் இல்லை.
+              </p>
+              <a href="index.php" style="display: inline-flex; align-items: center; gap: var(--space-xs); padding: var(--space-sm) var(--space-md); background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red)); color: var(--white); border: none; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; transition: all var(--transition-base);">
+                இன்றைய செய்திகளைப் பார்க்க
+              </a>
+            </div>
+          <?php endif; ?>
+        </div>
+
+        <!-- Facebook Section - Improved for Mobile -->
+        <div class="facebook-section">
+          <div class="facebook-card">
+            <div class="facebook-header">
+              <div class="facebook-logo">f</div>
+              <div class="facebook-info">
+                <h3 class="facebook-name">Liked தமிழ் Facebook பக்கம்</h3>
+                <div class="facebook-stats">
+                  <span>12.5K பின்தொடர்பவர்கள்</span>
+                  <span>•</span>
+                  <span>1,234 பதிவுகள்</span>
+                  <span>•</span>
+                  <span>ட்ரெண்டிங்</span>
+                </div>
+              </div>
+              <a href="https://www.facebook.com/liked.tamil/" target="_blank" class="facebook-follow-btn">
+                Follow
+              </a>
+            </div>
+            
+            <div class="facebook-content">
+              <p>எங்கள் Facebook பக்கத்தில் சமீபத்திய செய்திகள், புதுப்பிப்புகள் மற்றும் சிறப்பு உள்ளடக்கங்களைப் பெறுங்கள்</p>
+              <a href="https://www.facebook.com/liked.tamil/" target="_blank" class="facebook-link">
+                Facebook இல் பார்க்க
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <polyline points="12 5 19 12 12 19" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <?php if ($totalPages > 1): ?>
+          <nav class="pagination" aria-label="பக்கமாற்றம்">
+            <?php if ($page > 1): ?>
+              <a href="index.php?date=<?php echo $selectedDate; ?>&page=<?php echo $page - 1; ?>" 
+                 style="display: flex; align-items: center; justify-content: center; min-width: 40px; height: 40px; padding: 0 var(--space-sm); background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-secondary); font-weight: 500; font-size: 0.875rem; transition: all var(--transition-fast);"
+                 aria-label="முந்தைய பக்கம்">
+                &larr;
+              </a>
+            <?php endif; ?>
+            
+            <?php
+            $startPage = max(1, $page - 2);
+            $endPage = min($totalPages, $page + 2);
+            
+            if ($startPage > 1): ?>
+              <a href="index.php?date=<?php echo $selectedDate; ?>&page=1" 
+                 style="display: flex; align-items: center; justify-content: center; min-width: 40px; height: 40px; padding: 0 var(--space-sm); background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-secondary); font-weight: 500; font-size: 0.875rem; transition: all var(--transition-fast);">
+                1
+              </a>
+              <?php if ($startPage > 2): ?>
+                <span style="display: flex; align-items: center; justify-content: center; min-width: 40px; height: 40px; padding: 0 var(--space-sm); background: transparent; border: none; color: var(--muted); cursor: default;">
+                  ...
+                </span>
+              <?php endif; ?>
+            <?php endif; ?>
+            
+            <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
+              <a href="index.php?date=<?php echo $selectedDate; ?>&page=<?php echo $i; ?>" 
+                 style="display: flex; align-items: center; justify-content: center; min-width: 40px; height: 40px; padding: 0 var(--space-sm); background: <?php echo ($i == $page) ? 'linear-gradient(135deg, var(--primary-red), var(--primary-dark-red))' : 'var(--bg-card)'; ?>; border: 1px solid <?php echo ($i == $page) ? 'transparent' : 'var(--border-color)'; ?>; border-radius: var(--radius-md); color: <?php echo ($i == $page) ? 'var(--white)' : 'var(--text-secondary)'; ?>; font-weight: <?php echo ($i == $page) ? '600' : '500'; ?>; font-size: 0.875rem; transition: all var(--transition-fast);"
+                 aria-label="பக்கம் <?php echo $i; ?>"
+                 aria-current="<?php echo ($i == $page) ? 'page' : 'false'; ?>">
+                <?php echo $i; ?>
+              </a>
+            <?php endfor; ?>
+            
+            <?php if ($endPage < $totalPages): ?>
+              <?php if ($endPage < $totalPages - 1): ?>
+                <span style="display: flex; align-items: center; justify-content: center; min-width: 40px; height: 40px; padding: 0 var(--space-sm); background: transparent; border: none; color: var(--muted); cursor: default;">
+                  ...
+                </span>
+              <?php endif; ?>
+              <a href="index.php?date=<?php echo $selectedDate; ?>&page=<?php echo $totalPages; ?>" 
+                 style="display: flex; align-items: center; justify-content: center; min-width: 40px; height: 40px; padding: 0 var(--space-sm); background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-secondary); font-weight: 500; font-size: 0.875rem; transition: all var(--transition-fast);">
+                <?php echo $totalPages; ?>
+              </a>
+            <?php endif; ?>
+            
+            <?php if ($page < $totalPages): ?>
+              <a href="index.php?date=<?php echo $selectedDate; ?>&page=<?php echo $page + 1; ?>" 
+                 style="display: flex; align-items: center; justify-content: center; min-width: 40px; height: 40px; padding: 0 var(--space-sm); background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-secondary); font-weight: 500; font-size: 0.875rem; transition: all var(--transition-fast);"
+                 aria-label="அடுத்த பக்கம்">
+                &rarr;
+              </a>
+            <?php endif; ?>
+          </nav>
+        <?php endif; ?>
+      </section>
+    </div>
+  </main>
+
+  <!-- Desktop Footer -->
+  <footer class="desktop-footer">
+    <div class="container">
+      <div style="text-align: center;">
+        <p>&copy; <?php echo date('Y'); ?> Liked தமிழ். அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.</p>
+        <div style="display: flex; justify-content: center; gap: var(--space-lg); margin-top: var(--space-sm);">
+          <a href="about.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">எங்களைப் பற்றி</a>
+          <a href="contact.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">தொடர்பு கொள்ள</a>
+          <a href="privacy.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">தனியுரிமைக் கொள்கை</a>
+          <a href="terms.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">பயன்பாட்டு விதிமுறைகள்</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Mobile Footer Navigation -->
+  <footer class="mobile-footer" role="navigation" aria-label="மொபைல் வழிசெலுத்தல்">
+    <a href="index.php" class="mobile-nav-item <?php echo (!isset($_GET['category']) && !isset($_GET['page'])) ? 'active' : ''; ?>">
+      <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        <polyline points="9 22 9 12 15 12 15 22" />
+      </svg>
+      <span class="mobile-nav-label">முகப்பு</span>
+    </a>
+    
+    <a href="categories.php" class="mobile-nav-item">
+      <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7" />
+        <rect x="14" y="3" width="7" height="7" />
+        <rect x="3" y="14" width="7" height="7" />
+        <rect x="14" y="14" width="7" height="7" />
+      </svg>
+      <span class="mobile-nav-label">பிரிவுகள்</span>
+    </a>
+    
+    <button class="mobile-nav-item" onclick="toggleSearch()">
+      <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8" />
+        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      </svg>
+      <span class="mobile-nav-label">தேடல்</span>
+    </button>
+    
+    <a href="video.php" class="mobile-nav-item">
+      <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="23 7 16 12 23 17 23 7" />
+        <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+      </svg>
+      <span class="mobile-nav-label">வீடியோ</span>
+    </a>
+    
+    <a href="profile.php" class="mobile-nav-item">
+      <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </svg>
+      <span class="mobile-nav-label">சுயவிவரம்</span>
+    </a>
+  </footer>
+
+  <!-- Search Modal -->
+  <div class="search-modal" id="searchModal">
+    <div style="width: 100%; max-width: 600px; background: var(--bg-card); border-radius: var(--radius-lg); padding: var(--space-lg); box-shadow: var(--shadow-lg); animation: slideDown 0.3s ease; margin-top: var(--space-xl);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
+        <h3 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">தேடல்</h3>
+        <button onclick="toggleSearch()" aria-label="மூடு" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; padding: var(--space-xs); border-radius: var(--radius-sm); transition: all var(--transition-fast);">
+          &times;
+        </button>
+      </div>
+      
+      <form method="GET" action="search.php" style="display: flex; gap: var(--space-sm); margin-bottom: var(--space-lg);">
+        <input type="search" 
+               name="q" 
+               placeholder="செய்திகளைத் தேடுங்கள்..." 
+               style="flex: 1; padding: var(--space-md); background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); font-size: 1rem; outline: none; transition: all var(--transition-fast);"
+               autocomplete="off"
+               autofocus />
+        <button type="submit" style="padding: var(--space-md) var(--space-lg); background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red)); color: var(--white); border: none; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; transition: all var(--transition-fast);">
+          தேடு
+        </button>
+      </form>
+      
+      <div style="color: var(--text-muted); font-size: 0.875rem; text-align: center;">
+        உதாரணம்: "விளையாட்டு", "அரசியல்", "பொருளாதாரம்"
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize variables
+    let currentSlide = 0;
+    let slideInterval;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    
+    let calendarDate = new Date('<?php echo $selectedDate; ?>');
+    const selectedDate = new Date('<?php echo $selectedDate; ?>');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Slider functionality
+    function initSlider() {
+      if (totalSlides <= 1) return;
+      
+      startSlider();
+      
+      document.querySelector('.prev-slide')?.addEventListener('click', () => {
+        changeSlide(-1);
+        resetSliderInterval();
+      });
+      
+      document.querySelector('.next-slide')?.addEventListener('click', () => {
+        changeSlide(1);
+        resetSliderInterval();
+      });
+      
+      const slider = document.querySelector('.slider-container');
+      if (slider) {
+        slider.addEventListener('mouseenter', stopSlider);
+        slider.addEventListener('mouseleave', startSlider);
+        slider.addEventListener('touchstart', stopSlider);
+        slider.addEventListener('touchend', startSlider);
+      }
+    }
+    
+    function changeSlide(direction) {
+      slides[currentSlide].classList.remove('active');
+      currentSlide = (currentSlide + direction + totalSlides) % totalSlides;
+      slides[currentSlide].classList.add('active');
+    }
+    
+    function startSlider() {
+      if (totalSlides <= 1) return;
+      slideInterval = setInterval(() => changeSlide(1), 5000);
+    }
+    
+    function stopSlider() {
+      clearInterval(slideInterval);
+    }
+    
+    function resetSliderInterval() {
+      stopSlider();
+      startSlider();
     }
 
-    async function renderCalendar() {
-      const year = viewDate.getFullYear();
-      const month = viewDate.getMonth();
+    // Calendar functionality
+    function initCalendar() {
+      renderCalendar();
       
-      // Format month name in Tamil
+      document.querySelector('.prev-month')?.addEventListener('click', () => {
+        calendarDate.setMonth(calendarDate.getMonth() - 1);
+        renderCalendar();
+      });
+      
+      document.querySelector('.next-month')?.addEventListener('click', () => {
+        calendarDate.setMonth(calendarDate.getMonth() + 1);
+        renderCalendar();
+      });
+    }
+    
+    function renderCalendar() {
+      const year = calendarDate.getFullYear();
+      const month = calendarDate.getMonth();
+      
       const monthNames = [
         'ஜனவரி', 'பிப்ரவரி', 'மார்ச்', 'ஏப்ரல்', 
         'மே', 'ஜூன்', 'ஜூலை', 'ஆகஸ்ட்', 
         'செப்டம்பர்', 'அக்டோபர்', 'நவம்பர்', 'டிசம்பர்'
       ];
+      document.getElementById('calendarTitle').textContent = `${monthNames[month]} ${year}`;
       
-      calTitleEl.textContent = `${monthNames[month]} ${year}`;
-
       const firstDay = new Date(year, month, 1);
       const lastDay = new Date(year, month + 1, 0);
-      const startIndex = (firstDay.getDay() + 6) % 7; // Monday start
+      const daysInMonth = lastDay.getDate();
+      const startDay = (firstDay.getDay() + 6) % 7;
       
-      // Clear previous dates
-      calDates.innerHTML = '';
-
-      // Padding for days before month start
-      for (let i = 0; i < startIndex; i++) {
-        const pad = document.createElement('div');
-        pad.className = 'cal-date';
-        pad.style.visibility = 'hidden';
-        pad.textContent = '';
-        calDates.appendChild(pad);
+      const calendarDates = document.getElementById('calendarDates');
+      calendarDates.innerHTML = '';
+      
+      for (let i = 0; i < startDay; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'calendar-date empty';
+        calendarDates.appendChild(emptyCell);
       }
       
-      // Create date cells - ONLY for current month dates (1 to lastDay.getDate())
-      for (let d = 1; d <= lastDay.getDate(); d++) {
-        const cell = document.createElement('a');
-        cell.className = 'cal-date';
-        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateCell = document.createElement('a');
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         
-        // Get current filter
-        const currentFilter = getCurrentFilter();
+        dateCell.href = `index.php?date=${dateStr}`;
+        dateCell.className = 'calendar-date';
+        dateCell.textContent = day;
+        dateCell.setAttribute('aria-label', `${day} ${monthNames[month]}`);
         
-        // Regular link for normal navigation
-        cell.href = `index.php?date=${dateStr}&filter=${currentFilter}`;
-        cell.textContent = d;
-        cell.setAttribute('aria-label', `${d} ${monthNames[month]} ${year}`);
-        
-        // Check if this is today
-        const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
-        if (isToday) {
-          cell.classList.add('today');
+        const cellDate = new Date(year, month, day);
+        cellDate.setHours(0, 0, 0, 0);
+        if (cellDate.getTime() === today.getTime()) {
+          dateCell.classList.add('today');
         }
         
-        // Check if this is selected date
-        const isSelected = d === selectedDateObj.getDate() && 
-                          month === selectedDateObj.getMonth() && 
-                          year === selectedDateObj.getFullYear();
-        if (isSelected) {
-          cell.classList.add('selected');
+        if (dateStr === '<?php echo $selectedDate; ?>') {
+          dateCell.classList.add('selected');
         }
         
-        // Add click event to load news via AJAX and update URL
-        cell.addEventListener('click', async function(e) {
-          e.preventDefault();
-          
-          // Update selected date
-          selectedDateObj = new Date(dateStr);
-          
-          // Update URL without reload
-          const url = new URL(window.location);
-          url.searchParams.set('date', dateStr);
-          window.history.pushState({}, '', url);
-          
-          // Load news grid for this date first
-          loadNewsForDate(dateStr, currentFilter);
-          
-          // Update main grid pagination links
-          updatePaginationLinks(dateStr, currentFilter);
-          
-          // Reload calendar to update selected state
-          await renderCalendar();
-          
-          // Scroll to main news section
-          document.querySelector('.section').scrollIntoView({ behavior: 'smooth' });
-        });
-        
-        calDates.appendChild(cell);
-      }
-      
-      // Check if dates have news (after calendar is rendered)
-      checkDatesWithNews(year, month);
-    }
-
-    // Function to check which dates have news (non-blocking, runs after calendar render)
-    async function checkDatesWithNews(year, month) {
-      const firstDay = new Date(year, month, 1);
-      const lastDay = new Date(year, month + 1, 0);
-      
-      for (let d = 1; d <= lastDay.getDate(); d++) {
-        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        
-        try {
-          const response = await fetch('check-date-news.php?date=' + dateStr);
-          const data = await response.json();
-          if (data.hasNews) {
-            // Find the cell and add class
-            const cells = document.querySelectorAll('.cal-date');
-            cells.forEach(cell => {
-              if (cell.textContent === String(d) && !cell.style.visibility) {
-                cell.classList.add('has-news');
-              }
-            });
-          }
-        } catch (error) {
-          console.error('Error checking date news:', error);
-        }
+        calendarDates.appendChild(dateCell);
       }
     }
-
-    // Function to update pagination links
-    function updatePaginationLinks(date, filter) {
-      document.querySelectorAll('.pagination .page').forEach(link => {
-        const href = link.getAttribute('href');
-        if (href && href.includes('index.php')) {
-          const url = new URL(href, window.location.origin);
-          url.searchParams.set('date', date);
-          url.searchParams.set('filter', filter);
-          link.href = url.toString();
-        }
-      });
-    }
-
-    if (prevMonth && nextMonth) {
-      prevMonth.addEventListener('click', () => { 
-        viewDate.setMonth(viewDate.getMonth() - 1); 
-        renderCalendar(); 
-      });
-      
-      nextMonth.addEventListener('click', () => { 
-        viewDate.setMonth(viewDate.getMonth() + 1); 
-        renderCalendar(); 
-      });
-      
-      renderCalendar();
-    }
-
-    // Ticker width check
-    const track = document.getElementById('tickerTrack');
-    function ensureTickerLoop() {
-      if (!track) return;
-      const width = track.scrollWidth;
-      const container = track.parentElement.clientWidth;
-      if (width < container * 2) track.innerHTML = track.innerHTML + track.innerHTML;
-    }
-    window.addEventListener('load', ensureTickerLoop);
-    window.addEventListener('resize', ensureTickerLoop);
-
-    // Filter button functionality
-    document.querySelectorAll('.filter-btn').forEach(button => {
-      button.addEventListener('click', function() {
-        const filter = this.getAttribute('data-filter');
-        const section = this.getAttribute('data-section');
-        
-        // Update URL with filter parameter
-        const url = new URL(window.location);
-        url.searchParams.set('filter', filter);
-        window.history.pushState({}, '', url);
-        
-        // Update button active states in the same section
-        const sectionButtons = document.querySelectorAll(`.filter-btn[data-section="${section}"]`);
-        sectionButtons.forEach(btn => {
-          btn.classList.remove('active');
-        });
-        this.classList.add('active');
-        
-        // If this is in main section, reload news with filter
-        if (section === 'main') {
-          const urlParams = new URLSearchParams(window.location.search);
-          const date = urlParams.get('date') || new Date().toISOString().split('T')[0];
-          loadNewsForDate(date, filter);
-        }
-      });
-    });
-
-    // Facebook Feed Simulation
-    const facebookFeed = document.getElementById('facebookFeed');
-    
-    // Sample Facebook posts data
-    const fbPosts = [
-      {
-        id: 1,
-        author: "Liked தமிழ்",
-        time: "2 hours ago",
-        text: "இன்றைய சிறப்பு செய்தி: புதிய பொருளாதார திட்டம் அறிவிப்பு. முழு விவரங்களை எங்கள் வலைத்தளத்தில் படிக்கவும்.",
-        image: "https://images.unsplash.com/photo-1588681664899-f142ff2dc9b1?q=80&w=800&auto=format&fit=crop",
-        likes: 245,
-        comments: 42,
-        shares: 18
-      },
-      {
-        id: 2,
-        author: "Liked தமிழ்",
-        time: "5 hours ago",
-        text: "கடைசி ஓவரில் த்ரில்லர் வெற்றி! விளையாட்டு வீரர்களின் சாதனையைப் பாராட்டுகிறோம். #விளையாட்டு #கிரிக்கெட்",
-        image: "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?q=80&w=800&auto=format&fit=crop",
-        likes: 189,
-        comments: 31,
-        shares: 12
-      },
-      {
-        id: 3,
-        author: "Liked தமிழ்",
-        time: "1 day ago",
-        text: "தொழில்நுட்ப உலகில் புதிய முன்னேற்றம்: AI கருவி வெளியீடு. இது எவ்வாறு உங்கள் அன்றாட வாழ்க்கையை மாற்றும்?",
-        image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=800&auto=format&fit=crop",
-        likes: 312,
-        comments: 56,
-        shares: 24
-      }
-    ];
-
-    // Function to render Facebook posts
-    function renderFacebookPosts() {
-      if (!facebookFeed) return;
-      
-      facebookFeed.innerHTML = '';
-      
-      if (fbPosts.length === 0) {
-        facebookFeed.innerHTML = '<div class="fb-no-posts">No Facebook posts available</div>';
-        return;
-      }
-      
-      fbPosts.forEach(post => {
-        const postElement = document.createElement('div');
-        postElement.className = 'fb-post';
-        postElement.innerHTML = `
-          <div class="fb-post-header">
-            <div class="fb-avatar">LT</div>
-            <div class="fb-post-info">
-              <div class="fb-post-author">${post.author}</div>
-              <div class="fb-post-time">${post.time}</div>
-            </div>
-          </div>
-          <div class="fb-post-text">${post.text}</div>
-          ${post.image ? `<div class="fb-post-image">
-            <img src="${post.image}" alt="Facebook post image">
-          </div>` : ''}
-          <div class="fb-post-stats">
-            <div class="fb-likes">
-              <span class="fb-like-icon">👍</span>
-              <span>${post.likes}</span>
-            </div>
-            <a href="https://www.facebook.com/liked.tamil/" target="_blank" class="fb-view-link">
-              View on Facebook →
-            </a>
-          </div>
-        `;
-        facebookFeed.appendChild(postElement);
-      });
-    }
-
-    // Subscription modal functions
-    function openSubscription() {
-      document.getElementById('subscriptionModal').style.display = 'flex';
-    }
-    
-    function closeSubscription() {
-      document.getElementById('subscriptionModal').style.display = 'none';
-    }
-    
-    // Show success message if subscription was successful
-    <?php if (isset($subscriptionSuccess) && $subscriptionSuccess): ?>
-      document.addEventListener('DOMContentLoaded', function() {
-        openSubscription();
-        document.getElementById('subscriptionSuccess').style.display = 'block';
-      });
-    <?php endif; ?>
-
 
     // Search functionality
-    function handleSearch(event) {
-        event.preventDefault();
-        const searchInput = document.querySelector('.search input[name="q"]');
-        const searchTerm = searchInput.value.trim();
-        
-        if (searchTerm) {
-            // Redirect to search results page
-            window.location.href = `search.php?q=${encodeURIComponent(searchTerm)}`;
+    function toggleSearch() {
+      const searchModal = document.getElementById('searchModal');
+      searchModal.classList.toggle('active');
+      
+      if (searchModal.classList.contains('active')) {
+        document.body.style.overflow = 'hidden';
+        searchModal.querySelector('input').focus();
+      } else {
+        document.body.style.overflow = '';
+      }
+    }
+    
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const searchModal = document.getElementById('searchModal');
+        if (searchModal.classList.contains('active')) {
+          toggleSearch();
         }
+      }
+    });
+    
+    document.getElementById('searchModal')?.addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        toggleSearch();
+      }
+    });
+
+    // Initialize everything
+    document.addEventListener('DOMContentLoaded', () => {
+      initSlider();
+      initCalendar();
+      
+      document.getElementById('searchToggle')?.addEventListener('click', toggleSearch);
+      
+      // Update mobile footer active state
+      const currentPath = window.location.pathname;
+      const mobileNavItems = document.querySelectorAll('.mobile-nav-item');
+      
+      mobileNavItems.forEach(item => {
+        if (item.getAttribute('href') === currentPath) {
+          item.classList.add('active');
+        } else if (currentPath === '/' && item.getAttribute('href') === 'index.php') {
+          item.classList.add('active');
+        }
+      });
+    });
+
+    function openSubscription() {
+      alert('சந்தா செயல்பாடு விரைவில் கிடைக்கும்');
     }
 
-    // Add event listener to search form
-    document.querySelector('.search').addEventListener('submit', handleSearch);
-
-    // Mobile search functionality
-    document.querySelectorAll('.foot-item').forEach(item => {
-        if (item.querySelector('.foot-label')?.textContent === 'தேடல்') {
-            item.addEventListener('click', function(e) {
-                e.preventDefault();
-                // Create search modal for mobile
-                const searchModal = document.createElement('div');
-                searchModal.className = 'subscription-modal';
-                searchModal.style.display = 'flex';
-                searchModal.style.zIndex = '1001';
-                searchModal.innerHTML = `
-                    <div class="subscription-content" style="max-width: 90%;">
-                        <button class="close-modal" onclick="this.parentElement.parentElement.remove()">&times;</button>
-                        <h3 style="color: var(--yellow); text-align: center; margin-bottom: 20px;">தேடல்</h3>
-                        <form method="GET" action="search.php" class="search" style="display: flex; gap: 10px; margin-bottom: 20px;">
-                            <input type="search" name="q" placeholder="தேடல்..." style="flex: 1; padding: 12px; border-radius: var(--radius-sm); background: var(--glass); border: var(--border); color: var(--text);" autofocus>
-                            <button type="submit" style="background: linear-gradient(180deg, var(--red), #cc0f0f); color: white; border: none; padding: 12px 20px; border-radius: var(--radius-sm); cursor: pointer;">தேடு</button>
-                        </form>
-                    </div>
-                `;
-                document.body.appendChild(searchModal);
-            });
-        }
+    // Fix for mobile viewport height
+    function setViewportHeight() {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+    
+    setViewportHeight();
+    window.addEventListener('resize', setViewportHeight);
+    
+    // Ensure content fits screen
+    function adjustContentHeight() {
+      const headerHeight = document.querySelector('.header').offsetHeight;
+      const categoryNavHeight = document.querySelector('.category-nav').offsetHeight;
+      const breakingNewsHeight = document.querySelector('.breaking-news').offsetHeight;
+      const mobileFooterHeight = document.querySelector('.mobile-footer').offsetHeight;
+      
+      const totalStickyHeight = headerHeight + categoryNavHeight + breakingNewsHeight;
+      const mainContent = document.querySelector('.main-content');
+      
+      if (mainContent) {
+        const windowHeight = window.innerHeight;
+        const availableHeight = windowHeight - totalStickyHeight - mobileFooterHeight;
+        mainContent.style.minHeight = availableHeight + 'px';
+      }
+    }
+    
+    // Run after page loads
+    window.addEventListener('load', () => {
+      setTimeout(adjustContentHeight, 100);
     });
-
-    // Initialize on page load
-    document.addEventListener('DOMContentLoaded', function() {
-      renderFacebookPosts();
-      ensureTickerLoop();
-      renderCalendar();
-    });
+    
+    window.addEventListener('resize', adjustContentHeight);
   </script>
 </body>
 </html>

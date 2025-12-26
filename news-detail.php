@@ -640,7 +640,7 @@ $shareUrl = urlencode($currentUrl);
         
         @media (max-width: 740px) {
             .mobile-footer { display:block }
-            body { padding-bottom: 82px }
+            body { margin-bottom: 82px }
             .search { display:none }
         }
         
@@ -694,6 +694,7 @@ $shareUrl = urlencode($currentUrl);
         @media (max-width: 768px) {
             .article-container {
                 grid-template-columns: 1fr;
+                padding-bottom: 100px;
             }
             
             .sidebar {
@@ -1626,6 +1627,7 @@ $shareUrl = urlencode($currentUrl);
                     <?php if (empty($comments)): ?>
                         <div class="no-comments">
                             <div class="no-comments-icon">💬</div>
+                            <h3>இன்னும் கருத்துகள் இல்லை</h3>
                             <p>முதல் கருத்தைப் பதிவிட நீங்கள் தயாரா?</p>
                         </div>
                     <?php else: ?>
