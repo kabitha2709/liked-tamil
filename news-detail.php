@@ -1,4 +1,7 @@
 <?php
+// Start session at the very beginning
+session_start();
+
 // Database connection
 require_once 'config/database.php';
 $database = new Database();
@@ -165,8 +168,6 @@ if (!empty($news['content'])) {
     }
     
     // Safely split content into two parts without breaking HTML tags.
-    // Previously we split by character index which could cut HTML tags
-    // (producing fragments like 'yle="...') — instead split by paragraphs.
     $paragraphs = [];
 
     // Capture full <p>...</p> blocks first
@@ -312,24 +313,40 @@ if (!empty($news['content'])) {
 
 // Handle comment submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_comment'])) {
-    $name = cleanTamilText($_POST['name'] ?? '');
-    $email = filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL);
-    $comment = cleanTamilText($_POST['comment'] ?? '');
+    $name = trim($_POST['name'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $comment = trim($_POST['comment'] ?? '');
     $parent_id = isset($_POST['parent_id']) ? intval($_POST['parent_id']) : 0;
     
-    if (!empty($name) && !empty($comment)) {
-        // Also clean before storing in database
-        $cleanName = cleanTamilText($name);
-        $cleanComment = cleanTamilText($comment);
-        
-        $insertQuery = "INSERT INTO comments (news_id, parent_id, name, email, comment, status) 
-                        VALUES (?, ?, ?, ?, ?, 'pending')";
-        $insertStmt = $db->prepare($insertQuery);
-        $insertStmt->execute([$newsId, $parent_id, $cleanName, $email, $cleanComment]);
-        
-        // Redirect to prevent form resubmission and show pending message
-        header("Location: news-detail.php?id=" . $newsId . "&comment_submitted=true#comments");
-        exit();
+    // Validate required fields
+    if (!empty($name) && !empty($email) && !empty($comment)) {
+        try {
+            // Clean the data - don't over-clean names
+            $cleanName = htmlspecialchars(strip_tags($name));
+            $cleanComment = htmlspecialchars(strip_tags($comment));
+            $cleanEmail = filter_var($email, FILTER_SANITIZE_EMAIL);
+            
+            // Insert with 'pending' status for moderation
+            $insertQuery = "INSERT INTO comments (news_id, parent_id, name, email, comment, status) 
+                            VALUES (?, ?, ?, ?, ?, 'pending')";
+            $insertStmt = $db->prepare($insertQuery);
+            $result = $insertStmt->execute([$newsId, $parent_id, $cleanName, $cleanEmail, $cleanComment]);
+            
+            if ($result) {
+                // Get the new comment ID
+                $newCommentId = $db->lastInsertId();
+                
+                // Redirect to prevent form resubmission and show success message
+                header("Location: news-detail.php?id=" . $newsId . "&comment_submitted=true&new_comment=" . $newCommentId . "#comment-" . $newCommentId);
+                exit();
+            } else {
+                $error_message = "கருத்து சமர்ப்பிப்பதில் பிழை ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்.";
+            }
+        } catch (PDOException $e) {
+            $error_message = "தரவுத்தள பிழை: " . $e->getMessage();
+        }
+    } else {
+        $error_message = "அனைத்து புலங்களையும் நிரப்பவும்.";
     }
 }
 
@@ -338,7 +355,6 @@ if (isset($_GET['like_comment'])) {
     $commentId = intval($_GET['like_comment']);
     
     // Check if user already liked this comment (using session)
-    session_start();
     $likedKey = 'liked_comment_' . $commentId;
     
     if (!isset($_SESSION[$likedKey])) {
@@ -1462,6 +1478,17 @@ $shareUrl = urlencode($currentUrl);
             font-weight: 800; font-size: clamp(18px, 2.4vw, 28px); letter-spacing: .2px;
         }
         
+        /* Animation for new comment highlighting */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 17, 17, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 17, 17, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 17, 17, 0); }
+        }
+        
+        .comment-item.highlight {
+            animation: pulse 2s;
+        }
+        
     </style>
 </head>
 <body>
@@ -1560,7 +1587,13 @@ $shareUrl = urlencode($currentUrl);
                     <?php if (isset($_GET['comment_submitted']) && $_GET['comment_submitted'] == 'true'): ?>
                         <div class="feedback-success">
                             <span class="feedback-success-icon">✓</span>
-                            உங்கள் கருத்து வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது! நிர்வாகியால் அனுமதிக்கப்பட்ட பிறகு காட்டப்படும்.
+                            உங்கள் கருத்து வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது!
+                        </div>
+                    <?php endif; ?>
+                    <?php if (isset($error_message)): ?>
+                        <div class="pending-message">
+                            <span>⚠</span>
+                            <?php echo $error_message; ?>
                         </div>
                     <?php endif; ?>
                     <form method="POST" action="" id="commentForm">
@@ -1568,16 +1601,16 @@ $shareUrl = urlencode($currentUrl);
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="name">பெயர் *</label>
-                                <input type="text" id="name" name="name" class="form-control" required>
+                                <input type="text" id="name" name="name" class="form-control" required value="<?php echo isset($_POST['name']) ? htmlspecialchars($_POST['name']) : ''; ?>">
                             </div>
                             <div class="form-group">
                                 <label for="email">மின்னஞ்சல் (வெளிப்படையாக்கப்படாது) *</label>
-                                <input type="email" id="email" name="email" class="form-control" required>
+                                <input type="email" id="email" name="email" class="form-control" required value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
                             </div>
                         </div>
                         <div class="form-group">
                             <label for="comment">கருத்து *</label>
-                            <textarea id="comment" name="comment" class="form-control" required></textarea>
+                            <textarea id="comment" name="comment" class="form-control" required><?php echo isset($_POST['comment']) ? htmlspecialchars($_POST['comment']) : ''; ?></textarea>
                         </div>
                         <button type="submit" name="submit_comment" class="submit-btn">
                             <svg class="icon" viewBox="0 0 24 24" fill="none">
@@ -1598,7 +1631,8 @@ $shareUrl = urlencode($currentUrl);
                         </div>
                     <?php else: ?>
                         <?php foreach ($comments as $comment): ?>
-                            <div class="comment-item" id="comment-<?php echo $comment['id']; ?>">
+                            <div class="comment-item <?php echo isset($_GET['new_comment']) && $_GET['new_comment'] == $comment['id'] ? 'highlight' : ''; ?>" 
+                                 id="comment-<?php echo $comment['id']; ?>">
                                 <div class="comment-header">
                                     <div class="comment-avatar"><?php echo getInitials($comment['name']); ?></div>
                                     <div class="comment-user">
@@ -1651,7 +1685,8 @@ $shareUrl = urlencode($currentUrl);
                                 <?php if (!empty($comment['replies'])): ?>
                                     <div class="comment-replies">
                                         <?php foreach ($comment['replies'] as $reply): ?>
-                                            <div class="comment-item comment-reply" id="comment-<?php echo $reply['id']; ?>">
+                                            <div class="comment-item comment-reply <?php echo isset($_GET['new_comment']) && $_GET['new_comment'] == $reply['id'] ? 'highlight' : ''; ?>" 
+                                                 id="comment-<?php echo $reply['id']; ?>">
                                                 <div class="comment-header">
                                                     <div class="comment-avatar"><?php echo getInitials($reply['name']); ?></div>
                                                     <div class="comment-user">
@@ -1802,6 +1837,26 @@ $shareUrl = urlencode($currentUrl);
     <script>
         // JavaScript for comment reply functionality
         document.addEventListener('DOMContentLoaded', function() {
+            // Highlight new comment if exists in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const newCommentId = urlParams.get('new_comment');
+            
+            if (newCommentId) {
+                const commentElement = document.getElementById('comment-' + newCommentId);
+                if (commentElement) {
+                    // Scroll to the new comment
+                    commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    
+                    // Add highlight class
+                    commentElement.classList.add('highlight');
+                    
+                    // Remove highlight after 2 seconds
+                    setTimeout(() => {
+                        commentElement.classList.remove('highlight');
+                    }, 2000);
+                }
+            }
+            
             // Reply button functionality
             document.querySelectorAll('.reply-btn').forEach(button => {
                 button.addEventListener('click', function() {
@@ -1834,21 +1889,6 @@ $shareUrl = urlencode($currentUrl);
                 });
             }, 5000);
             
-            // Copy URL to clipboard functionality
-            const copyUrlBtn = document.getElementById('copyUrlBtn');
-            if (copyUrlBtn) {
-                copyUrlBtn.addEventListener('click', function() {
-                    const url = window.location.href;
-                    navigator.clipboard.writeText(url).then(function() {
-                        const originalText = copyUrlBtn.textContent;
-                        copyUrlBtn.textContent = 'URL Copied!';
-                        setTimeout(function() {
-                            copyUrlBtn.textContent = originalText;
-                        }, 2000);
-                    });
-                });
-            }
-
             // Share button hover effects
             document.querySelectorAll('.share-button').forEach(button => {
                 // Add tooltip on hover
@@ -1871,7 +1911,8 @@ $shareUrl = urlencode($currentUrl);
                         
                         const rect = this.getBoundingClientRect();
                         tooltip.style.top = (rect.top - 40) + 'px';
-                        tooltip.style.left = (rect.left + rect.width/2 - tooltip.offsetWidth/2) + 'px';
+                        tooltip.style.left = (rect.left + rect.width/2) + 'px';
+                        tooltip.style.transform = 'translateX(-50%)';
                         
                         this.appendChild(tooltip);
                     }
@@ -1915,6 +1956,27 @@ $shareUrl = urlencode($currentUrl);
                     underlinedText.style.textDecorationThickness = '2px';
                 });
             });
+
+            // Update comment count in the meta section
+            const commentCountElement = document.getElementById('commentCount');
+            const totalCommentsElement = document.getElementById('totalComments');
+            
+            // Function to update comment counts
+            function updateCommentCounts(count) {
+                if (commentCountElement) {
+                    commentCountElement.textContent = count + ' கருத்துகள்';
+                }
+                if (totalCommentsElement) {
+                    totalCommentsElement.textContent = count;
+                }
+            }
+            
+            // Check if we should update the count (when new comment is added)
+            if (newCommentId) {
+                // Increment the count by 1 for the new comment
+                const currentCount = <?php echo $totalComments; ?>;
+                updateCommentCounts(currentCount);
+            }
         });
     </script>
 </body>
