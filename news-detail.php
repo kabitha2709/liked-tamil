@@ -74,10 +74,17 @@ function cleanTamilText($text) {
     return trim($text);
 }
 
-// Function to preserve HTML tags and embed videos
+// Function to preserve HTML tags and embed videos - PRESERVE FORMATTING
 function processNewsContent($content) {
-    // Decode HTML entities
-    $content = html_entity_decode($content);
+    // Decode HTML entities first
+    $content = html_entity_decode($content, ENT_QUOTES, 'UTF-8');
+    
+    // Preserve HTML tags (allow basic formatting tags)
+    $allowed_tags = '<strong><b><em><i><u><br><p><h1><h2><h3><h4><h5><h6><ul><ol><li><blockquote><div><span><a><img>';
+    $content = strip_tags($content, $allowed_tags);
+    
+    // Convert line breaks to <br> for paragraphs without tags
+    $content = preg_replace('/\r\n|\r|\n/', '<br>', $content);
     
     // Check for YouTube links and convert to embed
     $youtubePattern = '/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/';
@@ -227,7 +234,7 @@ if (isset($_GET['like_comment'])) {
     exit();
 }
 
-// Fetch only approved comments for this news
+// Fetch only approved comments for this news - PRESERVE HTML
 $commentsQuery = "SELECT * FROM comments 
                   WHERE news_id = ? AND status = 'approved' 
                   ORDER BY 
@@ -237,10 +244,12 @@ $commentsStmt = $db->prepare($commentsQuery);
 $commentsStmt->execute([$newsId]);
 $allComments = $commentsStmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Clean comment data before displaying
+// Clean comment data before displaying - but preserve HTML tags
 foreach ($allComments as &$comment) {
     $comment['name'] = cleanTamilText($comment['name']);
-    $comment['comment'] = cleanTamilText($comment['comment']);
+    // Preserve HTML tags in comment content but sanitize
+    $comment['comment'] = strip_tags($comment['comment'], '<strong><b><em><i><u><br><p><span>');
+    $comment['comment'] = htmlspecialchars_decode($comment['comment']);
 }
 
 // Organize comments into parent-child structure
@@ -663,12 +672,28 @@ $shareUrl = urlencode($currentUrl);
             margin-bottom: 8px;
         }
         
-        .article-content strong {
-            color: var(--yellow);
+        .article-content strong,
+        .article-content b {
+            color: #ffffff;
+            font-weight: 700;
+            background: linear-gradient(45deg, var(--red), var(--yellow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            padding: 2px 4px;
+            border-radius: 4px;
         }
-        
-        .article-content em {
-            color: var(--muted);
+
+        .article-content em,
+        .article-content i {
+            color: #ffff99;
+            font-style: italic;
+        }
+
+        .article-content u {
+            text-decoration: underline;
+            text-decoration-color: var(--yellow);
+            text-decoration-thickness: 2px;
         }
         
         .article-content a {
@@ -846,62 +871,143 @@ $shareUrl = urlencode($currentUrl);
             gap: 10px;
         }
         
+        /* Share Icons */
         .share-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
         }
-        
+
+        @media (max-width: 768px) {
+            .share-buttons {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .share-buttons {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
         .share-button {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
+            justify-content: center;
+            padding: 15px 10px;
             background: var(--card-hi);
             border: var(--border);
             border-radius: var(--radius-xs);
-            color: var(--text);
             text-decoration: none;
-            transition: transform var(--trans), background var(--trans);
+            transition: all var(--trans);
+            text-align: center;
+            min-height: 80px;
+            position: relative;
+            overflow: hidden;
         }
-        
+
         .share-button:hover {
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
             background: var(--glass);
         }
-        
-        .share-button.whatsapp {
-            color: #25D366;
+
+        .share-button:hover .share-icon {
+            transform: scale(1.2);
         }
-        
-        .share-button.facebook {
-            color: #1877F2;
+
+        .share-button:hover .share-label {
+            opacity: 1;
+            transform: translateY(0);
         }
-        
-        .share-button.twitter {
-            color: #1DA1F2;
-        }
-        
-        .share-button.linkedin {
-            color: #0A66C2;
-        }
-        
-        .share-button.email {
-            color: #EA4335;
-        }
-        
-        .share-button.pinterest {
-            color: #E60023;
-        }
-        
+
         .share-icon {
             width: 24px;
             height: 24px;
+            margin-bottom: 8px;
+            transition: transform var(--trans);
         }
-        
+
         .share-label {
-            flex: 1;
+            font-size: 12px;
             font-weight: 600;
+            color: var(--text);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all var(--trans);
+            position: absolute;
+            bottom: 8px;
+            left: 0;
+            right: 0;
+            text-align: center;
+        }
+
+        /* Show label only on hover */
+        .share-button:hover .share-label {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Hide default SVG path and show custom ones */
+        .share-icon path {
+            fill: currentColor;
+        }
+
+        /* Individual share button colors */
+        .share-button.whatsapp {
+            color: #25D366;
+        }
+
+        .share-button.facebook {
+            color: #1877F2;
+        }
+
+        .share-button.twitter {
+            color: #1DA1F2;
+        }
+
+        .share-button.linkedin {
+            color: #0A66C2;
+        }
+
+        .share-button.telegram {
+            color: #0088cc;
+        }
+
+        .share-button.pinterest {
+            color: #E60023;
+        }
+
+        /* Share button tooltips */
+        .share-tooltip {
+            position: absolute !important;
+            background: var(--card) !important;
+            color: var(--text) !important;
+            padding: 8px 12px !important;
+            border-radius: 6px !important;
+            font-size: 12px !important;
+            white-space: nowrap !important;
+            z-index: 1000 !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+            border: 1px solid var(--border) !important;
+            transform: translateX(-50%) !important;
+            top: -40px !important;
+            left: 50% !important;
+            pointer-events: none !important;
+        }
+
+        .share-tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid var(--card);
         }
         
         /* Related News Section */
@@ -1210,6 +1316,26 @@ $shareUrl = urlencode($currentUrl);
             text-align: center;
         }
         
+        /* Comment approval handling */
+        .comment-item.pending {
+            opacity: 0.7;
+            border-left: 4px solid var(--yellow);
+        }
+
+        .comment-item.approved {
+            border-left: 4px solid #25D366;
+        }
+
+        .pending-badge {
+            background: var(--yellow);
+            color: var(--black);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
         @media (max-width: 768px) {
             .article-title {
                 font-size: 24px;
@@ -1252,6 +1378,9 @@ $shareUrl = urlencode($currentUrl);
                 margin: 20px 0;
             }
         }
+        .title {
+      font-weight: 800; font-size: clamp(18px, 2.4vw, 28px); letter-spacing: .2px;
+    }
         
     </style>
 </head>
@@ -1261,21 +1390,8 @@ $shareUrl = urlencode($currentUrl);
         <div class="appbar-wrap">
             <a href="index.php" class="brand">
                 <img src="Liked-tamil-news-logo-1 (2).png" alt="Portal Logo" class="logo" />
+                <span class="title">Liked தமிழ்</span>
             </a>
-            <div class="search" role="search">
-                <svg class="icon" viewBox="0 0 24 24" fill="none">
-                    <path d="M11 5a6 6 0 016 6c0 1.3-.41 2.5-1.11 3.48l4.32 4.32-1.41 1.41-4.32-4.32A6 6 0 1111 5z" stroke="currentColor" stroke-width="1.5"/>
-                </svg>
-                <input type="search" placeholder="தேடல்…" aria-label="தேடல்" />
-            </div>
-            <div class="actions">
-                <button class="btn primary">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none">
-                        <path d="M12 3l9 6-9 6-9-6 9-6zM3 15l9 6 9-6" stroke="currentColor" stroke-width="1.5"/>
-                    </svg>
-                    Subscribe
-                </button>
-            </div>
         </div>
     </header>
 
@@ -1424,7 +1540,7 @@ $shareUrl = urlencode($currentUrl);
                                         </button>
                                     </div>
                                 </div>
-                                <div class="comment-content"><?php echo nl2br(htmlspecialchars($comment['comment'])); ?></div>
+                                <div class="comment-content"><?php echo $comment['comment']; ?></div>
                                 
                                 <!-- Reply Form (Initially Hidden) -->
                                 <div class="reply-form" id="reply-form-<?php echo $comment['id']; ?>" style="display: none;">
@@ -1471,7 +1587,7 @@ $shareUrl = urlencode($currentUrl);
                                                         </a>
                                                     </div>
                                                 </div>
-                                                <div class="comment-content"><?php echo nl2br(htmlspecialchars($reply['comment'])); ?></div>
+                                                <div class="comment-content"><?php echo $reply['comment']; ?></div>
                                             </div>
                                         <?php endforeach; ?>
                                     </div>
@@ -1489,49 +1605,49 @@ $shareUrl = urlencode($currentUrl);
             <div class="share-section">
                 <h3 class="share-title">பகிர்</h3>
                 <div class="share-buttons">
-                    <a href="https://api.whatsapp.com/send?text=<?php echo $shareTitle . ' ' . $shareUrl; ?>" 
-                       target="_blank" class="share-button whatsapp">
-                        <svg class="share-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <a href="https://api.whatsapp.com/send?text=<?php echo urlencode($news['title'] . ' - ' . $currentUrl); ?>" 
+                       target="_blank" class="share-button whatsapp" title="WhatsApp இல் பகிரவும்">
+                        <svg class="share-icon" viewBox="0 0 24 24">
                             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.76.982.998-3.677-.236-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.826 9.826 0 012.9 6.994c-.004 5.45-4.438 9.88-9.888 9.88m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.333.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.333 11.893-11.893 0-3.18-1.24-6.162-3.495-8.411"/>
                         </svg>
                         <span class="share-label">WhatsApp</span>
                     </a>
                     
-                    <a href="https://www.facebook.com/sharer/sharer.php?u=<?php echo $shareUrl; ?>" 
-                       target="_blank" class="share-button facebook">
-                        <svg class="share-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <a href="https://www.facebook.com/sharer/sharer.php?u=<?php echo urlencode($currentUrl); ?>&quote=<?php echo urlencode($news['title']); ?>" 
+                       target="_blank" class="share-button facebook" title="Facebook இல் பகிரவும்">
+                        <svg class="share-icon" viewBox="0 0 24 24">
                             <path d="M18.77 7.46H14.5v-1.9c0-.9.6-1.1 1-1.1h3V.5h-4.33C10.24.5 9.5 3.44 9.5 5.32v2.15h-3v4h3v12h5v-12h3.85l.42-4z"/>
                         </svg>
                         <span class="share-label">Facebook</span>
                     </a>
                     
-                    <a href="https://twitter.com/intent/tweet?text=<?php echo $shareTitle; ?>&url=<?php echo $shareUrl; ?>" 
-                       target="_blank" class="share-button twitter">
-                        <svg class="share-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <a href="https://twitter.com/intent/tweet?text=<?php echo urlencode($news['title'] . ' - ' . $currentUrl); ?>" 
+                       target="_blank" class="share-button twitter" title="Twitter இல் பகிரவும்">
+                        <svg class="share-icon" viewBox="0 0 24 24">
                             <path d="M23.44 4.83c-.8.37-1.5.38-2.22.02.93-.56.98-.96 1.32-2.02-.88.52-1.86.9-2.9 1.1-.82-.88-2-1.43-3.3-1.43-2.5 0-4.55 2.04-4.55 4.54 0 .36.03.7.1 1.04-3.77-.2-7.12-2-9.36-4.75-.4.67-.6 1.45-.6 2.3 0 1.56.8 2.95 2 3.77-.74-.03-1.44-.23-2.05-.57v.06c0 2.2 1.56 4.03 3.64 4.44-.67.2-1.37.2-2.06.08.58 1.8 2.26 3.12 4.25 3.16C5.78 18.1 3.37 18.74 1 18.46c2 1.3 4.4 2.04 6.97 2.04 8.35 0 12.92-6.92 12.92-12.93 0-.2 0-.4-.02-.6.9-.63 1.96-1.22 2.56-2.14z"/>
                         </svg>
                         <span class="share-label">Twitter</span>
                     </a>
                     
-                    <a href="https://www.linkedin.com/shareArticle?mini=true&url=<?php echo $shareUrl; ?>&title=<?php echo $shareTitle; ?>" 
-                       target="_blank" class="share-button linkedin">
-                        <svg class="share-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <a href="https://www.linkedin.com/shareArticle?mini=true&url=<?php echo urlencode($currentUrl); ?>&title=<?php echo urlencode($news['title']); ?>&summary=<?php echo urlencode(substr(strip_tags($news['content']), 0, 200)); ?>" 
+                       target="_blank" class="share-button linkedin" title="LinkedIn இல் பகிரவும்">
+                        <svg class="share-icon" viewBox="0 0 24 24">
                             <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
                         </svg>
                         <span class="share-label">LinkedIn</span>
                     </a>
                     
-                    <a href="mailto:?subject=<?php echo $shareTitle; ?>&body=<?php echo $shareUrl; ?>" 
-                       class="share-button email">
-                        <svg class="share-icon" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                    <a href="https://t.me/share/url?url=<?php echo urlencode($currentUrl); ?>&text=<?php echo urlencode($news['title']); ?>" 
+                       target="_blank" class="share-button telegram" title="Telegram இல் பகிரவும்">
+                        <svg class="share-icon" viewBox="0 0 24 24">
+                            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.295-.605.295l.213-3.054 5.56-5.022c.242-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.135-.954l11.57-4.461c.538-.196 1.006.128.832.941z"/>
                         </svg>
-                        <span class="share-label">Email</span>
+                        <span class="share-label">Telegram</span>
                     </a>
                     
-                    <a href="https://pinterest.com/pin/create/button/?url=<?php echo $shareUrl; ?>&media=<?php echo $mainImagePath; ?>&description=<?php echo $shareTitle; ?>" 
-                       target="_blank" class="share-button pinterest">
-                        <svg class="share-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <a href="https://pinterest.com/pin/create/button/?url=<?php echo urlencode($currentUrl); ?>&media=<?php echo urlencode($mainImagePath); ?>&description=<?php echo urlencode($news['title']); ?>" 
+                       target="_blank" class="share-button pinterest" title="Pinterest இல் பகிரவும்">
+                        <svg class="share-icon" viewBox="0 0 24 24">
                             <path d="M12.14.5C5.86.5 2.7 5 2.7 8.75c0 2.27.86 4.3 2.7 5.05.3.12.57 0 .66-.33l.27-1.06c.1-.32.06-.44-.2-.73-.52-.62-.86-1.44-.86-2.6 0-3.33 2.5-6.32 6.5-6.32 3.55 0 5.5 2.17 5.5 5.07 0 3.8-1.7 7.02-4.2 7.02-1.37 0-2.4-1.14-2.07-2.54.4-1.68 1.16-3.48 1.16-4.7 0-1.07-.58-1.98-1.78-1.98-1.4 0-2.55 1.47-2.55 3.42 0 1.25.43 2.1.43 2.1l-1.7 7.2c-.5 2.13-.08 4.75-.04 5 .02.17.22.2.3.1.14-.18 1.82-2.26 2.4-4.33.16-.58.93-3.63.93-3.63.45.88 1.8 1.65 3.22 1.65 4.25 0 7.13-3.87 7.13-9.05C20.5 4.15 17.18.5 12.14.5z"/>
                         </svg>
                         <span class="share-label">Pinterest</span>
@@ -1651,6 +1767,73 @@ $shareUrl = urlencode($currentUrl);
                     });
                 });
             }
+
+            // Share button hover effects
+            document.querySelectorAll('.share-button').forEach(button => {
+                // Add tooltip on hover
+                button.addEventListener('mouseenter', function(e) {
+                    const title = this.getAttribute('title');
+                    if (title) {
+                        const tooltip = document.createElement('div');
+                        tooltip.className = 'share-tooltip';
+                        tooltip.textContent = title;
+                        tooltip.style.position = 'absolute';
+                        tooltip.style.background = 'var(--card)';
+                        tooltip.style.color = 'var(--text)';
+                        tooltip.style.padding = '8px 12px';
+                        tooltip.style.borderRadius = '6px';
+                        tooltip.style.fontSize = '12px';
+                        tooltip.style.whiteSpace = 'nowrap';
+                        tooltip.style.zIndex = '1000';
+                        tooltip.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+                        tooltip.style.border = '1px solid var(--border)';
+                        
+                        const rect = this.getBoundingClientRect();
+                        tooltip.style.top = (rect.top - 40) + 'px';
+                        tooltip.style.left = (rect.left + rect.width/2 - tooltip.offsetWidth/2) + 'px';
+                        
+                        this.appendChild(tooltip);
+                    }
+                });
+                
+                button.addEventListener('mouseleave', function() {
+                    const tooltip = this.querySelector('.share-tooltip');
+                    if (tooltip) {
+                        tooltip.remove();
+                    }
+                });
+            });
+
+            // Comment formatting - preserve HTML in comments
+            document.querySelectorAll('.comment-content').forEach(content => {
+                // Convert line breaks to <br> if they're not already there
+                if (!content.innerHTML.includes('<br>') && content.textContent.includes('\n')) {
+                    content.innerHTML = content.textContent.replace(/\n/g, '<br>');
+                }
+                
+                // Style bold text in comments
+                content.querySelectorAll('strong, b').forEach(boldText => {
+                    boldText.style.color = '#ffffff';
+                    boldText.style.fontWeight = '700';
+                    boldText.style.background = 'linear-gradient(45deg, var(--red), var(--yellow))';
+                    boldText.style.webkitBackgroundClip = 'text';
+                    boldText.style.webkitTextFillColor = 'transparent';
+                    boldText.style.backgroundClip = 'text';
+                });
+                
+                // Style italic text in comments
+                content.querySelectorAll('em, i').forEach(italicText => {
+                    italicText.style.color = '#ffff99';
+                    italicText.style.fontStyle = 'italic';
+                });
+                
+                // Style underlined text in comments
+                content.querySelectorAll('u').forEach(underlinedText => {
+                    underlinedText.style.textDecoration = 'underline';
+                    underlinedText.style.textDecorationColor = 'var(--yellow)';
+                    underlinedText.style.textDecorationThickness = '2px';
+                });
+            });
         });
     </script>
 </body>

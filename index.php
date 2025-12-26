@@ -1395,238 +1395,242 @@ require 'config/config.php'; // To get $base_url
     }
 
     // Function to load news grid for selected date
-    // Function to load news grid for selected date
-function loadNewsForDate(date, filter = '') {
-    const newsGrid = document.getElementById('newsGrid');
-    const sectionTitle = document.querySelector('.section .section-title');
-    
-    // Show loading state
-    newsGrid.innerHTML = '<div style="text-align:center; padding:40px; color:var(--muted); grid-column: 1/-1;">ஏற்றுகிறது...</div>';
-    
-    // AJAX call to fetch news for selected date
-    fetch(`get-news-for-date.php?date=${date}&filter=${filter}&page=1`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                // Update section title
-                if (sectionTitle) {
-                    const dateObj = new Date(date);
-                    const todayStr = new Date().toISOString().split('T')[0];
+    function loadNewsForDate(date, filter = '') {
+        const newsGrid = document.getElementById('newsGrid');
+        const sectionTitle = document.querySelector('.section .section-title');
+        
+        // Show loading state
+        newsGrid.innerHTML = '<div style="text-align:center; padding:40px; color:var(--muted); grid-column: 1/-1;">ஏற்றுகிறது...</div>';
+        
+        // AJAX call to fetch news for selected date
+        fetch(`get-news-for-date.php?date=${date}&filter=${filter}&page=1`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Update section title
+                    if (sectionTitle) {
+                        const dateObj = new Date(date);
+                        const todayStr = new Date().toISOString().split('T')[0];
+                        
+                        let titleText = '';
+                        if (date === todayStr) {
+                            titleText = 'இன்றைய செய்திகள்';
+                        } else {
+                            const day = dateObj.getDate().toString().padStart(2, '0');
+                            const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+                            const year = dateObj.getFullYear();
+                            titleText = `${day}/${month}/${year} செய்திகள்`;
+                        }
+                        
+                        sectionTitle.innerHTML = `${titleText} <span style="font-size: 14px; color: var(--muted); margin-left: 10px;">(${data.totalNews} செய்திகள்)</span>`;
+                    }
                     
-                    let titleText = '';
-                    if (date === todayStr) {
-                        titleText = 'இன்றைய செய்திகள்';
+                    if (data.news.length > 0) {
+                        let html = '';
+                        data.news.forEach(item => {
+                            // Format time ago - using published_at
+                            const publishTime = new Date(item.published_at || item.created_at);
+                            const now = new Date();
+                            const diffMs = now - publishTime;
+                            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                            
+                            let timeAgo = '';
+                            if (diffDays > 0) {
+                                timeAgo = diffDays + ' நாட்கள் முன்';
+                            } else if (diffHours > 0) {
+                                timeAgo = diffHours + ' மணி முன்';
+                            } else {
+                                timeAgo = Math.floor(diffMs / (1000 * 60)) + ' நி முன்';
+                            }
+                            
+                            // Calculate reading time
+                            const wordCount = item.content ? item.content.split(/\s+/).length : 0;
+                            const readingTime = Math.max(1, Math.ceil(wordCount / 200));
+                            
+                            // Get categories
+                            const categories = item.category_names ? item.category_names.split(', ') : [];
+                            const firstCategory = categories.length > 0 ? categories[0] : 'செய்தி';
+                            
+                            // Get proper image URL with fallback - FIXED HERE
+                            let imageUrl = '';
+                            if (item.image_path) {
+                                // If image_path starts with http or https, use as-is
+                                if (item.image_path.startsWith('http')) {
+                                    imageUrl = item.image_path;
+                                } else {
+                                    // Otherwise, prepend the base URL
+                                    imageUrl = '<?php echo $base_url; ?>' + item.image_path;
+                                }
+                            } else if (item.image) {
+                                // Use the news.image field
+                                imageUrl = '<?php echo $base_url; ?>uploads/news/' + item.image;
+                            } else {
+                                // Fallback image
+                                imageUrl = 'https://picsum.photos/id/' + Math.floor(Math.random() * 1000) + 1000 + '/800/500';
+                            }
+                            
+                            html += `
+                                <article class="news-card">
+                                    <a href="news-detail.php?id=${item.id}" style="text-decoration: none; color: inherit;">
+                                        <div class="news-thumb">
+                                            <img src="${imageUrl}" alt="${item.title}" />
+                                            <span class="badge">${firstCategory}</span>
+                                        </div>
+                                        <div class="news-content">
+                                            <h3 class="news-title">${item.title}</h3>
+                                            <div class="news-meta">
+                                                <span>${timeAgo}</span>
+                                                <span>•</span>
+                                                <span>${readingTime} நிமிடம்</span>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </article>
+                            `;
+                        });
+                        newsGrid.innerHTML = html;
                     } else {
+                        const dateObj = new Date(date);
                         const day = dateObj.getDate().toString().padStart(2, '0');
                         const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
                         const year = dateObj.getFullYear();
-                        titleText = `${day}/${month}/${year} செய்திகள்`;
+                        
+                        newsGrid.innerHTML = `<div style="text-align:center; padding:40px; color:var(--muted); grid-column: 1/-1;">
+                            <h3>செய்திகள் இல்லை</h3>
+                            <p>${day}/${month}/${year} தேதிக்கு செய்திகள் இல்லை.</p>
+                            <a href="index.php" class="btn primary" style="margin-top: 10px;">இன்றைய செய்திகளைப் பார்க்க</a>
+                        </div>`;
                     }
-                    
-                    sectionTitle.innerHTML = `${titleText} <span style="font-size: 14px; color: var(--muted); margin-left: 10px;">(${data.totalNews} செய்திகள்)</span>`;
-                }
-                
-                if (data.news.length > 0) {
-                    let html = '';
-                    data.news.forEach(item => {
-                        // Format time ago - using published_at
-                        const publishTime = new Date(item.published_at || item.created_at);
-                        const now = new Date();
-                        const diffMs = now - publishTime;
-                        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-                        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-                        
-                        let timeAgo = '';
-                        if (diffDays > 0) {
-                            timeAgo = diffDays + ' நாட்கள் முன்';
-                        } else if (diffHours > 0) {
-                            timeAgo = diffHours + ' மணி முன்';
-                        } else {
-                            timeAgo = Math.floor(diffMs / (1000 * 60)) + ' நி முன்';
-                        }
-                        
-                        // Calculate reading time
-                        const wordCount = item.content ? item.content.split(/\s+/).length : 0;
-                        const readingTime = Math.max(1, Math.ceil(wordCount / 200));
-                        
-                        // Get categories
-                        const categories = item.category_names ? item.category_names.split(', ') : [];
-                        const firstCategory = categories.length > 0 ? categories[0] : 'செய்தி';
-                        
-                        // Get proper image URL with fallback
-                        let imageUrl = '';
-                        if (item.image_path) {
-                            // Use the image path from news_images table
-                            imageUrl = item.image_path;
-                        } else if (item.image) {
-                            // Use the news.image field
-                            imageUrl = '<?php echo $base_url; ?>uploads/news/' + item.image;
-                        } else {
-                            // Fallback image
-                            imageUrl = 'https://picsum.photos/id/' + Math.floor(Math.random() * 1000) + 1000 + '/800/500';
-                        }
-                        
-                        html += `
-                            <article class="news-card">
-                                <a href="news-detail.php?id=${item.id}" style="text-decoration: none; color: inherit;">
-                                    <div class="news-thumb">
-                                        <img src="${imageUrl}" alt="${item.title}" />
-                                        <span class="badge">${firstCategory}</span>
-                                    </div>
-                                    <div class="news-content">
-                                        <h3 class="news-title">${item.title}</h3>
-                                        <div class="news-meta">
-                                            <span>${timeAgo}</span>
-                                            <span>•</span>
-                                            <span>${readingTime} நிமிடம்</span>
-                                        </div>
-                                    </div>
-                                </a>
-                            </article>
-                        `;
-                    });
-                    newsGrid.innerHTML = html;
                 } else {
-                    const dateObj = new Date(date);
-                    const day = dateObj.getDate().toString().padStart(2, '0');
-                    const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-                    const year = dateObj.getFullYear();
-                    
-                    newsGrid.innerHTML = `<div style="text-align:center; padding:40px; color:var(--muted); grid-column: 1/-1;">
-                        <h3>செய்திகள் இல்லை</h3>
-                        <p>${day}/${month}/${year} தேதிக்கு செய்திகள் இல்லை.</p>
-                        <a href="index.php" class="btn primary" style="margin-top: 10px;">இன்றைய செய்திகளைப் பார்க்க</a>
-                    </div>`;
+                    newsGrid.innerHTML = '<div style="text-align:center; padding:40px; color:var(--muted); grid-column: 1/-1;">செய்திகளைப் பதிவிறக்க முடியவில்லை</div>';
                 }
-            } else {
-                newsGrid.innerHTML = '<div style="text-align:center; padding:40px; color:var(--muted); grid-column: 1/-1;">செய்திகளைப் பதிவிறக்க முடியவில்லை</div>';
-            }
-        })
-        .catch(error => {
-            console.error('Error loading news:', error);
-            newsGrid.innerHTML = '<div style="text-align:center; padding:40px; color:var(--muted); grid-column: 1/-1;">பிழை ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்.</div>';
-        });
-}
-
-async function renderCalendar() {
-  const year = viewDate.getFullYear();
-  const month = viewDate.getMonth();
-  
-  // Format month name in Tamil
-  const monthNames = [
-    'ஜனவரி', 'பிப்ரவரி', 'மார்ச்', 'ஏப்ரல்', 
-    'மே', 'ஜூன்', 'ஜூலை', 'ஆகஸ்ட்', 
-    'செப்டம்பர்', 'அக்டோபர்', 'நவம்பர்', 'டிசம்பர்'
-  ];
-  
-  calTitleEl.textContent = `${monthNames[month]} ${year}`;
-
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const startIndex = (firstDay.getDay() + 6) % 7; // Monday start
-  
-  // Clear previous dates
-  calDates.innerHTML = '';
-
-  // Padding for days before month start
-  for (let i = 0; i < startIndex; i++) {
-    const pad = document.createElement('div');
-    pad.className = 'cal-date';
-    pad.style.visibility = 'hidden';
-    pad.textContent = '';
-    calDates.appendChild(pad);
-  }
-  
-  // Create date cells - ONLY for current month dates (1 to lastDay.getDate())
-  for (let d = 1; d <= lastDay.getDate(); d++) {
-    const cell = document.createElement('a');
-    cell.className = 'cal-date';
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    
-    // Get current filter
-    const currentFilter = getCurrentFilter();
-    
-    // Regular link for normal navigation
-    cell.href = `index.php?date=${dateStr}&filter=${currentFilter}`;
-    cell.textContent = d;
-    cell.setAttribute('aria-label', `${d} ${monthNames[month]} ${year}`);
-    
-    // Check if this is today
-    const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
-    if (isToday) {
-      cell.classList.add('today');
+            })
+            .catch(error => {
+                console.error('Error loading news:', error);
+                newsGrid.innerHTML = '<div style="text-align:center; padding:40px; color:var(--muted); grid-column: 1/-1;">பிழை ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்.</div>';
+            });
     }
-    
-    // Check if this is selected date
-    const isSelected = d === selectedDateObj.getDate() && 
-                       month === selectedDateObj.getMonth() && 
-                       year === selectedDateObj.getFullYear();
-    if (isSelected) {
-      cell.classList.add('selected');
-    }
-    
-    // Add click event to load news via AJAX and update URL
-    cell.addEventListener('click', async function(e) {
-      e.preventDefault();
-      
-      // Update selected date
-      selectedDateObj = new Date(dateStr);
-      
-      // Update URL without reload
-      const url = new URL(window.location);
-      url.searchParams.set('date', dateStr);
-      window.history.pushState({}, '', url);
-      
-      // Load news grid for this date first
-      loadNewsForDate(dateStr, currentFilter);
-      
-      // Update main grid pagination links
-      updatePaginationLinks(dateStr, currentFilter);
-      
-      // Reload calendar to update selected state
-      await renderCalendar();
-      
-      // Scroll to main news section
-      document.querySelector('.section').scrollIntoView({ behavior: 'smooth' });
-    });
-    
-    calDates.appendChild(cell);
-  }
-  
-  // Check if dates have news (after calendar is rendered)
-  checkDatesWithNews(year, month);
-}
 
-// Function to check which dates have news (non-blocking, runs after calendar render)
-async function checkDatesWithNews(year, month) {
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  
-  for (let d = 1; d <= lastDay.getDate(); d++) {
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    
-    try {
-      const response = await fetch('check-date-news.php?date=' + dateStr);
-      const data = await response.json();
-      if (data.hasNews) {
-        // Find the cell and add class
-        const cells = document.querySelectorAll('.cal-date');
-        cells.forEach(cell => {
-          if (cell.textContent === String(d) && !cell.style.visibility) {
-            cell.classList.add('has-news');
-          }
-        });
+    async function renderCalendar() {
+      const year = viewDate.getFullYear();
+      const month = viewDate.getMonth();
+      
+      // Format month name in Tamil
+      const monthNames = [
+        'ஜனவரி', 'பிப்ரவரி', 'மார்ச்', 'ஏப்ரல்', 
+        'மே', 'ஜூன்', 'ஜூலை', 'ஆகஸ்ட்', 
+        'செப்டம்பர்', 'அக்டோபர்', 'நவம்பர்', 'டிசம்பர்'
+      ];
+      
+      calTitleEl.textContent = `${monthNames[month]} ${year}`;
+
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const startIndex = (firstDay.getDay() + 6) % 7; // Monday start
+      
+      // Clear previous dates
+      calDates.innerHTML = '';
+
+      // Padding for days before month start
+      for (let i = 0; i < startIndex; i++) {
+        const pad = document.createElement('div');
+        pad.className = 'cal-date';
+        pad.style.visibility = 'hidden';
+        pad.textContent = '';
+        calDates.appendChild(pad);
       }
-    } catch (error) {
-      console.error('Error checking date news:', error);
+      
+      // Create date cells - ONLY for current month dates (1 to lastDay.getDate())
+      for (let d = 1; d <= lastDay.getDate(); d++) {
+        const cell = document.createElement('a');
+        cell.className = 'cal-date';
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        
+        // Get current filter
+        const currentFilter = getCurrentFilter();
+        
+        // Regular link for normal navigation
+        cell.href = `index.php?date=${dateStr}&filter=${currentFilter}`;
+        cell.textContent = d;
+        cell.setAttribute('aria-label', `${d} ${monthNames[month]} ${year}`);
+        
+        // Check if this is today
+        const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+        if (isToday) {
+          cell.classList.add('today');
+        }
+        
+        // Check if this is selected date
+        const isSelected = d === selectedDateObj.getDate() && 
+                          month === selectedDateObj.getMonth() && 
+                          year === selectedDateObj.getFullYear();
+        if (isSelected) {
+          cell.classList.add('selected');
+        }
+        
+        // Add click event to load news via AJAX and update URL
+        cell.addEventListener('click', async function(e) {
+          e.preventDefault();
+          
+          // Update selected date
+          selectedDateObj = new Date(dateStr);
+          
+          // Update URL without reload
+          const url = new URL(window.location);
+          url.searchParams.set('date', dateStr);
+          window.history.pushState({}, '', url);
+          
+          // Load news grid for this date first
+          loadNewsForDate(dateStr, currentFilter);
+          
+          // Update main grid pagination links
+          updatePaginationLinks(dateStr, currentFilter);
+          
+          // Reload calendar to update selected state
+          await renderCalendar();
+          
+          // Scroll to main news section
+          document.querySelector('.section').scrollIntoView({ behavior: 'smooth' });
+        });
+        
+        calDates.appendChild(cell);
+      }
+      
+      // Check if dates have news (after calendar is rendered)
+      checkDatesWithNews(year, month);
     }
-  }
-}
+
+    // Function to check which dates have news (non-blocking, runs after calendar render)
+    async function checkDatesWithNews(year, month) {
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      
+      for (let d = 1; d <= lastDay.getDate(); d++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        
+        try {
+          const response = await fetch('check-date-news.php?date=' + dateStr);
+          const data = await response.json();
+          if (data.hasNews) {
+            // Find the cell and add class
+            const cells = document.querySelectorAll('.cal-date');
+            cells.forEach(cell => {
+              if (cell.textContent === String(d) && !cell.style.visibility) {
+                cell.classList.add('has-news');
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Error checking date news:', error);
+        }
+      }
+    }
 
     // Function to update pagination links
     function updatePaginationLinks(date, filter) {
@@ -1789,44 +1793,44 @@ async function checkDatesWithNews(year, month) {
 
 
     // Search functionality
-function handleSearch(event) {
-    event.preventDefault();
-    const searchInput = document.querySelector('.search input[name="q"]');
-    const searchTerm = searchInput.value.trim();
-    
-    if (searchTerm) {
-        // Redirect to search results page
-        window.location.href = `search.php?q=${encodeURIComponent(searchTerm)}`;
+    function handleSearch(event) {
+        event.preventDefault();
+        const searchInput = document.querySelector('.search input[name="q"]');
+        const searchTerm = searchInput.value.trim();
+        
+        if (searchTerm) {
+            // Redirect to search results page
+            window.location.href = `search.php?q=${encodeURIComponent(searchTerm)}`;
+        }
     }
-}
 
-// Add event listener to search form
-document.querySelector('.search').addEventListener('submit', handleSearch);
+    // Add event listener to search form
+    document.querySelector('.search').addEventListener('submit', handleSearch);
 
-// Mobile search functionality
-document.querySelectorAll('.foot-item').forEach(item => {
-    if (item.querySelector('.foot-label')?.textContent === 'தேடல்') {
-        item.addEventListener('click', function(e) {
-            e.preventDefault();
-            // Create search modal for mobile
-            const searchModal = document.createElement('div');
-            searchModal.className = 'subscription-modal';
-            searchModal.style.display = 'flex';
-            searchModal.style.zIndex = '1001';
-            searchModal.innerHTML = `
-                <div class="subscription-content" style="max-width: 90%;">
-                    <button class="close-modal" onclick="this.parentElement.parentElement.remove()">&times;</button>
-                    <h3 style="color: var(--yellow); text-align: center; margin-bottom: 20px;">தேடல்</h3>
-                    <form method="GET" action="search.php" class="search" style="display: flex; gap: 10px; margin-bottom: 20px;">
-                        <input type="search" name="q" placeholder="தேடல்..." style="flex: 1; padding: 12px; border-radius: var(--radius-sm); background: var(--glass); border: var(--border); color: var(--text);" autofocus>
-                        <button type="submit" style="background: linear-gradient(180deg, var(--red), #cc0f0f); color: white; border: none; padding: 12px 20px; border-radius: var(--radius-sm); cursor: pointer;">தேடு</button>
-                    </form>
-                </div>
-            `;
-            document.body.appendChild(searchModal);
-        });
-    }
-});
+    // Mobile search functionality
+    document.querySelectorAll('.foot-item').forEach(item => {
+        if (item.querySelector('.foot-label')?.textContent === 'தேடல்') {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                // Create search modal for mobile
+                const searchModal = document.createElement('div');
+                searchModal.className = 'subscription-modal';
+                searchModal.style.display = 'flex';
+                searchModal.style.zIndex = '1001';
+                searchModal.innerHTML = `
+                    <div class="subscription-content" style="max-width: 90%;">
+                        <button class="close-modal" onclick="this.parentElement.parentElement.remove()">&times;</button>
+                        <h3 style="color: var(--yellow); text-align: center; margin-bottom: 20px;">தேடல்</h3>
+                        <form method="GET" action="search.php" class="search" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                            <input type="search" name="q" placeholder="தேடல்..." style="flex: 1; padding: 12px; border-radius: var(--radius-sm); background: var(--glass); border: var(--border); color: var(--text);" autofocus>
+                            <button type="submit" style="background: linear-gradient(180deg, var(--red), #cc0f0f); color: white; border: none; padding: 12px 20px; border-radius: var(--radius-sm); cursor: pointer;">தேடு</button>
+                        </form>
+                    </div>
+                `;
+                document.body.appendChild(searchModal);
+            });
+        }
+    });
 
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {

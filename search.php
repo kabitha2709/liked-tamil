@@ -3,6 +3,41 @@ require_once 'config/database.php';
 $database = new Database();
 $db = $database->getConnection();
 
+// Handle subscription form in search.php
+$subscriptionSuccess = false;
+$subscriptionError = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['subscribe'])) {
+    $email = $_POST['email'] ?? '';
+    
+    // Validate email
+    if (empty($email)) {
+        $subscriptionError = 'மின்னஞ்சலை உள்ளிடவும்';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $subscriptionError = 'செல்லுபடியாகாத மின்னஞ்சல் முகவரி';
+    } else {
+        try {
+            // Check if email already exists
+            $checkQuery = "SELECT id FROM subscribers WHERE email = ?";
+            $checkStmt = $db->prepare($checkQuery);
+            $checkStmt->execute([$email]);
+            
+            if ($checkStmt->fetch()) {
+                $subscriptionError = 'இந்த மின்னஞ்சல் ஏற்கனவே சந்தாதாரராக உள்ளது';
+            } else {
+                // Save to database
+                $subscribeQuery = "INSERT INTO subscribers (email, created_at) VALUES (?, NOW())";
+                $subscribeStmt = $db->prepare($subscribeQuery);
+                $subscribeStmt->execute([$email]);
+                
+                $subscriptionSuccess = true;
+            }
+        } catch (PDOException $e) {
+            $subscriptionError = 'தொழில்நுட்ப பிழை. மீண்டும் முயற்சிக்கவும்';
+        }
+    }
+}
+
 // Get search term
 $searchTerm = $_GET['q'] ?? '';
 
@@ -371,104 +406,165 @@ require 'config/config.php';
                 display: none;
             }
         }
+        
         /* Subscription Modal */
-.subscription-modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.8);
-  z-index: 1000;
-  align-items: center;
-  justify-content: center;
-}
+        .subscription-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
 
-.subscription-content {
-  background: var(--card);
-  border-radius: var(--radius);
-  padding: 30px;
-  width: 90%;
-  max-width: 500px;
-  border: var(--border);
-  box-shadow: var(--shadow);
-}
+        .subscription-content {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            border: var(--border);
+            box-shadow: var(--shadow);
+            position: relative;
+        }
 
-.subscription-content h3 {
-  color: var(--yellow);
-  margin-bottom: 20px;
-  text-align: center;
-}
+        .subscription-content h3 {
+            color: var(--yellow);
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 24px;
+        }
 
-.subscription-form {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
+        .subscription-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
 
-.subscription-form input {
-  flex: 1;
-  padding: 12px;
-  border-radius: var(--radius-sm);
-  background: var(--glass);
-  border: var(--border);
-  color: var(--text);
-  outline: none;
-}
+        .subscription-form input {
+            flex: 1;
+            padding: 12px 15px;
+            border-radius: var(--radius-sm);
+            background: var(--glass);
+            border: var(--border);
+            color: var(--text);
+            outline: none;
+            font-family: "Noto Sans Tamil", Inter, sans-serif;
+            font-size: 14px;
+        }
 
-.subscription-form button {
-  background: linear-gradient(180deg, var(--red), #cc0f0f);
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-weight: 600;
-}
+        .subscription-form input:focus {
+            border-color: var(--yellow);
+        }
 
-.close-modal {
-  background: transparent;
-  border: none;
-  color: var(--muted);
-  cursor: pointer;
-  float: right;
-  font-size: 20px;
-}
+        .subscription-form button {
+            background: linear-gradient(180deg, var(--red), #cc0f0f);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: 600;
+            font-family: "Noto Sans Tamil", Inter, sans-serif;
+            transition: transform var(--trans), box-shadow var(--trans);
+        }
 
-.subscription-success {
-  color: var(--yellow);
-  text-align: center;
-  padding: 10px;
-  display: none;
-}
+        .subscription-form button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 17, 17, 0.3);
+        }
+
+        .close-modal {
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background var(--trans), color var(--trans);
+        }
+
+        .close-modal:hover {
+            background: rgba(255,255,255,0.1);
+            color: var(--text);
+        }
+
+        .subscription-success {
+            color: var(--yellow);
+            text-align: center;
+            padding: 12px;
+            margin-bottom: 20px;
+            background: rgba(255, 252, 0, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 252, 0, 0.3);
+            font-weight: 600;
+        }
+
+        .subscription-error {
+            color: var(--red);
+            text-align: center;
+            padding: 12px;
+            margin-bottom: 20px;
+            background: rgba(255, 17, 17, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 17, 17, 0.3);
+            font-weight: 600;
+        }
+        
+        .icon {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+        .logo {
+      width: 20%;       /* adjust size */
+      height: 20%;
+      border-radius: 8px; /* optional rounded corners */
+      object-fit: contain; /* keeps aspect ratio */
+    }
     </style>
 </head>
 <body>
 
 <!-- App bar -->
 <header class="appbar">
-  <div class="appbar-wrap">
-    <a href="index.php" class="brand">
-      <img src="Liked-tamil-news-logo-1 (2).png" alt="Portal Logo" class="logo" />
-      <span class="title">Liked தமிழ்</span>
-    </a>
-    <!-- Search Form -->
-    <form method="GET" action="search.php" class="search" role="search">
-      <svg class="icon" viewBox="0 0 24 24" fill="none">
-        <path d="M11 5a6 6 0 016 6c0 1.3-.41 2.5-1.11 3.48l4.32 4.32-1.41 1.41-4.32-4.32A6 6 0 1111 5z" stroke="currentColor" stroke-width="1.5"/>
-      </svg>
-      <input type="search" name="q" placeholder="தேடல்…" aria-label="தேடல்" value="<?php echo isset($_GET['q']) ? htmlspecialchars($_GET['q']) : ''; ?>" />
-    </form>
-    <div class="actions">
-      <button class="btn primary" onclick="openSubscription()">
-        <svg class="icon" viewBox="0 0 24 24" fill="none">
-          <path d="M12 3l9 6-9 6-9-6 9-6zM3 15l9 6 9-6" stroke="currentColor" stroke-width="1.5"/>
-        </svg>
-        Subscribe
-      </button>
+    <div class="appbar-wrap">
+        <a href="index.php" class="brand">
+            <img src="Liked-tamil-news-logo-1 (2).png" alt="Portal Logo" class="logo" />
+            <span class="title">Liked தமிழ்</span>
+        </a>
+        <!-- Search Form -->
+        <form method="GET" action="search.php" class="search" role="search">
+            <svg class="icon" viewBox="0 0 24 24" fill="none">
+                <path d="M11 5a6 6 0 016 6c0 1.3-.41 2.5-1.11 3.48l4.32 4.32-1.41 1.41-4.32-4.32A6 6 0 1111 5z" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+            <input type="search" name="q" placeholder="தேடல்…" aria-label="தேடல்" value="<?php echo htmlspecialchars($searchTerm); ?>" />
+        </form>
+        <div class="actions">
+            <button class="btn primary" onclick="openSubscription()">
+                <svg class="icon" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 3l9 6-9 6-9-6 9-6zM3 15l9 6 9-6" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+                Subscribe
+            </button>
+        </div>
     </div>
-  </div>
 </header>
 
 <!-- Category Navigation -->
@@ -615,20 +711,32 @@ require 'config/config.php';
 </main>
 
 <!-- Subscription Modal -->
-  <div class="subscription-modal" id="subscriptionModal">
+<div class="subscription-modal" id="subscriptionModal">
     <div class="subscription-content">
-      <button class="close-modal" onclick="closeSubscription()">&times;</button>
-      <h3>Subscribe to Liked தமிழ்</h3>
-      <form method="POST" class="subscription-form">
-        <input type="email" name="email" placeholder="உங்கள் மின்னஞ்சல்" required>
-        <input type="hidden" name="subscribe" value="1">
-        <button type="submit">Subscribe</button>
-      </form>
-      <div class="subscription-success" id="subscriptionSuccess">
-        நன்றி! உங்கள் சந்தா வெற்றிகரமாக பதிவு செய்யப்பட்டது.
-      </div>
+        <button class="close-modal" onclick="closeSubscription()">&times;</button>
+        <h3>Subscribe to Liked தமிழ்</h3>
+        
+        <?php if ($subscriptionSuccess): ?>
+            <div class="subscription-success">
+                நன்றி! உங்கள் சந்தா வெற்றிகரமாக பதிவு செய்யப்பட்டது.
+            </div>
+        <?php elseif ($subscriptionError): ?>
+            <div class="subscription-error">
+                <?php echo htmlspecialchars($subscriptionError); ?>
+            </div>
+        <?php endif; ?>
+        
+        <form method="POST" class="subscription-form">
+            <input type="email" name="email" placeholder="உங்கள் மின்னஞ்சல்" required 
+                   value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
+            <input type="hidden" name="subscribe" value="1">
+            <button type="submit">Subscribe</button>
+        </form>
+        <div style="font-size: 12px; color: var(--muted); text-align: center; margin-top: 15px;">
+            புதிய செய்திகள் மற்றும் புதுப்பிப்புகளை பெறவும்
+        </div>
     </div>
-  </div>
+</div>
 
 <!-- Desktop Footer -->
 <footer class="likedtamil-footer">
@@ -664,6 +772,7 @@ require 'config/config.php';
 </footer>
 
 <script>
+    // Mobile search functionality
     function openMobileSearch() {
         const searchModal = document.createElement('div');
         searchModal.className = 'subscription-modal';
@@ -684,49 +793,58 @@ require 'config/config.php';
 
     // Subscription modal functions
     function openSubscription() {
-      document.getElementById('subscriptionModal').style.display = 'flex';
+        document.getElementById('subscriptionModal').style.display = 'flex';
+        // Clear any previous messages
+        const successMsg = document.querySelector('.subscription-success');
+        const errorMsg = document.querySelector('.subscription-error');
+        if (successMsg) successMsg.style.display = 'none';
+        if (errorMsg) errorMsg.style.display = 'none';
     }
     
     function closeSubscription() {
-      document.getElementById('subscriptionModal').style.display = 'none';
+        document.getElementById('subscriptionModal').style.display = 'none';
+        // Reload page to clear form if subscription was successful
+        <?php if ($subscriptionSuccess): ?>
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        <?php endif; ?>
     }
     
-    // Show success message if subscription was successful
-    <?php if (isset($subscriptionSuccess) && $subscriptionSuccess): ?>
-      document.addEventListener('DOMContentLoaded', function() {
-        openSubscription();
-        document.getElementById('subscriptionSuccess').style.display = 'block';
-      });
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('subscriptionModal');
+        if (event.target == modal) {
+            closeSubscription();
+        }
+    }
+    
+    // Show modal if subscription was attempted
+    <?php if ($subscriptionSuccess || $subscriptionError): ?>
+        document.addEventListener('DOMContentLoaded', function() {
+            openSubscription();
+        });
     <?php endif; ?>
 
-    // Add event listener to search form
-document.querySelector('.search').addEventListener('submit', handleSearch);
-
-// Mobile search functionality
-document.querySelectorAll('.foot-item').forEach(item => {
-    if (item.querySelector('.foot-label')?.textContent === 'தேடல்') {
-        item.addEventListener('click', function(e) {
+    // Search form submission
+    document.querySelector('.search').addEventListener('submit', function(e) {
+        const searchInput = this.querySelector('input[name="q"]');
+        if (!searchInput.value.trim()) {
             e.preventDefault();
-            // Create search modal for mobile
-            const searchModal = document.createElement('div');
-            searchModal.className = 'subscription-modal';
-            searchModal.style.display = 'flex';
-            searchModal.style.zIndex = '1001';
-            searchModal.innerHTML = `
-                <div class="subscription-content" style="max-width: 90%;">
-                    <button class="close-modal" onclick="this.parentElement.parentElement.remove()">&times;</button>
-                    <h3 style="color: var(--yellow); text-align: center; margin-bottom: 20px;">தேடல்</h3>
-                    <form method="GET" action="search.php" class="search" style="display: flex; gap: 10px; margin-bottom: 20px;">
-                        <input type="search" name="q" placeholder="தேடல்..." style="flex: 1; padding: 12px; border-radius: var(--radius-sm); background: var(--glass); border: var(--border); color: var(--text);" autofocus>
-                        <button type="submit" style="background: linear-gradient(180deg, var(--red), #cc0f0f); color: white; border: none; padding: 12px 20px; border-radius: var(--radius-sm); cursor: pointer;">தேடு</button>
-                    </form>
-                </div>
-            `;
-            document.body.appendChild(searchModal);
-        });
-    }
-});
+            alert('தேடல் வார்த்தையை உள்ளிடவும்');
+            searchInput.focus();
+        }
+    });
 
+    // Mobile footer search
+    document.querySelectorAll('.foot-item').forEach(item => {
+        if (item.querySelector('.foot-label')?.textContent === 'தேடல்') {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                openMobileSearch();
+            });
+        }
+    });
 </script>
 
 </body>

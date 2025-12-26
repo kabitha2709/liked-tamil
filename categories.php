@@ -366,10 +366,11 @@ function getNewsCategories($news) {
             display:flex; align-items:center; gap: 12px; text-decoration:none; color: var(--text);
         }
         .logo {
-            width: 40px; height: 40px; border-radius: 12px; overflow:hidden;
-            box-shadow: var(--shadow);
-            background: conic-gradient(from 220deg, var(--red), var(--yellow), var(--red));
-        }
+      width: 20%;       /* adjust size */
+      height: 20%;
+      border-radius: 8px; /* optional rounded corners */
+      object-fit: contain; /* keeps aspect ratio */
+    }
         .title {
             font-weight: 800; font-size: clamp(18px, 2.4vw, 28px); letter-spacing: .2px;
         }
@@ -657,6 +658,7 @@ function getNewsCategories($news) {
           padding: 10px;
           display: none;
         }
+        
     </style>
 </head>
 <body>
