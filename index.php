@@ -15,16 +15,6 @@ $selectedDate = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d');
 $dateObj = new DateTime($selectedDate);
 $formattedDate = $dateObj->format('Y-m-d');
 
-// Get filter from URL (Top, Local, Global)
-$filter = isset($_GET['filter']) ? $_GET['filter'] : '';
-
-// Category mapping for filters
-$categoryMap = [
-    'top' => 'சிறப்பு செய்திகள்',
-    'local' => 'உள்ளூர் செய்திகள்',
-    'global' => 'உலக செய்திகள்'
-];
-
 // Build WHERE clause based on filter
 $filterWhere = '';
 if (!empty($filter) && isset($categoryMap[$filter])) {
@@ -45,7 +35,7 @@ if ($selectedDate == date('Y-m-d')) {
     $countStmt->execute();
 } else {
     // Specific date news count with filter
-    $countQuery = "SELECT COUNT(*) as total FROM news WHERE DATE(created_at) = ? AND status = 'published'" . $filterWhere;
+    $countQuery = "SELECT COUNT(*) as total FROM news WHERE DATE(published_at) = ? AND status = 'published'" . $filterWhere;
     $countStmt = $db->prepare($countQuery);
     $countStmt->execute([$formattedDate]);
 }
@@ -61,7 +51,7 @@ if ($selectedDate == date('Y-m-d')) {
                   (SELECT GROUP_CONCAT(c.subcategories SEPARATOR ', ') FROM categories c WHERE FIND_IN_SET(c.id, n.categories) > 0) as subcategories_list
                   FROM news n 
                   WHERE n.status = 'published'" . $filterWhere . "
-                  ORDER BY n.created_at DESC 
+                  ORDER BY n.published_at DESC 
                   LIMIT $limit OFFSET $offset";
     $newsStmt = $db->prepare($newsQuery);
     $newsStmt->execute();
@@ -71,8 +61,8 @@ if ($selectedDate == date('Y-m-d')) {
                   (SELECT GROUP_CONCAT(c.name SEPARATOR ', ') FROM categories c WHERE FIND_IN_SET(c.id, n.categories) > 0) as category_names,
                   (SELECT GROUP_CONCAT(c.subcategories SEPARATOR ', ') FROM categories c WHERE FIND_IN_SET(c.id, n.categories) > 0) as subcategories_list
                   FROM news n 
-                  WHERE DATE(n.created_at) = ? AND n.status = 'published'" . $filterWhere . "
-                  ORDER BY n.created_at DESC 
+                  WHERE DATE(n.published_at) = ? AND n.status = 'published'" . $filterWhere . "
+                  ORDER BY n.published_at DESC 
                   LIMIT $limit OFFSET $offset";
     $newsStmt = $db->prepare($newsQuery);
     $newsStmt->execute([$formattedDate]);
@@ -84,7 +74,7 @@ $featuredQuery = "SELECT n.*,
                   (SELECT name FROM categories WHERE FIND_IN_SET(id, n.categories) > 0 LIMIT 1) as category_name
                   FROM news n 
                   WHERE n.status = 'published' 
-                  ORDER BY n.created_at DESC 
+                  ORDER BY n.published_at DESC 
                   LIMIT 3";
 $featuredStmt = $db->prepare($featuredQuery);
 $featuredStmt->execute();
@@ -94,8 +84,8 @@ $featuredNews = $featuredStmt->fetchAll(PDO::FETCH_ASSOC);
 $highlightsQuery = "SELECT n.*, 
                     (SELECT name FROM categories WHERE FIND_IN_SET(id, n.categories) > 0 LIMIT 1) as category_name
                     FROM news n 
-                    WHERE DATE(n.created_at) = ? AND n.status = 'published'" . $filterWhere . "
-                    ORDER BY n.created_at DESC 
+                    WHERE DATE(n.published_at) = ? AND n.status = 'published'" . $filterWhere . "
+                    ORDER BY n.published_at DESC 
                     LIMIT 2";
 $highlightsStmt = $db->prepare($highlightsQuery);
 $highlightsStmt->execute([$formattedDate]);
@@ -104,7 +94,7 @@ $highlights = $highlightsStmt->fetchAll(PDO::FETCH_ASSOC);
 // Fetch breaking news for ticker (recent 4 news)
 $tickerQuery = "SELECT * FROM news 
                 WHERE status = 'published' 
-                ORDER BY created_at DESC 
+                ORDER BY published_at DESC 
                 LIMIT 4";
 $tickerStmt = $db->prepare($tickerQuery);
 $tickerStmt->execute();
@@ -126,12 +116,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['subscribe'])) {
 
 // Function to check if a date has news
 function hasNewsForDate($db, $date) {
-    $query = "SELECT COUNT(*) as count FROM news WHERE DATE(created_at) = ? AND status = 'published'";
+    $query = "SELECT COUNT(*) as count FROM news WHERE DATE(published_at) = ? AND status = 'published'";
     $stmt = $db->prepare($query);
     $stmt->execute([$date]);
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
     return $result['count'] > 0;
 }
+
+require 'config/config.php'; // To get $base_url
 ?>
 
 <!DOCTYPE html>
@@ -888,7 +880,7 @@ function hasNewsForDate($db, $date) {
 </head>
 <body>
 
- <!-- App bar -->
+<!-- App bar -->
 <header class="appbar">
   <div class="appbar-wrap">
     <a href="index.php" class="brand">
@@ -965,16 +957,16 @@ function hasNewsForDate($db, $date) {
       <?php if (!empty($featuredNews)): ?>
         <?php foreach ($featuredNews as $index => $featured): ?>
           <article class="slide <?php echo $index === 0 ? 'active' : ''; ?>" data-index="<?php echo $index; ?>">
-            <img src="<?php echo !empty($featured['image']) ? 'uploads/news/' . htmlspecialchars($featured['image']) : 'https://images.unsplash.com/photo-1504711434964-1e0193031639?q=80&w=1600&auto=format&fit=crop'; ?>" alt="<?php echo htmlspecialchars($featured['title']); ?>" />
+            <img src="<?php echo !empty($featured['image']) ? $base_url . 'uploads/news/' . htmlspecialchars($featured['image']) : 'https://images.unsplash.com/photo-1504711434964-1e0193031639?q=80&w=1600&auto=format&fit=crop'; ?>" alt="<?php echo htmlspecialchars($featured['title']); ?>" />
             <div class="slide-grad"></div>
             <div class="slide-info">
               <div class="slide-cat">
-                <span class="pill"><?php echo htmlspecialchars($featured['category_name'] ?? 'செய்தி'); ?></span>
               </div>
               <h2 class="slide-title"><?php echo htmlspecialchars($featured['title']); ?></h2>
               <div class="slide-meta">
                 <?php 
-                $publishTime = new DateTime($featured['created_at']);
+                // CHANGED: Use published_at instead of created_at
+                $publishTime = new DateTime($featured['published_at'] ?: $featured['created_at']);
                 $now = new DateTime();
                 $interval = $now->diff($publishTime);
                 
@@ -1054,11 +1046,8 @@ function hasNewsForDate($db, $date) {
           (<?php echo $totalNews; ?> செய்திகள்)
         </span>
       </div>
-      <div>
-        <button class="btn filter-btn <?php echo ($filter == 'top' || $filter == '') ? 'active' : ''; ?>" data-filter="top" data-section="main">Top</button>
-        <button class="btn filter-btn <?php echo $filter == 'local' ? 'active' : ''; ?>" data-filter="local" data-section="main">Local</button>
-        <button class="btn filter-btn <?php echo $filter == 'global' ? 'active' : ''; ?>" data-filter="global" data-section="main">Global</button>
-      </div>
+      
+
     </div>
 
     <div class="grid-news" id="newsGrid">
@@ -1074,11 +1063,12 @@ function hasNewsForDate($db, $date) {
                 $imageStmt->execute([$item['id']]);
                 $newsImage = $imageStmt->fetch(PDO::FETCH_ASSOC);
                 
+                require 'config/config.php'; // To get $base_url
                 $imageSrc = '';
-                if ($newsImage && !empty($newsImage['image_path'])) {
-                  $imageSrc = 'uploads/news/' . htmlspecialchars($newsImage['image_path']);
-                } elseif (!empty($item['image'])) {
-                  $imageSrc = 'uploads/news/' . htmlspecialchars($item['image']);
+                if (!empty($item['image'])) {
+                  $imageSrc = $base_url . 'uploads/news/' . htmlspecialchars($item['image']);
+                } elseif ($newsImage && !empty($newsImage['image_path'])) {
+                  $imageSrc =  $base_url  . htmlspecialchars($newsImage['image_path']);
                 } else {
                   $imageSrc = 'https://picsum.photos/id/' . rand(1000, 1100) . '/800/500';
                 }
@@ -1091,7 +1081,7 @@ function hasNewsForDate($db, $date) {
                     echo htmlspecialchars(trim($categories[0])); 
                   ?></span>
                 <?php else: ?>
-                  <span class="badge">செய்தி</span>
+                  
                 <?php endif; ?>
               </div>
               <div class="news-content">
@@ -1111,7 +1101,8 @@ function hasNewsForDate($db, $date) {
                 <?php endif; ?>
                 <div class="news-meta">
                   <?php 
-                  $publishTime = new DateTime($item['created_at']);
+                  // CHANGED: Use published_at instead of created_at
+                  $publishTime = new DateTime($item['published_at'] ?: $item['created_at']);
                   $now = new DateTime();
                   $interval = $now->diff($publishTime);
                   
@@ -1348,8 +1339,8 @@ function hasNewsForDate($db, $date) {
           if (data.success && data.news.length > 0) {
             let html = '';
             data.news.forEach(item => {
-              // Format time ago
-              const publishTime = new Date(item.created_at);
+              // Format time ago - using published_at
+              const publishTime = new Date(item.published_at || item.created_at);
               const now = new Date();
               const diffMs = now - publishTime;
               const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
@@ -1404,91 +1395,123 @@ function hasNewsForDate($db, $date) {
     }
 
     // Function to load news grid for selected date
-    function loadNewsForDate(date, filter = '') {
-      const newsGrid = document.getElementById('newsGrid');
-      const sectionTitle = document.querySelector('.section .section-title');
-      
-      // Show loading state
-      newsGrid.innerHTML = '<div style="text-align:center; padding:40px; color:var(--muted);">ஏற்றுகிறது...</div>';
-      
-      // AJAX call to fetch news for selected date
-      fetch(`get-news-for-date.php?date=${date}&filter=${filter}&page=1`)
+    // Function to load news grid for selected date
+function loadNewsForDate(date, filter = '') {
+    const newsGrid = document.getElementById('newsGrid');
+    const sectionTitle = document.querySelector('.section .section-title');
+    
+    // Show loading state
+    newsGrid.innerHTML = '<div style="text-align:center; padding:40px; color:var(--muted); grid-column: 1/-1;">ஏற்றுகிறது...</div>';
+    
+    // AJAX call to fetch news for selected date
+    fetch(`get-news-for-date.php?date=${date}&filter=${filter}&page=1`)
         .then(response => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          return response.json();
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
         })
         .then(data => {
-          if (data.success) {
-            // Update section title
-            if (sectionTitle) {
-              sectionTitle.innerHTML = `${data.dateDisplay} <span style="font-size: 14px; color: var(--muted); margin-left: 10px;">(${data.totalNews} செய்திகள்)</span>`;
-            }
-            
-            if (data.news.length > 0) {
-              let html = '';
-              data.news.forEach(item => {
-                // Format time ago
-                const publishTime = new Date(item.created_at);
-                const now = new Date();
-                const diffMs = now - publishTime;
-                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-                const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-                
-                let timeAgo = '';
-                if (diffDays > 0) {
-                  timeAgo = diffDays + ' நாட்கள் முன்';
-                } else if (diffHours > 0) {
-                  timeAgo = diffHours + ' மணி முன்';
-                } else {
-                  timeAgo = Math.floor(diffMs / (1000 * 60)) + ' நி முன்';
+            if (data.success) {
+                // Update section title
+                if (sectionTitle) {
+                    const dateObj = new Date(date);
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    
+                    let titleText = '';
+                    if (date === todayStr) {
+                        titleText = 'இன்றைய செய்திகள்';
+                    } else {
+                        const day = dateObj.getDate().toString().padStart(2, '0');
+                        const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+                        const year = dateObj.getFullYear();
+                        titleText = `${day}/${month}/${year} செய்திகள்`;
+                    }
+                    
+                    sectionTitle.innerHTML = `${titleText} <span style="font-size: 14px; color: var(--muted); margin-left: 10px;">(${data.totalNews} செய்திகள்)</span>`;
                 }
                 
-                // Calculate reading time
-                const wordCount = item.content ? item.content.split(/\s+/).length : 0;
-                const readingTime = Math.max(1, Math.ceil(wordCount / 200));
-                
-                // Get categories
-                const categories = item.category_names ? item.category_names.split(', ') : [];
-                const firstCategory = categories.length > 0 ? categories[0] : 'செய்தி';
-                
-                html += `
-                  <article class="news-card">
-                    <a href="news-detail.php?id=${item.id}" style="text-decoration: none; color: inherit;">
-                      <div class="news-thumb">
-                        <img src="${item.image}" alt="${item.title}" />
-                        <span class="badge">${firstCategory}</span>
-                      </div>
-                      <div class="news-content">
-                        <h3 class="news-title">${item.title}</h3>
-                        <div class="news-meta">
-                          <span>${timeAgo}</span>
-                          <span>•</span>
-                          <span>${readingTime} நிமிடம்</span>
-                        </div>
-                      </div>
-                    </a>
-                  </article>
-                `;
-              });
-              newsGrid.innerHTML = html;
+                if (data.news.length > 0) {
+                    let html = '';
+                    data.news.forEach(item => {
+                        // Format time ago - using published_at
+                        const publishTime = new Date(item.published_at || item.created_at);
+                        const now = new Date();
+                        const diffMs = now - publishTime;
+                        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                        
+                        let timeAgo = '';
+                        if (diffDays > 0) {
+                            timeAgo = diffDays + ' நாட்கள் முன்';
+                        } else if (diffHours > 0) {
+                            timeAgo = diffHours + ' மணி முன்';
+                        } else {
+                            timeAgo = Math.floor(diffMs / (1000 * 60)) + ' நி முன்';
+                        }
+                        
+                        // Calculate reading time
+                        const wordCount = item.content ? item.content.split(/\s+/).length : 0;
+                        const readingTime = Math.max(1, Math.ceil(wordCount / 200));
+                        
+                        // Get categories
+                        const categories = item.category_names ? item.category_names.split(', ') : [];
+                        const firstCategory = categories.length > 0 ? categories[0] : 'செய்தி';
+                        
+                        // Get proper image URL with fallback
+                        let imageUrl = '';
+                        if (item.image_path) {
+                            // Use the image path from news_images table
+                            imageUrl = item.image_path;
+                        } else if (item.image) {
+                            // Use the news.image field
+                            imageUrl = '<?php echo $base_url; ?>uploads/news/' + item.image;
+                        } else {
+                            // Fallback image
+                            imageUrl = 'https://picsum.photos/id/' + Math.floor(Math.random() * 1000) + 1000 + '/800/500';
+                        }
+                        
+                        html += `
+                            <article class="news-card">
+                                <a href="news-detail.php?id=${item.id}" style="text-decoration: none; color: inherit;">
+                                    <div class="news-thumb">
+                                        <img src="${imageUrl}" alt="${item.title}" />
+                                        <span class="badge">${firstCategory}</span>
+                                    </div>
+                                    <div class="news-content">
+                                        <h3 class="news-title">${item.title}</h3>
+                                        <div class="news-meta">
+                                            <span>${timeAgo}</span>
+                                            <span>•</span>
+                                            <span>${readingTime} நிமிடம்</span>
+                                        </div>
+                                    </div>
+                                </a>
+                            </article>
+                        `;
+                    });
+                    newsGrid.innerHTML = html;
+                } else {
+                    const dateObj = new Date(date);
+                    const day = dateObj.getDate().toString().padStart(2, '0');
+                    const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+                    const year = dateObj.getFullYear();
+                    
+                    newsGrid.innerHTML = `<div style="text-align:center; padding:40px; color:var(--muted); grid-column: 1/-1;">
+                        <h3>செய்திகள் இல்லை</h3>
+                        <p>${day}/${month}/${year} தேதிக்கு செய்திகள் இல்லை.</p>
+                        <a href="index.php" class="btn primary" style="margin-top: 10px;">இன்றைய செய்திகளைப் பார்க்க</a>
+                    </div>`;
+                }
             } else {
-              const todayStr = new Date().toISOString().split('T')[0];
-              const displayDate = date === todayStr ? 'இன்றைய' : 'தேர்ந்தெடுக்கப்பட்ட தேதியின்';
-              newsGrid.innerHTML = `<div style="text-align:center; padding:40px; color:var(--muted); grid-column: 1/-1;">
-                ${displayDate} செய்திகள் இல்லை
-              </div>`;
+                newsGrid.innerHTML = '<div style="text-align:center; padding:40px; color:var(--muted); grid-column: 1/-1;">செய்திகளைப் பதிவிறக்க முடியவில்லை</div>';
             }
-          } else {
-            newsGrid.innerHTML = '<div style="text-align:center; padding:40px; color:var(--muted); grid-column: 1/-1;">செய்திகளைப் பதிவிறக்க முடியவில்லை</div>';
-          }
         })
         .catch(error => {
-          console.error('Error loading news:', error);
-          newsGrid.innerHTML = '<div style="text-align:center; padding:40px; color:var(--muted); grid-column: 1/-1;">பிழை ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்.</div>';
+            console.error('Error loading news:', error);
+            newsGrid.innerHTML = '<div style="text-align:center; padding:40px; color:var(--muted); grid-column: 1/-1;">பிழை ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்.</div>';
         });
-    }
+}
 
 async function renderCalendar() {
   const year = viewDate.getFullYear();
@@ -1763,6 +1786,47 @@ async function checkDatesWithNews(year, month) {
         document.getElementById('subscriptionSuccess').style.display = 'block';
       });
     <?php endif; ?>
+
+
+    // Search functionality
+function handleSearch(event) {
+    event.preventDefault();
+    const searchInput = document.querySelector('.search input[name="q"]');
+    const searchTerm = searchInput.value.trim();
+    
+    if (searchTerm) {
+        // Redirect to search results page
+        window.location.href = `search.php?q=${encodeURIComponent(searchTerm)}`;
+    }
+}
+
+// Add event listener to search form
+document.querySelector('.search').addEventListener('submit', handleSearch);
+
+// Mobile search functionality
+document.querySelectorAll('.foot-item').forEach(item => {
+    if (item.querySelector('.foot-label')?.textContent === 'தேடல்') {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            // Create search modal for mobile
+            const searchModal = document.createElement('div');
+            searchModal.className = 'subscription-modal';
+            searchModal.style.display = 'flex';
+            searchModal.style.zIndex = '1001';
+            searchModal.innerHTML = `
+                <div class="subscription-content" style="max-width: 90%;">
+                    <button class="close-modal" onclick="this.parentElement.parentElement.remove()">&times;</button>
+                    <h3 style="color: var(--yellow); text-align: center; margin-bottom: 20px;">தேடல்</h3>
+                    <form method="GET" action="search.php" class="search" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <input type="search" name="q" placeholder="தேடல்..." style="flex: 1; padding: 12px; border-radius: var(--radius-sm); background: var(--glass); border: var(--border); color: var(--text);" autofocus>
+                        <button type="submit" style="background: linear-gradient(180deg, var(--red), #cc0f0f); color: white; border: none; padding: 12px 20px; border-radius: var(--radius-sm); cursor: pointer;">தேடு</button>
+                    </form>
+                </div>
+            `;
+            document.body.appendChild(searchModal);
+        });
+    }
+});
 
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {

@@ -1,42 +1,79 @@
 <?php
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+require_once 'config/database.php';
+$database = new Database();
+$db = $database->getConnection();
 
-require_once '../config/database.php';
+// Get parameters
+$date = $_GET['date'] ?? date('Y-m-d');
+$filter = $_GET['filter'] ?? '';
+$page = $_GET['page'] ?? 1;
+$limit = 60;
+$offset = ($page - 1) * $limit;
 
-$year = isset($_GET['year']) ? $_GET['year'] : date('Y');
-$month = isset($_GET['month']) ? $_GET['month'] : date('n');
+// Build WHERE clause
+$whereConditions = ["n.status = 'published'"];
+$params = [];
 
-try {
-    $database = new Database();
-    $db = $database->getConnection();
-    
-    // Fetch dates that have news in the given month
-    // Use COALESCE to handle both published_at and created_at
-    $query = "SELECT DATE(COALESCE(published_at, created_at)) as news_date 
-              FROM news 
-              WHERE YEAR(COALESCE(published_at, created_at)) = ? 
-              AND MONTH(COALESCE(published_at, created_at)) = ? 
-              AND status = 'published' 
-              GROUP BY DATE(COALESCE(published_at, created_at))
-              ORDER BY news_date ASC";
-    
-    $stmt = $db->prepare($query);
-    $stmt->execute([$year, $month]);
-    
-    $dates = [];
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $dates[] = $row['news_date'];
-    }
-    
-    // Remove duplicates and sort (ORDER BY should handle it, but ensure clean data)
-    $dates = array_unique($dates);
-    sort($dates);
-    
-    echo json_encode($dates);
-    
-} catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Failed to load dates']);
+// Date filter
+if ($date == date('Y-m-d')) {
+    // Today's news
+    $whereConditions[] = "DATE(n.published_at) = CURDATE()";
+} else {
+    $whereConditions[] = "DATE(n.published_at) = ?";
+    $params[] = $date;
 }
+
+// Category filter
+if (!empty($filter) && is_numeric($filter)) {
+    $whereConditions[] = "FIND_IN_SET(?, n.categories) > 0";
+    $params[] = $filter;
+}
+
+// Prepare WHERE clause
+$whereClause = !empty($whereConditions) ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
+
+// Count query
+$countQuery = "SELECT COUNT(*) as total FROM news n $whereClause";
+$countStmt = $db->prepare($countQuery);
+$countStmt->execute($params);
+$totalNews = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+// News query with images
+$newsQuery = "SELECT 
+    n.*,
+    COALESCE(
+        (SELECT image_path FROM news_images WHERE news_id = n.id ORDER BY display_order LIMIT 1),
+        n.image
+    ) as image_path,
+    (SELECT GROUP_CONCAT(c.name SEPARATOR ', ') FROM categories c WHERE FIND_IN_SET(c.id, n.categories) > 0) as category_names
+    FROM news n 
+    $whereClause
+    ORDER BY n.published_at DESC 
+    LIMIT $limit OFFSET $offset";
+
+$newsStmt = $db->prepare($newsQuery);
+$newsStmt->execute($params);
+$news = $newsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Format date for display
+$dateObj = new DateTime($date);
+$today = new DateTime();
+$dateDisplay = '';
+if ($date == $today->format('Y-m-d')) {
+    $dateDisplay = 'இன்றைய செய்திகள்';
+} else {
+    $dateDisplay = $dateObj->format('d/m/Y') . ' செய்திகள்';
+}
+
+// Prepare response
+$response = [
+    'success' => true,
+    'date' => $date,
+    'dateDisplay' => $dateDisplay,
+    'totalNews' => $totalNews,
+    'news' => $news
+];
+
+header('Content-Type: application/json');
+echo json_encode($response);
 ?>

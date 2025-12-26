@@ -3,6 +3,10 @@
 require_once 'config/database.php';
 $database = new Database();
 $db = $database->getConnection();
+require 'config/config.php'; 
+
+// Base URL from config
+$base_url = "http://localhost/WebBuilders/news_admin/uploads/news/";
 
 // Fetch main categories for navigation
 $categoryQuery = "SELECT * FROM categories WHERE status = 'active' ORDER BY id";
@@ -61,17 +65,19 @@ if ($category_id > 0) {
         // Method 1: Try to find news where categories column contains the category name
         $offset = ($page - 1) * $per_page;
         
-        // IMPORTANT: Based on your database dump, the news.categories column contains CATEGORY NAMES (not IDs)
-        // So we need to search for the category name in the categories column
+        // Modified query to fetch news with image from news table only
         $newsQuery = "SELECT n.*, 
-                      (SELECT image_path FROM news_images WHERE news_id = n.id ORDER BY display_order LIMIT 1) as image_path
+                      (SELECT GROUP_CONCAT(DISTINCT c.name SEPARATOR ', ') 
+                       FROM categories c 
+                       WHERE FIND_IN_SET(c.id, REPLACE(REPLACE(n.categories, '[', ''), ']', '')) > 0) as category_names
                       FROM news n
                       WHERE n.status = 'published' 
                       AND (n.categories LIKE :cat_name 
                            OR n.categories LIKE :cat_name_comma_start 
                            OR n.categories LIKE :cat_name_comma_middle 
-                           OR n.categories LIKE :cat_name_comma_end)
-                      ORDER BY n.created_at DESC 
+                           OR n.categories LIKE :cat_name_comma_end
+                           OR n.categories LIKE :cat_id_pattern)
+                      ORDER BY COALESCE(n.published_at, n.created_at) DESC 
                       LIMIT :limit OFFSET :offset";
         
         $newsStmt = $db->prepare($newsQuery);
@@ -81,11 +87,13 @@ if ($category_id > 0) {
         $cat_name_comma_start = $categoryName . ",%";
         $cat_name_comma_middle = "%," . $categoryName . ",%";
         $cat_name_comma_end = "%," . $categoryName;
+        $cat_id_pattern = "%" . $category_id . "%";
         
         $newsStmt->bindValue(':cat_name', $cat_name, PDO::PARAM_STR);
         $newsStmt->bindValue(':cat_name_comma_start', $cat_name_comma_start, PDO::PARAM_STR);
         $newsStmt->bindValue(':cat_name_comma_middle', $cat_name_comma_middle, PDO::PARAM_STR);
         $newsStmt->bindValue(':cat_name_comma_end', $cat_name_comma_end, PDO::PARAM_STR);
+        $newsStmt->bindValue(':cat_id_pattern', $cat_id_pattern, PDO::PARAM_STR);
         $newsStmt->bindValue(':limit', $per_page, PDO::PARAM_INT);
         $newsStmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         
@@ -98,13 +106,15 @@ if ($category_id > 0) {
                       AND (categories LIKE :cat_name 
                            OR categories LIKE :cat_name_comma_start 
                            OR categories LIKE :cat_name_comma_middle 
-                           OR categories LIKE :cat_name_comma_end)";
+                           OR categories LIKE :cat_name_comma_end
+                           OR categories LIKE :cat_id_pattern)";
         
         $countStmt = $db->prepare($countQuery);
         $countStmt->bindValue(':cat_name', $cat_name, PDO::PARAM_STR);
         $countStmt->bindValue(':cat_name_comma_start', $cat_name_comma_start, PDO::PARAM_STR);
         $countStmt->bindValue(':cat_name_comma_middle', $cat_name_comma_middle, PDO::PARAM_STR);
         $countStmt->bindValue(':cat_name_comma_end', $cat_name_comma_end, PDO::PARAM_STR);
+        $countStmt->bindValue(':cat_id_pattern', $cat_id_pattern, PDO::PARAM_STR);
         $countStmt->execute();
         
         $result = $countStmt->fetch(PDO::FETCH_ASSOC);
@@ -136,12 +146,21 @@ function formatTamilDate($date) {
     }
 }
 
-// Function to get time ago in Tamil
-function timeAgoTamil($date) {
+// Function to get time ago in Tamil using published_at
+function timeAgoTamil($published_at, $created_at = null) {
     try {
         $now = new DateTime();
-        $created = new DateTime($date);
-        $interval = $now->diff($created);
+        
+        // Use published_at if available, otherwise fall back to created_at
+        if (!empty($published_at)) {
+            $published = new DateTime($published_at);
+            $interval = $now->diff($published);
+        } elseif (!empty($created_at)) {
+            $created = new DateTime($created_at);
+            $interval = $now->diff($created);
+        } else {
+            return "சமீபத்தில்";
+        }
         
         if ($interval->y > 0) {
             return $interval->y . " வருடம் முன்";
@@ -180,20 +199,111 @@ function extractSubcategory($news, $category_subcategories) {
     return !empty($category_subcategories) ? trim($category_subcategories[0]) : 'பொது';
 }
 
-// Function to get news image
+// Function to get news image (checks news_images table first, then falls back to news table)
 function getNewsImage($news) {
-    // First check if there's a direct image path from news_images table
-    if (!empty($news['image_path'])) {
-        return htmlspecialchars($news['image_path']);
+    global $db, $base_url;
+    
+    $news_id = is_array($news) ? $news['id'] : $news;
+    
+    // Try to get image from news_images table first
+    $imagesQuery = "SELECT image_path FROM news_images 
+                    WHERE news_id = ? 
+                    ORDER BY 
+                        CASE position 
+                            WHEN 'top' THEN 1
+                            WHEN 'center' THEN 2
+                            WHEN 'bottom' THEN 3
+                            ELSE 4
+                        END,
+                        display_order ASC
+                    LIMIT 1";
+    
+    $imagesStmt = $db->prepare($imagesQuery);
+    $imagesStmt->execute([$news_id]);
+    $imageRow = $imagesStmt->fetch(PDO::FETCH_ASSOC);
+    
+    // If image found in news_images table
+    if ($imageRow && !empty($imageRow['image_path'])) {
+        $imagePath = $imageRow['image_path'];
+        
+        // Check if it's already a full URL
+        if (filter_var($imagePath, FILTER_VALIDATE_URL)) {
+            return htmlspecialchars($imagePath);
+        }
+        
+        // Check if file exists in uploads/news/positions/
+        $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/uploads/news/positions/' . basename($imagePath);
+        if (file_exists($fullPath)) {
+            return $base_url . 'uploads/news/positions/' . htmlspecialchars(basename($imagePath));
+        }
+        
+        // Try the regular uploads/news/ folder
+        $altPath = $_SERVER['DOCUMENT_ROOT'] . '/uploads/news/' . basename($imagePath);
+        if (file_exists($altPath)) {
+            return $base_url . 'uploads/news/' . htmlspecialchars(basename($imagePath));
+        }
     }
     
-    // Then check the main image field
-    if (!empty($news['image'])) {
-        return htmlspecialchars($news['image']);
+    // Fallback to news table image
+    if (is_array($news) && !empty($news['image'])) {
+        $imagePath = $news['image'];
+        
+        // Check if it's already a full URL
+        if (filter_var($imagePath, FILTER_VALIDATE_URL)) {
+            return htmlspecialchars($imagePath);
+        }
+        
+        // If it's a relative path, prepend base_url
+        if (strpos($imagePath, 'http') !== 0) {
+            return $base_url . htmlspecialchars($imagePath);
+        }
+        
+        return htmlspecialchars($imagePath);
     }
     
     // Fallback to random placeholder
-    return 'https://picsum.photos/id/' . rand(1000, 1100) . '/800/500';
+    $placeholder_id = rand(1000, 1100);
+    return 'https://picsum.photos/id/' . $placeholder_id . '/800/500';
+}
+
+// Function to get categories from news item
+function getNewsCategories($news) {
+    if (!empty($news['category_names'])) {
+        return htmlspecialchars($news['category_names']);
+    }
+    
+    // Try to parse from categories field
+    if (!empty($news['categories'])) {
+        // Remove brackets and split
+        $categories_str = str_replace(['[', ']'], '', $news['categories']);
+        $category_ids = explode(',', $categories_str);
+        
+        if (!empty($category_ids)) {
+            global $db;
+            $category_names = [];
+            
+            // Fetch category names from database
+            foreach ($category_ids as $cat_id) {
+                $cat_id = trim($cat_id);
+                if (is_numeric($cat_id) && $cat_id > 0) {
+                    $catQuery = "SELECT name FROM categories WHERE id = ?";
+                    $catStmt = $db->prepare($catQuery);
+                    $catStmt->execute([$cat_id]);
+                    $category = $catStmt->fetch(PDO::FETCH_ASSOC);
+                    
+                    if ($category && !empty($category['name'])) {
+                        $category_names[] = $category['name'];
+                    }
+                }
+            }
+            
+            if (!empty($category_names)) {
+                return implode(', ', $category_names);
+            }
+        }
+    }
+    
+    return '';
 }
 ?>
 
@@ -588,6 +698,7 @@ function getNewsImage($news) {
         <?php endforeach; ?>
     </div>
 </nav>
+
         <!-- Breaking news ticker -->
         <section class="ticker">
             <div class="ticker-wrap">
@@ -621,17 +732,7 @@ function getNewsImage($news) {
                 <?php endif; ?>
             </div>
             
-            <?php if (!empty($category_subcategories)): ?>
-                <div class="category-subcategories">
-                    <?php foreach ($category_subcategories as $subcat): ?>
-                        <?php if (!empty(trim($subcat))): ?>
-                            <a href="#<?php echo urlencode($subcat); ?>" class="subcategory-chip">
-                                <?php echo htmlspecialchars($subcat); ?>
-                            </a>
-                        <?php endif; ?>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
+            
         </div>
 
         <div class="section">
@@ -646,11 +747,18 @@ function getNewsImage($news) {
                         <?php 
                         $news_subcategory = extractSubcategory($news, $category_subcategories);
                         $news_image = getNewsImage($news);
+                        $news_categories = getNewsCategories($news);
                         ?>
                         <a href="news-detail.php?id=<?php echo $news['id']; ?>" class="news-card">
                             <div class="news-thumb">
-                                <img src="<?php echo $news_image; ?>" alt="<?php echo htmlspecialchars($news['title']); ?>">
-                                <span class="news-badge"><?php echo htmlspecialchars($news_subcategory); ?></span>
+                                <img src="<?php echo $news_image; ?>" 
+                                     alt="<?php echo htmlspecialchars($news['title']); ?>" 
+                                     loading="lazy" />
+                                <?php if ($news_categories): ?>
+                                    <span class="news-badge"><?php echo htmlspecialchars($news_categories); ?></span>
+                                <?php else: ?>
+                                    <span class="news-badge"><?php echo htmlspecialchars($news_subcategory); ?></span>
+                                <?php endif; ?>
                             </div>
                             <div class="news-content">
                                 <h3 class="news-title"><?php echo htmlspecialchars($news['title']); ?></h3>
@@ -661,8 +769,8 @@ function getNewsImage($news) {
                                     ?>
                                 </div>
                                 <div class="news-meta">
-                                    <span><?php echo timeAgoTamil($news['created_at']); ?></span>
-                                    <span><?php echo formatTamilDate($news['created_at']); ?></span>
+                                    <span><?php echo timeAgoTamil($news['published_at'], $news['created_at']); ?></span>
+                                    <span><?php echo !empty($news['published_at']) ? formatTamilDate($news['published_at']) : formatTamilDate($news['created_at']); ?></span>
                                 </div>
                             </div>
                         </a>
@@ -725,19 +833,55 @@ function getNewsImage($news) {
                                   AND (categories LIKE :cat_name 
                                        OR categories LIKE CONCAT(:cat_name_only, ',%')
                                        OR categories LIKE CONCAT('%,', :cat_name_only, ',%')
-                                       OR categories LIKE CONCAT('%,', :cat_name_only))";
+                                       OR categories LIKE CONCAT('%,', :cat_name_only)
+                                       OR categories LIKE :cat_id_pattern)";
                     $countStmt = $db->prepare($countQuery);
                     $countStmt->bindValue(':cat_name', $cat_name, PDO::PARAM_STR);
                     $countStmt->bindValue(':cat_name_only', $category['name'], PDO::PARAM_STR);
+                    $countStmt->bindValue(':cat_id_pattern', '%' . $category['id'] . '%', PDO::PARAM_STR);
                     $countStmt->execute();
                     $countResult = $countStmt->fetch(PDO::FETCH_ASSOC);
                     $cat_news_count = $countResult ? $countResult['total'] : 0;
+                    
+                    // Get a sample news item for category image
+                    $sampleQuery = "SELECT n.id FROM news n
+                                  WHERE n.status = 'published' 
+                                  AND (n.categories LIKE :cat_name 
+                                       OR n.categories LIKE CONCAT(:cat_name_only, ',%')
+                                       OR n.categories LIKE CONCAT('%,', :cat_name_only, ',%')
+                                       OR n.categories LIKE CONCAT('%,', :cat_name_only)
+                                       OR n.categories LIKE :cat_id_pattern)
+                                  ORDER BY COALESCE(n.published_at, n.created_at) DESC 
+                                  LIMIT 1";
+                    $sampleStmt = $db->prepare($sampleQuery);
+                    $sampleStmt->bindValue(':cat_name', $cat_name, PDO::PARAM_STR);
+                    $sampleStmt->bindValue(':cat_name_only', $category['name'], PDO::PARAM_STR);
+                    $sampleStmt->bindValue(':cat_id_pattern', '%' . $category['id'] . '%', PDO::PARAM_STR);
+                    $sampleStmt->execute();
+                    $sampleNews = $sampleStmt->fetch(PDO::FETCH_ASSOC);
+                    
+                    if ($sampleNews) {
+                        $category_image = getNewsImage($sampleNews);
+                    } else {
+                        $placeholder_id = rand(1000, 1100);
+                        $category_image = 'https://picsum.photos/id/' . $placeholder_id . '/800/500';
+                    }
                     ?>
                     <a href="categories.php?id=<?php echo $category['id']; ?>" class="news-card">
+                        <div class="news-thumb">
+                            <img src="<?php echo $category_image; ?>" 
+                                 alt="<?php echo htmlspecialchars($category['name']); ?>" 
+                                 loading="lazy" />
+                            <span class="news-badge"><?php echo htmlspecialchars($category['name']); ?></span>
+                        </div>
                         <div class="news-content">
                             <h3 class="news-title"><?php echo htmlspecialchars($category['name']); ?></h3>
                             <div class="news-excerpt">
                                 <p><?php echo $cat_news_count; ?> செய்திகள்</p>
+                            </div>
+                            <div class="news-meta">
+                                <span>பிரிவு</span>
+                                <span>செய்திகள்: <?php echo $cat_news_count; ?></span>
                             </div>
                         </div>
                     </a>
@@ -813,6 +957,17 @@ function getNewsImage($news) {
     }
     window.addEventListener('load', ensureTickerLoop);
     window.addEventListener('resize', ensureTickerLoop);
+    
+    // Image error handling
+    document.addEventListener('DOMContentLoaded', function() {
+        const images = document.querySelectorAll('img');
+        images.forEach(img => {
+            img.onerror = function() {
+                this.src = 'https://picsum.photos/id/' + Math.floor(Math.random() * 100) + '/800/500';
+                this.onerror = null; // Prevent infinite loop
+            };
+        });
+    });
 </script>
 
 </body>
