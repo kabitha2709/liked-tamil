@@ -24,142 +24,279 @@ $tickerNews = $tickerStmt->fetchAll(PDO::FETCH_ASSOC);
 <html lang="ta">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>சுயவிவரம் - Liked தமிழ்</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <title>Liked தமிழ் - எங்களைப் பற்றி</title>
+  
+  <!-- Favicon -->
+  <?php include 'includes/favicon.php'; ?>
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+Tamil:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Tamil:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <style>
+    /* ===== CSS Variables ===== */
     :root {
-      --red: #ff1111;        /* primary red */
-      --yellow: #fffc00;     /* accent yellow */
-      --black: #000000;      /* base black */
-      --fb-blue: #1877f2;    /* Facebook blue */
-
-      --bg: #0a0a0a;         /* deep black for background */
-      --text: #f5f7fa;       /* white-ish text */
-      --muted: #b8bfc8;      /* muted text */
-      --card: #121314;       /* card surface */
-      --card-hi: #16181a;    /* hover surface */
-      --border: 1px solid rgba(255,255,255,.06);
-      --glass: rgba(255,255,255,.06);
-      --shadow: 0 12px 32px rgba(0,0,0,.45);
-
-      --radius: 16px;
-      --radius-sm: 12px;
-      --radius-xs: 10px;
-      --trans: 240ms cubic-bezier(.2,.8,.2,1);
+      /* Colors */
+      --primary-red: #e63946;
+      --primary-dark-red: #c1121f;
+      --accent-yellow: #ffd166;
+      --black: #000000;
+      --white: #ffffff;
+      
+      /* UI Colors */
+      --bg-primary: #0a0a0a;
+      --bg-secondary: #121212;
+      --bg-card: #1a1a1a;
+      --bg-hover: #222222;
+      
+      --text-primary: #f8f9fa;
+      --text-secondary: #adb5bd;
+      --text-muted: #6c757d;
+      
+      --border-color: rgba(255, 255, 255, 0.1);
+      --glass-bg: rgba(255, 255, 255, 0.05);
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+      --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+      
+      /* Spacing */
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+      --space-2xl: 48px;
+      
+      /* Border Radius */
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --radius-full: 9999px;
+      
+      /* Transitions */
+      --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+      
+      /* Typography */
+      --font-heading: 'Noto Sans Tamil', 'Inter', system-ui, sans-serif;
+      --font-body: 'Noto Sans Tamil', 'Inter', system-ui, sans-serif;
     }
     
     /* Light mode variables */
     .light-mode {
-      --red: #ff1111;
-      --yellow: #ffaa00;
+      --primary-red: #e63946;
+      --primary-dark-red: #c1121f;
+      --accent-yellow: #ffaa00;
       --black: #000000;
-      --bg: #f8f9fa;
-      --text: #1a1a1a;
-      --muted: #6c757d;
-      --card: #ffffff;
-      --card-hi: #f8f9fa;
-      --border: 1px solid rgba(0,0,0,.12);
-      --glass: rgba(0,0,0,.04);
-      --shadow: 0 12px 32px rgba(0,0,0,.08);
-    }
-
-    * { box-sizing: border-box }
-    html, body { height: 100% }
-    body {
-      margin: 0;
-      font-family: "Noto Sans Tamil", Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color: var(--text);
-      background: var(--bg);
-      background-attachment: fixed;
-      line-height: 1.6;
-      transition: background-color var(--trans), color var(--trans);
+      --white: #ffffff;
+      
+      --bg-primary: #f8f9fa;
+      --bg-secondary: #ffffff;
+      --bg-card: #ffffff;
+      --bg-hover: #f8f9fa;
+      
+      --text-primary: #1a1a1a;
+      --text-secondary: #495057;
+      --text-muted: #6c757d;
+      
+      --border-color: rgba(0, 0, 0, 0.12);
+      --glass-bg: rgba(0, 0, 0, 0.04);
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+      --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.15);
     }
     
-    /* Dark mode specific background */
-    body:not(.light-mode) {
-      background:
-        radial-gradient(800px 420px at 10% -10%, rgba(255,17,17,.12), transparent 42%),
-        radial-gradient(600px 380px at 95% 0%, rgba(255,252,0,.10), transparent 52%),
-        var(--bg);
+    /* ===== Reset & Base Styles ===== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
-
-    /* App bar */
-    .logo {
-      width: 20%;       /* adjust size */
-      height: 20%;
-      border-radius: 8px; /* optional rounded corners */
-      object-fit: contain; /* keeps aspect ratio */
+    
+    html {
+      -webkit-text-size-adjust: 100%;
+      -webkit-tap-highlight-color: transparent;
+      scroll-behavior: smooth;
     }
-
-    .appbar {
-      position: sticky; top: 0; z-index: 90;
-      backdrop-filter: saturate(1.25) blur(12px);
-      background: linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.25));
-      border-bottom: var(--border);
+    
+    body {
+      font-family: var(--font-body);
+      color: var(--text-primary);
+      background: var(--bg-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+      transition: background-color var(--transition-base), color var(--transition-base);
     }
-    .appbar-wrap {
-      display: grid; grid-template-columns: auto 1fr auto; gap: 16px;
-      align-items: center; padding: 12px clamp(14px, 3vw, 24px);
-      max-width: 1200px; margin: 0 auto;
+    
+    /* Background gradient - only for dark mode */
+    body:not(.light-mode)::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 100vh;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(230, 57, 70, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 209, 102, 0.1) 0%, transparent 50%);
+      z-index: -1;
+      pointer-events: none;
     }
-    .brand {
-      display:flex; align-items:center; gap: 12px; text-decoration:none; color: var(--text);
+    
+    /* ===== Typography ===== */
+    h1, h2, h3, h4, h5, h6 {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      line-height: 1.2;
     }
-    .badge {
-      width: 40px; height: 40px; border-radius: 12px; overflow:hidden; position:relative;
-      box-shadow: var(--shadow);
-      background:
-        conic-gradient(from 220deg, var(--red), var(--yellow), var(--red));
-    }
-    .title {
-      font-weight: 800; font-size: clamp(18px, 2.4vw, 28px); letter-spacing: .2px;
-    }
-    .search {
-      display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px;
-      background: var(--glass); border: var(--border);
-    }
-    .search input {
-      flex:1; background:transparent; border:0; color: var(--text); outline:none;
-    }
-    .actions { display:flex; gap: 10px }
-    .btn {
-      display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:12px;
-      background: var(--card); border: var(--border); color: var(--text); cursor:pointer;
-      transition: transform var(--trans), box-shadow var(--trans), background var(--trans);
+    
+    a {
+      color: inherit;
       text-decoration: none;
+      transition: color var(--transition-fast);
     }
-    .btn:hover { transform: translateY(-2px); box-shadow: var(--shadow) }
-    .btn.primary {
-      background: linear-gradient(180deg, var(--red), #cc0f0f);
-      color: #fff; border: 0;
+    
+    a:hover {
+      color: var(--accent-yellow);
     }
-    .icon { width: 20px; height: 20px }
+    
+    /* ===== Utility Classes ===== */
+    .container {
+      width: 100%;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 var(--space-md);
+    }
+    
+    @media (min-width: 640px) {
+      .container {
+        padding: 0 var(--space-lg);
+      }
+    }
+    
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    
+    /* ===== Header Fixes ===== */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(10, 10, 10, 0.98);
+      backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid var(--border-color);
+      padding: var(--space-sm) 0;
+    }
+    
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+      height: 60px;
+    }
+    
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .logo {
+      height: 40px;
+      width: auto;
+      object-fit: contain;
+      border-radius: var(--radius-sm);
+      max-width: 150px;
+    }
+    
+    @media (min-width: 640px) {
+      .logo {
+        height: 48px;
+        max-width: 200px;
+      }
+    }
+    
+    .site-title {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 1;
+    }
+    
+    @media (min-width: 640px) {
+      .site-title {
+        font-size: 1.5rem;
+      }
+    }
+    
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      flex-shrink: 0;
+    }
+    
+    .search-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition-fast);
+    }
+    
+    .search-btn:hover {
+      color: var(--text-primary);
+      background: var(--glass-bg);
+    }
     
     /* Theme toggle button */
     .theme-toggle {
-      background: var(--card);
-      border: var(--border);
-      border-radius: 12px;
-      width: 44px;
-      height: 44px;
+      background: var(--glass-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      width: 40px;
+      height: 40px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all var(--trans);
-      color: var(--text);
+      transition: all var(--transition-fast);
+      color: var(--text-secondary);
     }
     
     .theme-toggle:hover {
       transform: translateY(-2px);
-      box-shadow: var(--shadow);
-      background: var(--card-hi);
+      box-shadow: var(--shadow-sm);
+      background: var(--bg-hover);
+      color: var(--text-primary);
     }
     
     .theme-toggle svg {
@@ -178,978 +315,787 @@ $tickerNews = $tickerStmt->fetchAll(PDO::FETCH_ASSOC);
     .light-mode .theme-toggle .sun-icon {
       display: block;
     }
-
-    /* Category bar (chips) */
-    .catbar {
-      background: linear-gradient(180deg, rgba(255,252,0,.08), transparent);
-      border-top: var(--border);
-      border-bottom: var(--border);
+    
+    .subscribe-btn {
+      display: none;
     }
-    .catbar-wrap {
-      max-width: 1200px; margin: 0 auto; padding: 10px clamp(14px, 3vw, 24px);
-      display:flex; gap: 8px; overflow-x: auto; scrollbar-width: thin;
+    
+    @media (min-width: 768px) {
+      .subscribe-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-xs);
+        padding: var(--space-sm) var(--space-md);
+        background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red));
+        color: var(--white);
+        border: none;
+        border-radius: var(--radius-md);
+        font-family: var(--font-body);
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all var(--transition-base);
+      }
+      
+      .subscribe-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+      }
     }
-    .chip {
-      flex: 0 0 auto;
-      display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px;
-      background: var(--glass); border: var(--border); color: var(--text); font-weight:600; font-size: 13px;
-      transition: background var(--trans), transform var(--trans), color var(--trans);
-      cursor: pointer;
-      text-decoration: none;
+    
+    /* ===== Category Navigation Fixes ===== */
+    .category-nav {
+      position: sticky;
+      top: 60px; /* Match header height */
+      z-index: 900;
+      background: rgba(18, 18, 18, 0.98);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-color);
+      padding: var(--space-sm) 0;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    
+    .category-nav::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .category-list {
+      display: flex;
+      gap: var(--space-xs);
+      padding: 0 var(--space-md);
+      list-style: none;
+      min-width: max-content;
+    }
+    
+    @media (min-width: 640px) {
+      .category-list {
+        gap: var(--space-sm);
+        padding: 0 var(--space-lg);
+        justify-content: center;
+      }
+    }
+    
+    .category-link {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: var(--space-sm) var(--space-md);
+      background: var(--glass-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      color: var(--text-secondary);
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: 0.875rem;
       white-space: nowrap;
-    }
-    .chip:hover { transform: translateY(-2px); background: rgba(255,17,17,.18) }
-    .chip.active { background: linear-gradient(180deg, var(--red), #d10f0f); color: #fff; border: 0 }
-
-    /* Ticker */
-    .ticker {
-      background: var(--yellow); color: var(--black);
-      border-bottom: 2px solid rgba(0,0,0,.25);
-    }
-    .ticker-wrap {
-      max-width: 1200px; margin: 0 auto; padding: 8px clamp(14px, 3vw, 24px);
-      display:grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items:center;
-    }
-    .tag-chip {
-      background: var(--black); color: var(--yellow);
-      border-radius: 999px; padding:6px 10px; font-weight: 700; border: 1px solid rgba(255,255,255,.08)
-    }
-    .marquee { overflow: hidden; height: 28px; }
-    .marquee-track {
-      display:inline-flex; gap: 28px; white-space: nowrap;
-      animation: track 24s linear infinite;
-    }
-    .marquee:hover .marquee-track { animation-play-state: paused }
-    @keyframes track { from { transform: translateX(0) } to { transform: translateX(-50%) } }
-    .dot { width:6px; height:6px; border-radius:50%; display:inline-block; background: rgba(0,0,0,.5); margin: 0 10px }
-
-    /* Hero slider */
-    .hero {
-      max-width: 1200px; margin: 18px auto; padding: 0 clamp(14px, 3vw, 24px);
-      display:grid; grid-template-columns: 1.2fr .8fr; gap: 16px;
-    }
-    @media (max-width: 980px) { .hero { grid-template-columns: 1fr } }
-
-    .slider {
-      position: relative; border-radius: var(--radius); overflow: hidden;
-      background: var(--card); border: var(--border); box-shadow: var(--shadow);
-    }
-    .slide { position:absolute; inset:0; opacity:0; transform: scale(1.02); transition: opacity .6s ease, transform .8s ease }
-    .slide.active { opacity:1; transform: scale(1) }
-    .slide img { width:100%; height: 420px; object-fit: cover; display:block; filter: contrast(1.02) saturate(1.05) }
-    .slide-grad { position:absolute; inset:0; background: linear-gradient(180deg, rgba(0,0,0,.05), rgba(0,0,0,.65) 65%) }
-    .slide-info { position:absolute; left: 18px; right: 18px; bottom: 16px; color:#fff; display:flex; flex-direction:column; gap:8px }
-    .pill { padding:6px 10px; border-radius:999px; font-size:12px; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.22) }
-    .slide-title { font-size: clamp(20px, 2.2vw, 28px); font-weight:800; line-height:1.25 }
-    .slide-meta { font-size: 13px; opacity:.9 }
-    .slider-nav { position:absolute; right: 12px; bottom: 12px; display:flex; gap:8px }
-    .nav-btn { width:38px; height:38px; border-radius:12px; background: rgba(0,0,0,.5); color:#fff; border: 1px solid rgba(255,255,255,.25); display:grid; place-items:center; cursor:pointer; transition: transform var(--trans), background var(--trans) }
-    .nav-btn:hover { transform: translateY(-1px); background: rgba(0,0,0,.65) }
-
-    /* Side panel: calendar + highlights */
-    .panel { display:flex; flex-direction: column; gap: 16px }
-    .card {
-      background: var(--card); border: var(--border);
-      border-radius: var(--radius); box-shadow: var(--shadow);
-      padding: 14px;
-    }
-
-    /* Calendar */
-    .calendar { display:grid; gap: 10px }
-    .cal-head { display:flex; justify-content: space-between; align-items: center }
-    .cal-title { font-weight:800; color: var(--yellow) }
-    .cal-grid { display:grid; grid-template-columns: repeat(7, 1fr); gap: 6px }
-    .cal-day { text-align:center; font-size: 12px; color: var(--muted) }
-    .cal-date {
-      text-align:center; font-size: 13px; padding: 8px 0; border-radius: 10px; color: var(--text);
-      background: var(--glass); border: var(--border); cursor: pointer;
-      transition: background var(--trans), transform var(--trans), box-shadow var(--trans);
-      text-decoration: none;
-      display: block;
-    }
-    .cal-date:hover { background: rgba(255,252,0,.14); transform: translateY(-2px); box-shadow: var(--shadow) }
-    .cal-date.today { outline: 0 0 0 2px var(--yellow); font-weight: 700 }
-    .cal-date.selected { background: linear-gradient(180deg, var(--red), #cc0f0f); color: #fff; border: 0 }
-
-    /* Sections */
-    .section { max-width: 1200px; margin: 8px auto 20px; padding: 0 clamp(14px, 3vw, 24px) }
-    .section-head { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px }
-    .section-title { font-weight:800; font-size: clamp(18px, 2vw, 22px) }
-
-    /* Grid (desktop 3+, mobile 2-per-row) */
-    .grid-news {
-      display:grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
-    }
-    @media (max-width: 1120px) { .grid-news { grid-template-columns: repeat(3, 1fr) } }
-    @media (max-width: 980px)  { .grid-news { grid-template-columns: repeat(2, 1fr) } } /* two per row on tablets */
-    @media (max-width: 640px)  { .grid-news { grid-template-columns: 1fr 1fr } }       /* strictly 2 per row on mobile */
-
-    .news-card {
-      display:flex; flex-direction: column; overflow:hidden;
-      border-radius: var(--radius-sm); background: var(--card); border: var(--border);
-      box-shadow: var(--shadow);
-      transition: transform var(--trans), box-shadow var(--trans), background var(--trans);
-      text-decoration: none;
-      color: inherit;
-    }
-    .news-card:hover { transform: translateY(-4px); box-shadow: 0 14px 40px rgba(0,0,0,.50); background: var(--card-hi) }
-    .news-thumb { position:relative; aspect-ratio: 16/10; overflow:hidden }
-    .news-thumb img { width:100%; height:100%; object-fit:cover; transform: scale(1.02); transition: transform .7s ease }
-    .news-card:hover .news-thumb img { transform: scale(1.06) }
-    .badge {
-      position:absolute; top:10px; left:10px; display:inline-flex; gap:6px; align-items:center;
-      padding:6px 10px; border-radius:999px; background: rgba(0,0,0,.55); color:#fff; font-size:12px; border: 1px solid rgba(255,255,255,.25)
-    }
-    .news-content { padding: 12px 12px 14px }
-    .news-title { font-weight:700; font-size: 16px; line-height:1.4; margin: 4px 0 6px }
-    .news-meta { font-size: 12px; color: var(--muted); display:flex; gap:8px; align-items:center }
-    .readmore { margin-top: 10px; display:inline-flex; align-items:center; gap:8px; color: var(--yellow); font-weight:700; text-decoration:none }
-    .readmore::after { content:'→'; transition: transform var(--trans) }
-    .news-card:hover .readmore::after { transform: translateX(3px) }
-
-    .page[style*="background: transparent"] {
-  background: transparent !important;
-  border: none !important;
-  color: var(--muted) !important;
-  cursor: default !important;
-}
-
-    /* Pagination */
-    .pagination {
-      display:flex; gap: 8px; justify-content: center; margin: 18px 0 100px;
-      flex-wrap: wrap;
-    }
-    .page {
-      padding:10px 14px; border-radius:999px; background: var(--glass); border: var(--border); cursor:pointer;
-      transition: background var(--trans), transform var(--trans);
-      text-decoration: none;
-      color: var(--text);
-      min-width: 40px;
-      text-align: center;
-      font-family: "Noto Sans Tamil", Inter, sans-serif;
-    }
-    .page.active { background: linear-gradient(180deg, var(--red), #cc0f0f); color: #fff; border: 0 }
-    .page:hover { transform: translateY(-2px); background: rgba(255,17,17,.18) }
-
-    /* Facebook Feed Section */
-    .facebook-feed-main {
-      margin: 40px 0 30px;
-      width: 100%;
+      transition: all var(--transition-base);
     }
     
-    .fb-feed-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 14px 16px;
-      background: linear-gradient(90deg, rgba(24,119,242,0.12), rgba(24,119,242,0.03));
-      border-radius: var(--radius) var(--radius) 0 0;
-      border-bottom: var(--border);
-    }
-    
-    .fb-logo {
-      width: 36px;
-      height: 36px;
-      background: linear-gradient(135deg, var(--fb-blue), #0A5BC4);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: 700;
-      font-size: 16px;
-      box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);
-    }
-    
-    .fb-header-info {
-      flex: 1;
-    }
-    
-    .fb-page-name {
-      font-weight: 700;
-      font-size: 16px;
-      margin-bottom: 2px;
-      color: var(--text);
-    }
-    
-    .fb-follower-count {
-      font-size: 13px;
-      color: var(--muted);
-    }
-    
-    .follow-btn {
-      background: var(--fb-blue);
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 13px;
-      cursor: pointer;
-      transition: transform var(--trans), opacity var(--trans), box-shadow var(--trans);
-      text-decoration: none;
-      display: inline-block;
-    }
-    
-    .follow-btn:hover {
-      opacity: 0.9;
+    .category-link:hover,
+    .category-link.active {
+      background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red));
+      color: var(--white);
+      border-color: transparent;
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);
+      box-shadow: var(--shadow-sm);
     }
     
-    .fb-feed-content {
-      padding: 16px;
-      max-height: 400px;
-      overflow-y: auto;
-      scrollbar-width: thin;
-      scrollbar-color: var(--glass) transparent;
+    /* ===== Breaking News Ticker ===== */
+    .breaking-news {
+      background: linear-gradient(135deg, var(--primary-dark-red), var(--primary-red));
+      padding: var(--space-sm) 0;
+      overflow: hidden;
+      position: sticky;
+      top: 110px; /* Header (60px) + Category Nav (50px) */
+      z-index: 800;
     }
     
-    .fb-feed-content::-webkit-scrollbar {
-      width: 6px;
-    }
-    
-    .fb-feed-content::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    
-    .fb-feed-content::-webkit-scrollbar-thumb {
-      background-color: var(--glass);
-      border-radius: 20px;
-    }
-    
-    .fb-post {
-      background: var(--card);
-      border-radius: var(--radius-sm);
-      border: var(--border);
-      padding: 14px;
-      margin-bottom: 14px;
-      transition: transform var(--trans), box-shadow var(--trans), background var(--trans);
-    }
-    
-    .fb-post:hover {
-      transform: translateY(-3px);
-      box-shadow: var(--shadow);
-      background: var(--card-hi);
-    }
-    
-    .fb-post-header {
+    .ticker-container {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 12px;
+      gap: var(--space-md);
+      padding: 0 var(--space-md);
     }
     
-    .fb-avatar {
-      width: 36px;
-      height: 36px;
-      background: linear-gradient(135deg, var(--red), var(--yellow));
-      border-radius: 50%;
+    @media (min-width: 640px) {
+      .ticker-container {
+        padding: 0 var(--space-lg);
+      }
+    }
+    
+    .breaking-label {
       display: flex;
       align-items: center;
-      justify-content: center;
-      color: var(--black);
+      gap: var(--space-xs);
+      background: var(--black);
+      color: var(--accent-yellow);
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
       font-weight: 700;
-      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
     
-    .fb-post-info {
+    .ticker-content {
       flex: 1;
-    }
-    
-    .fb-post-author {
-      font-weight: 600;
-      font-size: 14px;
-      margin-bottom: 2px;
-    }
-    
-    .fb-post-time {
-      font-size: 11px;
-      color: var(--muted);
-    }
-    
-    .fb-post-text {
-      font-size: 14px;
-      line-height: 1.5;
-      margin-bottom: 12px;
-      color: var(--text);
-    }
-    
-    .fb-post-image {
-      width: 100%;
-      border-radius: 8px;
-      margin-bottom: 12px;
       overflow: hidden;
     }
     
-    .fb-post-image img {
-      width: 100%;
-      height: auto;
-      border-radius: 8px;
-      transition: transform .5s ease;
+    .ticker-track {
+      display: inline-flex;
+      gap: var(--space-xl);
+      animation: ticker 30s linear infinite;
+      white-space: nowrap;
+      padding-right: var(--space-xl);
     }
     
-    .fb-post:hover .fb-post-image img {
-      transform: scale(1.03);
+    .ticker-content:hover .ticker-track {
+      animation-play-state: paused;
     }
     
-    .fb-post-stats {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-top: 10px;
-      border-top: var(--border);
+    @keyframes ticker {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
     }
     
-    .fb-likes {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 13px;
-      color: var(--muted);
+    /* ===== Main Content ===== */
+    .main-content {
+      padding: var(--space-xl) 0;
+      min-height: calc(100vh - 180px);
     }
     
-    .fb-like-icon {
-      width: 16px;
-      height: 16px;
-      background: linear-gradient(135deg, var(--fb-blue), #0A5BC4);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 10px;
+    /* ===== About Section ===== */
+    .about-section {
+      margin-bottom: var(--space-2xl);
     }
     
-    .fb-view-link {
-      font-size: 12px;
-      color: var(--fb-blue);
-      text-decoration: none;
-      font-weight: 600;
-      transition: color var(--trans);
+    .about-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: var(--space-xl);
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border-color);
+      margin-bottom: var(--space-xl);
     }
     
-    .fb-view-link:hover {
-      color: var(--yellow);
-    }
-    
-    .fb-no-posts {
+    .about-title {
+      font-size: 2rem;
+      color: var(--accent-yellow);
+      margin-bottom: var(--space-lg);
       text-align: center;
-      padding: 20px;
-      color: var(--muted);
-      font-style: italic;
     }
     
-    /* Desktop Footer */
-    .likedtamil-footer {
-      display:  block;
-      background: #000000;
-      color: #fffc00;
+    .about-content {
+      color: var(--text-primary);
+      line-height: 1.7;
+    }
+    
+    .about-content p {
+      margin-bottom: var(--space-md);
+      font-size: 1.1rem;
+    }
+    
+    .about-content h3 {
+      color: var(--accent-yellow);
+      margin: var(--space-xl) 0 var(--space-lg);
+      font-size: 1.5rem;
+    }
+    
+    .about-content ul {
+      margin: var(--space-md) 0 var(--space-lg) var(--space-xl);
+      color: var(--text-secondary);
+    }
+    
+    .about-content li {
+      margin-bottom: var(--space-sm);
+    }
+    
+    .about-content a {
+      color: var(--accent-yellow);
+      text-decoration: underline;
+    }
+    
+    .about-content a:hover {
+      color: var(--primary-red);
+    }
+    
+    .about-features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: var(--space-lg);
+      margin: var(--space-xl) 0;
+    }
+    
+    .feature-item {
+      background: var(--glass-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
       text-align: center;
-      padding: 8px 10px;
-      font-size: 13px;
-      border-top: 2px solid #ff1111;
-      font-family: "Noto Sans Tamil", Inter, sans-serif;
-      margin-top: 20px;
+      transition: all var(--transition-base);
     }
     
-    .likedtamil-footer-wrap {
-      max-width: 1200px;
-      margin: 0 auto;
+    .feature-item:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary-red);
     }
     
-    .likedtamil-footer a {
-      color: #ff1111;
-      text-decoration: none;
-      font-weight: 600;
-      transition: color 0.2s ease;
+    .feature-icon {
+      font-size: 2.5rem;
+      margin-bottom: var(--space-sm);
+      display: block;
     }
     
-    .likedtamil-footer a:hover {
-      color: #fffc00;
+    .feature-item h4 {
+      color: var(--text-primary);
+      margin-bottom: var(--space-sm);
+      font-size: 1.2rem;
     }
     
-    @media (max-width: 740px) {
-      .likedtamil-footer {
+    .feature-item p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin: 0;
+    }
+    
+    /* Highlight box */
+    .highlight-box {
+      background: rgba(255, 209, 102, 0.1);
+      border-left: 4px solid var(--accent-yellow);
+      padding: var(--space-lg);
+      border-radius: var(--radius-sm);
+      margin: var(--space-xl) 0;
+    }
+    
+    .highlight-box strong {
+      color: var(--accent-yellow);
+    }
+    
+    /* ===== Desktop Footer ===== */
+    .desktop-footer {
+      display: none;
+    }
+    
+    @media (min-width: 768px) {
+      .desktop-footer {
+        display: block;
+        background: var(--black);
+        color: var(--accent-yellow);
+        padding: var(--space-lg) 0;
+        border-top: 3px solid var(--primary-red);
+        margin-top: var(--space-xl);
+      }
+    }
+    
+    /* ===== Mobile Footer ===== */
+    .mobile-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      background: rgba(10, 10, 10, 0.98);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border-color);
+      padding: var(--space-sm) 0;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      height: 70px;
+    }
+    
+    @media (min-width: 768px) {
+      .mobile-footer {
         display: none;
       }
     }
-
-    /* Sticky mobile footer */
+    
+    .mobile-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-md);
+      transition: all var(--transition-fast);
+      flex: 1;
+      max-width: 80px;
+      text-decoration: none;
+      color: var(--text-secondary);
+    }
+    
+    .mobile-nav-item.active {
+      color: var(--primary-red);
+    }
+    
+    .mobile-nav-icon {
+      width: 22px;
+      height: 22px;
+    }
+    
+    .mobile-nav-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    /* ===== Search Modal ===== */
+    .search-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 1100;
+      align-items: flex-start;
+      justify-content: center;
+      padding: var(--space-xl) var(--space-md);
+      overflow-y: auto;
+    }
+    
+    .search-modal.active {
+      display: flex;
+    }
+    
+    /* ===== Responsive Adjustments ===== */
+    @media (max-width: 767px) {
+      .header {
+        height: 60px;
+      }
+      
+      .logo {
+        max-width: 120px;
+      }
+      
+      .site-title {
+        font-size: 1rem;
+      }
+      
+      .category-nav {
+        height: 50px;
+        top: 60px;
+      }
+      
+      .breaking-news {
+        top: 110px;
+        height: 40px;
+      }
+      
+      .ticker-container {
+        padding: 0 var(--space-sm);
+        gap: var(--space-sm);
+      }
+      
+      .breaking-label {
+        font-size: 0.7rem;
+        padding: 2px 8px;
+      }
+      
+      .about-card {
+        padding: var(--space-lg);
+      }
+      
+      .about-title {
+        font-size: 1.5rem;
+      }
+      
+      .about-content p {
+        font-size: 1rem;
+      }
+      
+      .about-features {
+        grid-template-columns: 1fr;
+        gap: var(--space-md);
+      }
+      
+      .mobile-footer {
+        height: 70px;
+      }
+    }
+    
+    /* Animation for mobile footer */
+    @keyframes slideUp {
+      from {
+        transform: translateY(100%);
+      }
+      to {
+        transform: translateY(0);
+      }
+    }
+    
     .mobile-footer {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 99;
-      backdrop-filter: blur(12px) saturate(1.1);
-      background: linear-gradient(180deg, rgba(255,17,17,.85), rgba(255,17,17,.98));
-      border-top: 2px solid rgba(255,252,0,.55);
-      display:none;
+      animation: slideUp 0.3s ease-out;
     }
-    @media (max-width: 740px) {
-      .mobile-footer { display:block }
-      body { padding-bottom: 82px }
-      .search { display:none }
-    }
-    .foot-wrap { max-width: 1200px; margin: 0 auto; padding: 10px clamp(12px, 4vw, 18px); display:flex; justify-content: space-between; gap: 6px }
-    .foot-item {
-      flex:1; display:flex; flex-direction: column; align-items:center; gap: 6px;
-      color: #fff; text-decoration:none; padding:8px; border-radius: 12px;
-      transition: transform var(--trans), background var(--trans)
-    }
-    .foot-item:hover, .foot-item.active { background: rgba(0,0,0,.18); transform: translateY(-2px) }
-    .foot-icon { width: 22px; height: 22px }
-    .foot-label { font-size: 12px; font-weight:700 }
-
-    /* Subtle entrance */
-    .fade-in-up { opacity:0; transform: translateY(12px); animation: in .6s var(--trans) forwards }
-    @keyframes in { to { opacity:1; transform: translateY(0) } }
-    
-    /* News Count Badge */
-    .news-count {
-      background: var(--yellow);
-      color: var(--black);
-      padding: 2px 6px;
-      border-radius: 10px;
-      font-size: 11px;
-      font-weight: 700;
-      margin-left: 5px;
-    }
-    
-    /* No News Message */
-    .no-news {
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--muted);
-      grid-column: 1 / -1;
-    }
-    
-    /* Date has news indicator */
-    .has-news {
-      position: relative;
-    }
-    
-    .has-news::after {
-      content: '';
-      position: absolute;
-      bottom: 2px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 4px;
-      height: 4px;
-      background-color: var(--yellow);
-      border-radius: 50%;
-    }
-    
-    /* Loading spinner */
-    .loading {
-      text-align: center;
-      padding: 20px;
-      color: var(--muted);
-    }
-
-    /* Pagination */
-    .pagination { display:flex; justify-content:center; gap:8px; margin:32px 0 }
-    .page { padding:8px 14px; border-radius:10px; background: var(--card); border: var(--border); color: var(--text); cursor:pointer; transition: transform var(--trans), background var(--trans) }
-    .page:hover { transform: translateY(-2px); background: var(--card-hi) }
-    .page.active { background: linear-gradient(180deg, var(--red), #cc0f0f); color: #fff; border: 0 }
-
-    /* Pagination */
-.pagination {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  margin: 18px 0 100px;
-  flex-wrap: wrap; /* Responsive */
-}
-.page {
-  padding: 10px 14px;
-  border-radius: 999px;
-  background: var(--glass);
-  border: var(--border);
-  cursor: pointer;
-  transition: background var(--trans), transform var(--trans);
-  text-decoration: none;
-  color: var(--text);
-  min-width: 40px;
-  text-align: center;
-  font-family: "Noto Sans Tamil", Inter, sans-serif;
-}
-.page.active {
-  background: linear-gradient(180deg, var(--red), #cc0f0f);
-  color: #fff;
-  border: 0;
-}
-.page:hover {
-  transform: translateY(-2px);
-  background: rgba(255,17,17,.18);
-}
-
-/* Mobile pagination */
-@media (max-width: 640px) {
-  .pagination {
-    gap: 6px;
-    margin: 18px 0 80px;
-  }
-  .page {
-    padding: 8px 12px;
-    font-size: 14px;
-    min-width: 36px;
-  }
-}
-/* Mobile responsiveness */
-@media (max-width: 640px) {
-  body {
-    padding-bottom: 90px; /* Add padding for mobile footer */
-  }
-  
-  .appbar-wrap {
-    grid-template-columns: auto 1fr;
-    gap: 12px;
-  }
-  .search {
-    display: none; /* Hide search on mobile - use icon in footer */
-  }
-  .actions {
-    display: none; /* Hide subscribe button on mobile */
-  }
-  .title {
-    font-size: 18px;
-  }
-  
-  .catbar-wrap {
-    padding: 8px 12px;
-  }
-  .chip {
-    padding: 6px 10px;
-    font-size: 12px;
-  }
-  
-  .hero {
-    margin: 12px auto;
-    gap: 12px;
-  }
-  
-  .slide img {
-    height: 300px;
-  }
-  
-  .slide-info {
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
-  }
-  .slide-title {
-    font-size: 18px;
-  }
-  
-  .grid-news {
-    gap: 12px;
-  }
-  .news-title {
-    font-size: 15px;
-  }
-  
-  .pagination {
-    gap: 6px;
-    margin: 18px 0 100px; /* Extra margin for mobile footer */
-  }
-  .page {
-    padding: 8px 12px;
-    font-size: 14px;
-    min-width: 36px;
-  }
-}
-
-/* Subscription Modal */
-.subscription-modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.8);
-  z-index: 1000;
-  align-items: center;
-  justify-content: center;
-}
-
-.subscription-content {
-  background: var(--card);
-  border-radius: var(--radius);
-  padding: 30px;
-  width: 90%;
-  max-width: 500px;
-  border: var(--border);
-  box-shadow: var(--shadow);
-}
-
-.subscription-content h3 {
-  color: var(--yellow);
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-.subscription-form {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.subscription-form input {
-  flex: 1;
-  padding: 12px;
-  border-radius: var(--radius-sm);
-  background: var(--glass);
-  border: var(--border);
-  color: var(--text);
-  outline: none;
-}
-
-.subscription-form button {
-  background: linear-gradient(180deg, var(--red), #cc0f0f);
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.close-modal {
-  background: transparent;
-  border: none;
-  color: var(--muted);
-  cursor: pointer;
-  float: right;
-  font-size: 20px;
-}
-
-.subscription-success {
-  color: var(--yellow);
-  text-align: center;
-  padding: 10px;
-  display: none;
-}
-    .section-head { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px }
-
-    /* About Section Styling */
-.about-section {
-  max-width: 1200px;
-  margin: 20px auto;
-  padding: 0 clamp(14px, 3vw, 24px);
-}
-
-.about-card {
-  background: var(--card);
-  border: var(--border);
-  border-radius: var(--radius);
-  padding: 24px;
-  margin-bottom: 24px;
-  box-shadow: var(--shadow);
-}
-
-.about-title {
-  color: var(--yellow);
-  text-align: center;
-  font-size: clamp(22px, 2.5vw, 28px);
-  margin-bottom: 20px;
-  font-weight: 800;
-}
-
-.about-content {
-  text-align: center;
-  color: var(--text);
-  line-height: 1.7;
-}
-
-.about-content p {
-  margin-bottom: 16px;
-  font-size: 16px;
-  text-align: center;
-}
-
-.about-content ul {
-  display: inline-block;
-  text-align: left;
-  margin: 16px auto;
-  padding-left: 20px;
-}
-
-.about-content li {
-  margin-bottom: 8px;
-  text-align: left;
-}
-
-.about-features {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  margin: 30px 0;
-}
-
-.feature-item {
-  background: var(--glass);
-  border: var(--border);
-  border-radius: var(--radius-sm);
-  padding: 20px;
-  text-align: center;
-  transition: transform var(--trans), box-shadow var(--trans);
-}
-
-.feature-item:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow);
-}
-
-.feature-icon {
-  font-size: 32px;
-  margin-bottom: 12px;
-}
-
-/* Mobile responsiveness for about section */
-@media (max-width: 768px) {
-  .about-card {
-    padding: 16px;
-  }
-  
-  .about-content p {
-    font-size: 15px;
-    text-align: center;
-  }
-  
-  .about-features {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-  
-  .feature-item {
-    padding: 16px;
-  }
-}
-
-@media (max-width: 640px) {
-  .about-section {
-    margin: 16px auto;
-    padding-bottom: 20px; /* Extra padding for mobile */
-  }
-  
-  .about-card {
-    padding: 14px;
-    margin-bottom: 16px;
-  }
-  
-  .about-content p {
-    font-size: 14px;
-    text-align: center;
-  }
-  
-  .about-features {
-    margin: 20px 0;
-  }
-  
-  .feature-item {
-    padding: 14px;
-  }
-}
   </style>
 </head>
 <body>
-
-  <!-- App bar - Same as index.php -->
-  <header class="appbar">
-    <div class="appbar-wrap">
-      <a href="index.php" class="brand">
-        <img src="Liked-tamil-news-logo-1 (2).png" alt="Portal Logo" class="logo" />
-        <span class="title">Liked தமிழ்</span>
-      </a>
-      <form method="GET" action="search.php" class="search" role="search">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M11 5a6 6 0 016 6c0 1.3-.41 2.5-1.11 3.48l4.32 4.32-1.41 1.41-4.32-4.32A6 6 0 1111 5z" stroke="currentColor" stroke-width="1.5"/>
-        </svg>
-        <input type="search" name="q" placeholder="தேடல்…" aria-label="தேடல்" />
-      </form>
-      <div class="actions">
-        <a href="index.php#subscriptionModal" class="btn primary">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M12 3l9 6-9 6-9-6 9-6zM3 15l9 6 9-6" stroke="currentColor" stroke-width="1.5"/>
-          </svg>
-          Subscribe
+  <!-- Header -->
+  <header class="header" role="banner">
+    <div class="container">
+      <div class="header-content">
+        <a href="index.php" class="logo-container">
+          <img src="Liked-tamil-news-logo-1 (2).png" alt="Liked தமிழ்" class="logo" />
+          <h1 class="site-title">Liked தமிழ்</h1>
         </a>
-        <!-- Theme Toggle -->
-        <button class="theme-toggle" id="themeToggle" aria-label="Change theme">
-          <svg class="moon-icon" viewBox="0 0 24 24" fill="none">
-            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.6"/>
-          </svg>
-          <svg class="sun-icon" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.6"/>
-            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.6"/>
-          </svg>
-        </button>
+        
+        <div class="header-actions">
+          <button class="search-btn" aria-label="தேடல்" id="searchToggle">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </button>
+          
+          <button class="subscribe-btn" onclick="openSubscription()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+              <polyline points="22,6 12,13 2,6" />
+            </svg>
+            சந்தா
+          </button>
+          <button class="theme-toggle" id="themeToggle" aria-label="Change theme">
+            <svg class="moon-icon" viewBox="0 0 24 24" fill="none">
+              <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.6"/>
+            </svg>
+            <svg class="sun-icon" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.6"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   </header>
 
   <!-- Category Navigation -->
-  <nav class="catbar" aria-label="Categories">
-    <div class="catbar-wrap">
-      <a href="index.php" class="chip">முகப்பு</a>
-      <?php foreach ($categories as $category): ?>
-        <a href="categories.php?id=<?php echo $category['id']; ?>" class="chip">
-          <?php echo htmlspecialchars($category['name']); ?>
-        </a>
-      <?php endforeach; ?>
-    </div>
-  </nav>
-
-  <!-- Breaking news ticker -->
-  <section class="ticker">
-    <div class="ticker-wrap">
-      <span class="tag-chip">Breaking</span>
-      <div class="marquee" aria-label="Breaking news">
-        <div class="marquee-track" id="tickerTrack">
-          <span>சிறப்பு: புதிய திட்டம் அறிவிப்பு வெளியீடு<span class="dot"></span></span>
-          <span>விளையாட்டு: கடைசி ஓவரில் த்ரில்லர் வெற்றி<span class="dot"></span></span>
-          <span>தொழில்நுட்பம்: AI கருவி வெளியீடு<span class="dot"></span></span>
-          <span>உலக செய்திகள்: வர்த்தக உடன்பாடு கையெழுத்து<span class="dot"></span></span>
-          <!-- duplicate for seamless loop -->
-          <span>சிறப்பு: புதிய திட்டம் அறிவிப்பு வெளியீடு<span class="dot"></span></span>
-          <span>விளையாட்டு: கடைசி ஓவரில் த்ரில்லர் வெற்றி<span class="dot"></span></span>
-          <span>தொழில்நுட்பம்: AI கருவி வெளியீடு<span class="dot"></span></span>
-          <span>உலக செய்திகள்: வர்த்தக உடன்பாடு கையெழுத்து<span class="dot"></span></span>
-        </div>
-      </div>
-      <span class="tag-chip">Live • 24/7</span>
-    </div>
-  </section>
-
-  <!-- About Section -->
-  <section class="about-section">
-    <div class="about-card">
-      <h2 class="about-title">Liked தமிழ் பற்றி</h2>
-      <div class="about-content">
-        <p>Liked தமிழ் என்பது தமிழ் மொழியில் சிறந்த செய்திகள், கட்டுரைகள், கலை மற்றும் கலாச்சார உள்ளடக்கங்களை வழங்கும் முன்னணி செய்தி வலைத்தளமாகும். 2024 ஆம் ஆண்டு தொடங்கப்பட்ட இந்த தளம், உலகளாவிய தமிழ் மக்களுக்கு நம்பகமான, சரியான நேரத்தில், சுவாரஸ்யமான செய்திகளை வழங்குவதை நோக்கமாகக் கொண்டுள்ளது.</p>
-        
-        <h3 style="color: var(--yellow); margin-top: 30px;">எங்கள் நோக்கம்</h3>
-        <p>தமிழ் மொழியின் செழுமையைப் பாதுகாத்து, தகவல் தொழில்நுட்பத்தின் மூலம் உலகளாவிய தமிழ் சமூகத்தை இணைக்கும் வகையில் உயர்தர உள்ளடக்கங்களை வழங்குவது எங்கள் நோக்கமாகும்.</p>
-        
-        <h3 style="color: var(--yellow); margin-top: 30px;">சிறப்புக் கூறுகள்</h3>
-        <div class="about-features">
-          <div class="feature-item">
-            <div class="feature-icon">📰</div>
-            <h4 style="margin: 0 0 10px 0;">பல்துறை செய்திகள்</h4>
-            <p style="margin: 0; font-size: 14px; color: var(--muted);">அரசியல், பொருளாதாரம், விளையாட்டு, தொழில்நுட்பம், கலை, கலாச்சாரம் உள்ளிட்ட பல்துறை செய்திகள்</p>
-          </div>
-          
-          <div class="feature-item">
-            <div class="feature-icon">⚡</div>
-            <h4 style="margin: 0 0 10px 0;">விரைவான புதுப்பிப்பு</h4>
-            <p style="margin: 0; font-size: 14px; color: var(--muted);">24/7 செய்தி புதுப்பிப்பு, உடனடி Breaking News, Live Updates</p>
-          </div>
-          
-          <div class="feature-item">
-            <div class="feature-icon">📱</div>
-            <h4 style="margin: 0 0 10px 0;">மொபைல் இணக்கம்</h4>
-            <p style="margin: 0; font-size: 14px; color: var(--muted);">அனைத்து சாதனங்களிலும் சிறப்பாக வேலை செய்யும் Responsive Design</p>
-          </div>
-          
-          <div class="feature-item">
-            <div class="feature-icon">🔍</div>
-            <h4 style="margin: 0 0 10px 0;">ஆழ்ந்த பகுப்பாய்வு</h4>
-            <p style="margin: 0; font-size: 14px; color: var(--muted);">மேலோட்டமான செய்திகள் மட்டுமல்ல, ஆழ்ந்த ஆய்வுகள் மற்றும் பகுப்பாய்வுகள்</p>
-          </div>
-        </div>
-        
-        <h3 style="color: var(--yellow); margin-top: 30px;">எங்கள் அணி</h3>
-        <p>Liked தமிழ் அனுபவம் வாய்ந்த பத்திரிகையாளர்கள், எழுத்தாளர்கள் மற்றும் தொழில்நுட்ப வல்லுநர்களைக் கொண்ட ஒரு தகுதிவாய்ந்த அணியால் இயக்கப்படுகிறது. எங்கள் அனைத்து உள்ளடக்கங்களும் உண்மைத்தன்மை, நடுநிலை மற்றும் தரத்திற்காக கடுமையான சரிபார்ப்பு செய்யப்படுகின்றன.</p>
-        
-        <h3 style="color: var(--yellow); margin-top: 30px;">தொடர்பு கொள்ள</h3>
-        <p>கருத்துகள், பரிந்துரைகள் அல்லது விளம்பரங்களுக்கு:</p>
-        <ul style="color: var(--muted);">
-          <li>மின்னஞ்சல்: info@likedtamil.lk</li>
-          <li>வலைத்தளம்: <a href="https://likedtamil.lk" style="color: var(--yellow); text-decoration: none;">likedtamil.lk</a></li>
-          <li>பேஸ்புக்: <a href="https://facebook.com/liked.tamil" style="color: var(--yellow); text-decoration: none;">facebook.com/liked.tamil</a></li>
+  <nav class="category-nav" aria-label="Main categories">
+    <div class="container">
+      <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+        <ul class="category-list">
+          <li style="display: inline-block;">
+            <a href="index.php" class="category-link">
+              முகப்பு
+            </a>
+          </li>
+          <?php foreach ($categories as $category): ?>
+            <li style="display: inline-block;">
+              <a href="categories.php?id=<?php echo $category['id']; ?>" 
+                 class="category-link">
+                <?php echo htmlspecialchars($category['name']); ?>
+              </a>
+            </li>
+          <?php endforeach; ?>
         </ul>
       </div>
     </div>
-    
-    <div class="about-card">
-      <h2 class="about-title">வளர்ச்சி குழு</h2>
-      <div class="about-content">
-        <p>இந்த வலைத்தளம் <a href="https://webbuilders.lk" style="color: var(--yellow); text-decoration: none;">Webbuilders.lk</a> நிறுவனத்தால் மேம்படுத்தப்பட்டு பராமரிக்கப்படுகிறது. தமிழ் வலைத்தளங்களின் வளர்ச்சி மற்றும் மேம்பாட்டில் முன்னணி நிறுவனமாக செயல்படும் Webbuilders.lk, நவீன தொழில்நுட்பங்களைப் பயன்படுத்தி தரமான தமிழ் உள்ளடக்கங்களை உருவாக்குவதில் நிபுணத்துவம் பெற்றுள்ளது.</p>
+  </nav>
+
+  <!-- Breaking News Ticker -->
+  <section class="breaking-news" aria-label="Breaking news">
+    <div class="container">
+      <div class="ticker-container">
+        <div class="breaking-label">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="12" r="10" />
+          </svg>
+          Breaking
+        </div>
         
-        <p style="margin-top: 20px; padding: 15px; background: rgba(255,252,0,0.1); border-radius: var(--radius-sm); border-left: 3px solid var(--yellow);">
-          <strong>வலைத்தள மேம்பாட்டு சேவைகள்:</strong><br>
-          வலைத்தள வடிவமைப்பு, உள்ளடக்க மேலாண்மை அமைப்பு (CMS), மொபைல் பயன்பாடுகள், SEO மேம்பாடு, இணையதள பாதுகாப்பு மற்றும் பராமரிப்பு.
-        </p>
+        <div class="ticker-content">
+          <div class="ticker-track">
+            <?php foreach ($tickerNews as $item): ?>
+              <span style="display: inline-flex; align-items: center; gap: var(--space-sm); margin-right: var(--space-xl);">
+                <?php echo htmlspecialchars($item['title']); ?>
+                <span style="width: 4px; height: 4px; background: var(--accent-yellow); border-radius: 50%;"></span>
+              </span>
+            <?php endforeach; ?>
+            <?php foreach ($tickerNews as $item): ?>
+              <span style="display: inline-flex; align-items: center; gap: var(--space-sm); margin-right: var(--space-xl);">
+                <?php echo htmlspecialchars($item['title']); ?>
+                <span style="width: 4px; height: 4px; background: var(--accent-yellow); border-radius: 50%;"></span>
+              </span>
+            <?php endforeach; ?>
+          </div>
+        </div>
+        
+        <div class="breaking-label">
+          Live • 24/7
+        </div>
       </div>
     </div>
   </section>
 
+  <!-- Main Content Area -->
+  <main class="main-content" role="main">
+    <div class="container">
+      
+      <!-- About Section -->
+      <section class="about-section">
+        <div class="about-card">
+          <h2 class="about-title">Liked தமிழ் பற்றி</h2>
+          <div class="about-content">
+            <p>Liked தமிழ் என்பது தமிழ் மொழியில் சிறந்த செய்திகள், கட்டுரைகள், கலை மற்றும் கலாச்சார உள்ளடக்கங்களை வழங்கும் முன்னணி செய்தி வலைத்தளமாகும். 2024 ஆம் ஆண்டு தொடங்கப்பட்ட இந்த தளம், உலகளாவிய தமிழ் மக்களுக்கு நம்பகமான, சரியான நேரத்தில், சுவாரஸ்யமான செய்திகளை வழங்குவதை நோக்கமாகக் கொண்டுள்ளது.</p>
+            
+            <h3>எங்கள் நோக்கம்</h3>
+            <p>தமிழ் மொழியின் செழுமையைப் பாதுகாத்து, தகவல் தொழில்நுட்பத்தின் மூலம் உலகளாவிய தமிழ் சமூகத்தை இணைக்கும் வகையில் உயர்தர உள்ளடக்கங்களை வழங்குவது எங்கள் நோக்கமாகும்.</p>
+            
+            <h3>சிறப்புக் கூறுகள்</h3>
+            <div class="about-features">
+              <div class="feature-item">
+                <span class="feature-icon">📰</span>
+                <h4>பல்துறை செய்திகள்</h4>
+                <p>அரசியல், பொருளாதாரம், விளையாட்டு, தொழில்நுட்பம், கலை, கலாச்சாரம் உள்ளிட்ட பல்துறை செய்திகள்</p>
+              </div>
+              
+              <div class="feature-item">
+                <span class="feature-icon">⚡</span>
+                <h4>விரைவான புதுப்பிப்பு</h4>
+                <p>24/7 செய்தி புதுப்பிப்பு, உடனடி Breaking News, Live Updates</p>
+              </div>
+              
+              <div class="feature-item">
+                <span class="feature-icon">📱</span>
+                <h4>மொபைல் இணக்கம்</h4>
+                <p>அனைத்து சாதனங்களிலும் சிறப்பாக வேலை செய்யும் Responsive Design</p>
+              </div>
+              
+              <div class="feature-item">
+                <span class="feature-icon">🔍</span>
+                <h4>ஆழ்ந்த பகுப்பாய்வு</h4>
+                <p>மேலோட்டமான செய்திகள் மட்டுமல்ல, ஆழ்ந்த ஆய்வுகள் மற்றும் பகுப்பாய்வுகள்</p>
+              </div>
+            </div>
+            
+            <h3>எங்கள் அணி</h3>
+            <p>Liked தமிழ் அனுபவம் வாய்ந்த பத்திரிகையாளர்கள், எழுத்தாளர்கள் மற்றும் தொழில்நுட்ப வல்லுநர்களைக் கொண்ட ஒரு தகுதிவாய்ந்த அணியால் இயக்கப்படுகிறது. எங்கள் அனைத்து உள்ளடக்கங்களும் உண்மைத்தன்மை, நடுநிலை மற்றும் தரத்திற்காக கடுமையான சரிபார்ப்பு செய்யப்படுகின்றன.</p>
+            
+            <h3>தொடர்பு கொள்ள</h3>
+            <p>கருத்துகள், பரிந்துரைகள் அல்லது விளம்பரங்களுக்கு:</p>
+            <ul>
+              <li>மின்னஞ்சல்: info@likedtamil.lk</li>
+              <li>வலைத்தளம்: <a href="https://likedtamil.lk" target="_blank">likedtamil.lk</a></li>
+              <li>பேஸ்புக்: <a href="https://facebook.com/liked.tamil" target="_blank">facebook.com/liked.tamil</a></li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="about-card">
+          <h2 class="about-title">வளர்ச்சி குழு</h2>
+          <div class="about-content">
+            <p>இந்த வலைத்தளம் <a href="https://webbuilders.lk" target="_blank">Webbuilders.lk</a> நிறுவனத்தால் மேம்படுத்தப்பட்டு பராமரிக்கப்படுகிறது. தமிழ் வலைத்தளங்களின் வளர்ச்சி மற்றும் மேம்பாட்டில் முன்னணி நிறுவனமாக செயல்படும் Webbuilders.lk, நவீன தொழில்நுட்பங்களைப் பயன்படுத்தி தரமான தமிழ் உள்ளடக்கங்களை உருவாக்குவதில் நிபுணத்துவம் பெற்றுள்ளது.</p>
+            
+            <div class="highlight-box">
+              <strong>வலைத்தள மேம்பாட்டு சேவைகள்:</strong><br>
+              வலைத்தள வடிவமைப்பு, உள்ளடக்க மேலாண்மை அமைப்பு (CMS), மொபைல் பயன்பாடுகள், SEO மேம்பாடு, இணையதள பாதுகாப்பு மற்றும் பராமரிப்பு.
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
   <!-- Desktop Footer -->
-  <footer class="likedtamil-footer">
-    <div class="likedtamil-footer-wrap">
-      © <?php echo date('Y'); ?> All Rights Reserved by <a href="https://likedtamil.lk" target="_blank">Likedtamil.lk</a> | Developed by <a href="https://webbuilders.lk" target="_blank">Webbuilders.lk</a>
+  <footer class="desktop-footer">
+    <div class="container">
+      <div style="text-align: center;">
+        <p>&copy; <?php echo date('Y'); ?> Liked தமிழ். அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.</p>
+        <div style="display: flex; justify-content: center; gap: var(--space-lg); margin-top: var(--space-sm);">
+          <a href="about.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">எங்களைப் பற்றி</a>
+          <a href="contact.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">தொடர்பு கொள்ள</a>
+          <a href="privacy.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">தனியுரிமைக் கொள்கை</a>
+          <a href="terms.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">பயன்பாட்டு விதிமுறைகள்</a>
+        </div>
+      </div>
     </div>
   </footer>
 
-  <!-- Mobile Footer -->
-  <footer class="mobile-footer" role="navigation" aria-label="மொபைல் அடிக்குறிப்பு">
-    <div class="foot-wrap">
-      <a href="index.php" class="foot-item">
-        <svg class="foot-icon" viewBox="0 0 24 24" fill="none" stroke="#fff">
-          <path d="M3 10l9-7 9 7v9a2 2 0 01-2 2H5a2 2 0 01-2-2v-9z" stroke="#fff" stroke-width="1.6"/>
-        </svg>
-        <span class="foot-label">முகப்பு</span>
-      </a>
-      <a href="categories.php" class="foot-item">
-        <svg class="foot-icon" viewBox="0 0 24 24" fill="none" stroke="#fff">
-          <path d="M4 6h16M4 12h16M4 18h16" stroke="#fff" stroke-width="1.6"/>
-        </svg>
-        <span class="foot-label">பிரிவுகள்</span>
-      </a>
-      <a href="search.php" class="foot-item">
-        <svg class="foot-icon" viewBox="0 0 24 24" fill="none" stroke="#fff">
-          <path d="M11 5a6 6 0 016 6c0 1.3-.41 2.5-1.11 3.48l4.32 4.32-1.41 1.41-4.32-4.32A6 6 0 1111 5z" stroke="#fff" stroke-width="1.6"/>
-        </svg>
-        <span class="foot-label">தேடல்</span>
-      </a>
-      <a href="about.php" class="foot-item active">
-        <svg class="foot-icon" viewBox="0 0 24 24" fill="none" stroke="#fff">
-          <circle cx="12" cy="12" r="6" stroke="#fff" stroke-width="1.6"/>
-        </svg>
-        <span class="foot-label">சுயவிவரம்</span>
-      </a>
-      <a href="video.php" class="foot-item">
-        <svg class="foot-icon" viewBox="0 0 24 24" fill="none" stroke="#fff">
-          <path d="M6 19l6-6 6 6M6 12l6-6 6 6" stroke="#fff" stroke-width="1.6"/>
-        </svg>
-        <span class="foot-label">வீடியோ</span>
-      </a>
-    </div>
-  </footer>
-
-</body>
-<script>
-  // Theme toggle functionality
-  const themeToggle = document.getElementById('themeToggle');
-  const body = document.body;
-  
-  // Check for saved theme or prefer color scheme
-  const savedTheme = localStorage.getItem('theme');
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  
-  if (savedTheme === 'light' || (!savedTheme && !prefersDark)) {
-    body.classList.add('light-mode');
-  }
-  
-  themeToggle.addEventListener('click', () => {
-    body.classList.toggle('light-mode');
+  <!-- Mobile Footer Navigation -->
+  <footer class="mobile-footer" role="navigation" aria-label="மொபைல் வழிசெலுத்தல்">
+    <a href="index.php" class="mobile-nav-item">
+      <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        <polyline points="9 22 9 12 15 12 15 22" />
+      </svg>
+      <span class="mobile-nav-label">முகப்பு</span>
+    </a>
     
-    // Save preference
-    if (body.classList.contains('light-mode')) {
-      localStorage.setItem('theme', 'light');
-    } else {
-      localStorage.setItem('theme', 'dark');
+    <a href="categories.php" class="mobile-nav-item">
+      <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7" />
+        <rect x="14" y="3" width="7" height="7" />
+        <rect x="3" y="14" width="7" height="7" />
+        <rect x="14" y="14" width="7" height="7" />
+      </svg>
+      <span class="mobile-nav-label">பிரிவுகள்</span>
+    </a>
+    
+    <button class="mobile-nav-item" onclick="toggleSearch()">
+      <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8" />
+        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      </svg>
+      <span class="mobile-nav-label">தேடல்</span>
+    </button>
+    
+    <a href="video.php" class="mobile-nav-item">
+      <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="23 7 16 12 23 17 23 7" />
+        <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+      </svg>
+      <span class="mobile-nav-label">வீடியோ</span>
+    </a>
+    
+    <a href="about.php" class="mobile-nav-item active">
+      <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </svg>
+      <span class="mobile-nav-label">சுயவிவரம்</span>
+    </a>
+  </footer>
+
+  <!-- Search Modal -->
+  <div class="search-modal" id="searchModal">
+    <div style="width: 100%; max-width: 600px; background: var(--bg-card); border-radius: var(--radius-lg); padding: var(--space-lg); box-shadow: var(--shadow-lg); animation: slideDown 0.3s ease; margin-top: var(--space-xl);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
+        <h3 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">தேடல்</h3>
+        <button onclick="toggleSearch()" aria-label="மூடு" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; padding: var(--space-xs); border-radius: var(--radius-sm); transition: all var(--transition-fast);">
+          &times;
+        </button>
+      </div>
+      
+      <form method="GET" action="search.php" style="display: flex; gap: var(--space-sm); margin-bottom: var(--space-lg);">
+        <input type="search" 
+               name="q" 
+               placeholder="செய்திகளைத் தேடுங்கள்..." 
+               style="flex: 1; padding: var(--space-md); background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); font-size: 1rem; outline: none; transition: all var(--transition-fast);"
+               autocomplete="off"
+               autofocus />
+        <button type="submit" style="padding: var(--space-md) var(--space-lg); background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red)); color: var(--white); border: none; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; transition: all var(--transition-fast);">
+          தேடு
+        </button>
+      </form>
+      
+      <div style="color: var(--text-muted); font-size: 0.875rem; text-align: center;">
+        உதாரணம்: "விளையாட்டு", "அரசியல்", "பொருளாதாரம்"
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Search functionality
+    function toggleSearch() {
+      const searchModal = document.getElementById('searchModal');
+      searchModal.classList.toggle('active');
+      
+      if (searchModal.classList.contains('active')) {
+        document.body.style.overflow = 'hidden';
+        searchModal.querySelector('input').focus();
+      } else {
+        document.body.style.overflow = '';
+      }
     }
-  });
-</script>
+    
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const searchModal = document.getElementById('searchModal');
+        if (searchModal.classList.contains('active')) {
+          toggleSearch();
+        }
+      }
+    });
+    
+    document.getElementById('searchModal')?.addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        toggleSearch();
+      }
+    });
+
+    document.getElementById('searchToggle')?.addEventListener('click', toggleSearch);
+
+    // Theme toggle functionality
+    const themeToggle = document.getElementById('themeToggle');
+    const body = document.body;
+    
+    // Check for saved theme or prefer color scheme
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    if (savedTheme === 'light' || (!savedTheme && !prefersDark)) {
+      body.classList.add('light-mode');
+    }
+    
+    themeToggle.addEventListener('click', () => {
+      body.classList.toggle('light-mode');
+      
+      // Save preference
+      if (body.classList.contains('light-mode')) {
+        localStorage.setItem('theme', 'light');
+      } else {
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    // Fix for mobile viewport height
+    function setViewportHeight() {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+    
+    setViewportHeight();
+    window.addEventListener('resize', setViewportHeight);
+    
+    function openSubscription() {
+      alert('சந்தா செயல்பாடு விரைவில் கிடைக்கும்');
+    }
+
+    // Ensure content fits screen
+    function adjustContentHeight() {
+      const headerHeight = document.querySelector('.header').offsetHeight;
+      const categoryNavHeight = document.querySelector('.category-nav').offsetHeight;
+      const breakingNewsHeight = document.querySelector('.breaking-news').offsetHeight;
+      const mobileFooterHeight = document.querySelector('.mobile-footer').offsetHeight;
+      
+      const totalStickyHeight = headerHeight + categoryNavHeight + breakingNewsHeight;
+      const mainContent = document.querySelector('.main-content');
+      
+      if (mainContent) {
+        const windowHeight = window.innerHeight;
+        const availableHeight = windowHeight - totalStickyHeight - mobileFooterHeight;
+        mainContent.style.minHeight = availableHeight + 'px';
+      }
+    }
+    
+    // Run after page loads
+    window.addEventListener('load', () => {
+      setTimeout(adjustContentHeight, 100);
+      
+      // Update mobile footer active state
+      const currentPath = window.location.pathname;
+      const mobileNavItems = document.querySelectorAll('.mobile-nav-item');
+      
+      mobileNavItems.forEach(item => {
+        if (item.getAttribute('href') === currentPath) {
+          item.classList.add('active');
+        } else if (currentPath === '/about.php') {
+          // Remove active from other items when on about page
+          if (item.getAttribute('href') === 'about.php') {
+            item.classList.add('active');
+          } else {
+            item.classList.remove('active');
+          }
+        }
+      });
+    });
+    
+    window.addEventListener('resize', adjustContentHeight);
+  </script>
+</body>
 </html>

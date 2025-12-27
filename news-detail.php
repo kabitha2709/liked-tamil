@@ -462,6 +462,9 @@ $shareUrl = urlencode($currentUrl);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($news['title']); ?> - Liked தமிழ்</title>
     
+    <!-- Favicon -->
+    <?php include 'includes/favicon.php'; ?>
+    
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -476,211 +479,342 @@ $shareUrl = urlencode($currentUrl);
     <meta name="twitter:card" content="summary_large_image">
     
     <style>
-        /* Same CSS as before - kept exactly as in your single.html */
         :root {
-            --red: #ff1111;
-            --yellow: #fffc00;
+            --primary-red: #e63946;
+            --primary-dark-red: #c1121f;
+            --accent-yellow: #ffd166;
             --black: #000000;
-            --bg: #0a0a0a;
-            --text: #f5f7fa;
-            --muted: #b8bfc8;
-            --card: #121314;
-            --card-hi: #16181a;
-            --border: 1px solid rgba(255,255,255,.06);
-            --glass: rgba(255,255,255,.06);
-            --shadow: 0 12px 32px rgba(0,0,0,.45);
-            --radius: 16px;
-            --radius-sm: 12px;
-            --radius-xs: 10px;
-            --trans: 240ms cubic-bezier(.2,.8,.2,1);
+            --white: #ffffff;
+            
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #121212;
+            --bg-card: #1a1a1a;
+            --bg-hover: #222222;
+            
+            --text-primary: #f8f9fa;
+            --text-secondary: #adb5bd;
+            --text-muted: #6c757d;
+            
+            --border-color: rgba(255, 255, 255, 0.1);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+            
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            --space-2xl: 48px;
+            
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --radius-full: 9999px;
+            
+            --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+            
+            --font-heading: 'Noto Sans Tamil', 'Inter', system-ui, sans-serif;
+            --font-body: 'Noto Sans Tamil', 'Inter', system-ui, sans-serif;
         }
-
-        * { box-sizing: border-box }
-        html, body { height: 100% }
-        body {
+        
+        /* Light mode variables */
+        .light-mode {
+            --primary-red: #e63946;
+            --primary-dark-red: #c1121f;
+            --accent-yellow: #ffaa00;
+            --black: #000000;
+            --white: #ffffff;
+            
+            --bg-primary: #f8f9fa;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --bg-hover: #f8f9fa;
+            
+            --text-primary: #1a1a1a;
+            --text-secondary: #495057;
+            --text-muted: #6c757d;
+            
+            --border-color: rgba(0, 0, 0, 0.12);
+            --glass-bg: rgba(0, 0, 0, 0.04);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* ===== Reset & Base Styles ===== */
+        *, *::before, *::after {
+            box-sizing: border-box;
             margin: 0;
-            font-family: "Noto Sans Tamil", Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-            color: var(--text);
-            background:
-                radial-gradient(800px 420px at 10% -10%, rgba(255,17,17,.12), transparent 42%),
-                radial-gradient(600px 380px at 95% 0%, rgba(255,252,0,.10), transparent 52%),
-                var(--bg);
-            background-attachment: fixed;
+            padding: 0;
+        }
+        
+        html {
+            -webkit-text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: var(--font-body);
+            color: var(--text-primary);
+            background: var(--bg-primary);
             line-height: 1.6;
-            padding-bottom: 82px;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            transition: background-color var(--transition-base), color var(--transition-base);
+        }
+        
+        /* Background gradient - only for dark mode */
+        body:not(.light-mode)::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100vh;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(230, 57, 70, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 209, 102, 0.1) 0%, transparent 50%);
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* ===== Header Fixes ===== */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(10, 10, 10, 0.98);
+            backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid var(--border-color);
+            padding: var(--space-sm) 0;
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-md);
+            height: 60px;
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            flex: 1;
+            min-width: 0;
         }
         
         .logo {
-            width: 20%;
-            height: 20%;
-            border-radius: 8px;
+            height: 40px;
+            width: auto;
             object-fit: contain;
+            border-radius: var(--radius-sm);
+            max-width: 150px;
         }
         
-        .appbar {
-            position: sticky; top: 0; z-index: 90;
-            backdrop-filter: saturate(1.25) blur(12px);
-            background: linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.25));
-            border-bottom: var(--border);
-        }
-        
-        .appbar-wrap {
-            display: grid; grid-template-columns: auto 1fr auto; gap: 16px;
-            align-items: center; padding: 12px clamp(14px, 3vw, 24px);
-            max-width: 1200px; margin: 0 auto;
-        }
-        
-        .brand {
-            display:flex; align-items:center; gap: 12px; text-decoration:none; color: var(--text);
-        }
-        
-        .title {
-            font-weight: 80%; font-size: clamp(18px, 2.4vw, 28px); letter-spacing: .2px;
-        }
-        
-        .search {
-            display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px;
-            background: var(--glass); border: var(--border);
-        }
-        
-        .search input {
-            flex:1; background:transparent; border:0; color: var(--text); outline:none;
-        }
-        
-        .actions { display:flex; gap: 10px }
-        .btn {
-            display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:12px;
-            background: var(--card); border: var(--border); color: var(--text); cursor:pointer;
-            transition: transform var(--trans), box-shadow var(--trans), background var(--trans);
-        }
-        
-        .btn:hover { transform: translateY(-2px); box-shadow: var(--shadow) }
-        .btn.primary {
-            background: linear-gradient(180deg, var(--red), #cc0f0f);
-            color: #fff; border: 0;
-        }
-        
-        .icon { width: 20px; height: 20px }
-        
-        .catbar {
-            background: linear-gradient(180deg, rgba(255,252,0,.08), transparent);
-            border-top: var(--border);
-            border-bottom: var(--border);
-        }
-        
-        .catbar-wrap {
-            max-width: 1200px; margin: 0 auto; padding: 10px clamp(14px, 3vw, 24px);
-            display:flex; gap: 8px; overflow-x: auto; scrollbar-width: thin;
-        }
-        
-        .chip {
-            flex: 0 0 auto;
-            display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px;
-            background: var(--glass); border: var(--border); color: var(--text); font-weight:600; font-size: 13px;
-            transition: background var(--trans), transform var(--trans), color var(--trans);
-            cursor: pointer;
-            text-decoration: none;
-        }
-        
-        .chip:hover { transform: translateY(-2px); background: rgba(255,17,17,.18) }
-        .chip.active { background: linear-gradient(180deg, var(--red), #d10f0f); color: #fff; border: 0 }
-        
-        .news-count {
-            background: var(--red);
-            color: white;
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 10px;
-            min-width: 18px;
-            text-align: center;
-            font-weight: 700;
-        }
-        
-        .likedtamil-footer {
-            display:  block;
-            background: #000000;
-            color: #fffc00;
-            text-align: center;
-            padding: 8px 10px;
-            font-size: 13px;
-            border-top: 2px solid #ff1111;
-            font-family: "Noto Sans Tamil", Inter, sans-serif;
-            margin-top: 20px;
-        }
-        
-        .likedtamil-footer-wrap {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        .likedtamil-footer a {
-            color: #ff1111;
-            text-decoration: none;
-            font-weight: 600;
-            transition: color 0.2s ease;
-        }
-        
-        .likedtamil-footer a:hover {
-            color: #fffc00;
-        }
-        
-        @media (max-width: 740px) {
-            .likedtamil-footer {
-                display: none;
+        @media (min-width: 640px) {
+            .logo {
+                height: 48px;
+                max-width: 200px;
             }
         }
         
-        .mobile-footer {
-            position: fixed; bottom: 0; left: 0; right: 0; z-index: 99;
-            backdrop-filter: blur(12px) saturate(1.1);
-            background: linear-gradient(180deg, rgba(255,17,17,.85), rgba(255,17,17,.98));
-            border-top: 2px solid rgba(255,252,0,.55);
-            display:none;
+        .site-title {
+            font-family: var(--font-heading);
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-shrink: 1;
         }
         
-        @media (max-width: 740px) {
-            .mobile-footer { display:block }
-            body { margin-bottom: 82px }
-            .search { display:none }
+        @media (min-width: 640px) {
+            .site-title {
+                font-size: 1.5rem;
+            }
         }
         
-        .foot-wrap {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 10px clamp(12px, 4vw, 18px);
-            display:flex;
-            justify-content: space-between;
-            gap: 6px;
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            flex-shrink: 0;
         }
         
-        .foot-item {
-            flex:1;
-            display:flex;
-            flex-direction: column;
-            align-items:center;
-            gap: 6px;
-            color: #fff;
-            text-decoration:none;
-            padding:8px;
-            border-radius: 12px;
-            transition: transform var(--trans), background var(--trans);
+        .search-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-fast);
         }
         
-        .foot-item:hover, .foot-item.active {
-            background: rgba(0,0,0,.18);
+        .search-btn:hover {
+            color: var(--text-primary);
+            background: var(--glass-bg);
+        }
+        
+        /* Theme toggle button */
+        .theme-toggle {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-full);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            color: var(--text-secondary);
+        }
+        
+        .theme-toggle:hover {
             transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+            background: var(--bg-hover);
+            color: var(--text-primary);
         }
         
-        .foot-icon {
-            width: 22px;
-            height: 22px;
+        .theme-toggle svg {
+            width: 20px;
+            height: 20px;
         }
         
-        .foot-label {
-            font-size: 12px;
-            font-weight:700;
+        .theme-toggle .sun-icon {
+            display: none;
         }
         
+        .light-mode .theme-toggle .moon-icon {
+            display: none;
+        }
+        
+        .light-mode .theme-toggle .sun-icon {
+            display: block;
+        }
+        
+        .subscribe-btn {
+            display: none;
+        }
+        
+        @media (min-width: 768px) {
+            .subscribe-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: var(--space-xs);
+                padding: var(--space-sm) var(--space-md);
+                background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red));
+                color: var(--white);
+                border: none;
+                border-radius: var(--radius-md);
+                font-family: var(--font-body);
+                font-weight: 600;
+                font-size: 0.875rem;
+                cursor: pointer;
+                transition: all var(--transition-base);
+            }
+            
+            .subscribe-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: var(--shadow-md);
+            }
+        }
+        
+        /* ===== Category Navigation Fixes ===== */
+        .category-nav {
+            position: sticky;
+            top: 60px; /* Match header height */
+            z-index: 900;
+            background: rgba(18, 18, 18, 0.98);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            padding: var(--space-sm) 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        
+        .category-nav::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .category-list {
+            display: flex;
+            gap: var(--space-xs);
+            padding: 0 var(--space-md);
+            list-style: none;
+            min-width: max-content;
+        }
+        
+        @media (min-width: 640px) {
+            .category-list {
+                gap: var(--space-sm);
+                padding: 0 var(--space-lg);
+                justify-content: center;
+            }
+        }
+        
+        .category-link {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-xs);
+            padding: var(--space-sm) var(--space-md);
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-full);
+            color: var(--text-secondary);
+            font-family: var(--font-body);
+            font-weight: 500;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            transition: all var(--transition-base);
+        }
+        
+        .category-link:hover,
+        .category-link.active {
+            background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red));
+            color: var(--white);
+            border-color: transparent;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        /* ===== Main Content ===== */
+        .container {
+            width: 100%;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 var(--space-md);
+        }
+        
+        @media (min-width: 640px) {
+            .container {
+                padding: 0 var(--space-lg);
+            }
+        }
+        
+        .main-content {
+            padding: var(--space-xl) 0;
+            min-height: calc(100vh - 180px);
+        }
+        
+        /* Article Container */
         .article-container {
             max-width: 1200px;
             color:  #fff;
@@ -718,7 +852,7 @@ $shareUrl = urlencode($currentUrl);
         .article-category {
             display: inline-block;
             padding: 8px 16px;
-            background: linear-gradient(180deg, var(--red), #cc0f0f);
+            background: linear-gradient(180deg, var(--primary-red), var(--primary-dark-red));
             color: white;
             border-radius: 20px;
             font-size: 14px;
@@ -731,14 +865,14 @@ $shareUrl = urlencode($currentUrl);
             font-weight: 800;
             line-height: 1.3;
             margin-bottom: 20px;
-            color: #fff;
+            color: var(--text-primary);
         }
         
         .article-meta {
             display: flex;
             align-items: center;
             gap: 20px;
-            color: var(--muted);
+            color: var(--text-secondary);
             font-size: 14px;
             margin-bottom: 30px;
         }
@@ -747,14 +881,14 @@ $shareUrl = urlencode($currentUrl);
             width: 100%;
             height: 400px;
             object-fit: cover;
-            border-radius: 12px;
+            border-radius: var(--radius-lg);
             margin-bottom: 30px;
         }
         
         .article-content {
             font-size: 18px;
             line-height: 1.8;
-            color: var(--text);
+            color: var(--text-primary);
         }
         
         .article-content p {
@@ -764,13 +898,13 @@ $shareUrl = urlencode($currentUrl);
         .article-content h2 {
             font-size: 24px;
             margin: 30px 0 20px;
-            color: var(--yellow);
+            color: var(--accent-yellow);
         }
         
         .article-content h3 {
             font-size: 20px;
             margin: 25px 0 15px;
-            color: var(--yellow);
+            color: var(--accent-yellow);
         }
         
         .article-content ul,
@@ -787,7 +921,7 @@ $shareUrl = urlencode($currentUrl);
         .article-content b {
             color: #ffffff;
             font-weight: 700;
-            background: linear-gradient(45deg, var(--red), var(--yellow));
+            background: linear-gradient(45deg, var(--primary-red), var(--accent-yellow));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -803,12 +937,12 @@ $shareUrl = urlencode($currentUrl);
 
         .article-content u {
             text-decoration: underline;
-            text-decoration-color: var(--yellow);
+            text-decoration-color: var(--accent-yellow);
             text-decoration-thickness: 2px;
         }
         
         .article-content a {
-            color: var(--red);
+            color: var(--primary-red);
             text-decoration: none;
         }
         
@@ -823,8 +957,8 @@ $shareUrl = urlencode($currentUrl);
             height: 0;
             margin: 30px 0;
             overflow: hidden;
-            border-radius: 12px;
-            box-shadow: var(--shadow);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
         }
         
         .video-container iframe {
@@ -839,7 +973,7 @@ $shareUrl = urlencode($currentUrl);
         /* Image Position Styles */
         .position-image {
             width: 100%;
-            border-radius: 12px;
+            border-radius: var(--radius-lg);
             overflow: hidden;
             margin: 30px 0;
         }
@@ -865,7 +999,7 @@ $shareUrl = urlencode($currentUrl);
             max-height: 500px;
             object-fit: cover;
             display: block;
-            border-radius: 12px;
+            border-radius: var(--radius-lg);
         }
 
         /* Inline image + text row for center images */
@@ -891,13 +1025,13 @@ $shareUrl = urlencode($currentUrl);
             max-height: 360px;
             object-fit: cover;
             display: block;
-            border-radius: 12px;
+            border-radius: var(--radius-lg);
         }
 
         .image-caption {
             text-align: center;
             font-size: 14px;
-            color: var(--muted);
+            color: var(--text-muted);
             margin-top: 8px;
             font-style: italic;
             padding: 0 10px;
@@ -915,18 +1049,18 @@ $shareUrl = urlencode($currentUrl);
         }
         
         .share-section {
-            background: var(--card);
-            border-radius: var(--radius);
-            padding: 14px;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
             margin-bottom: 30px;
-            border: var(--border);
+            border: 1px solid var(--border-color);
         }
         
         .share-title {
             font-size: 18px;
             font-weight: 600;
             margin-bottom: 20px;
-            color: var(--text);
+            color: var(--text-primary);
             display: flex;
             align-items: center;
             gap: 10px;
@@ -957,11 +1091,11 @@ $shareUrl = urlencode($currentUrl);
             align-items: center;
             justify-content: center;
             padding: 15px 10px;
-            background: var(--card-hi);
-            border: var(--border);
-            border-radius: var(--radius-xs);
+            background: var(--bg-hover);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
             text-decoration: none;
-            transition: all var(--trans);
+            transition: all var(--transition-base);
             text-align: center;
             min-height: 80px;
             position: relative;
@@ -970,30 +1104,25 @@ $shareUrl = urlencode($currentUrl);
 
         .share-button:hover {
             transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-            background: var(--glass);
+            box-shadow: var(--shadow-md);
+            background: var(--glass-bg);
         }
 
         .share-button:hover .share-icon {
             transform: scale(1.2);
         }
 
-        .share-button:hover .share-label {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
         .share-icon {
             width: 24px;
             height: 24px;
             margin-bottom: 8px;
-            transition: transform var(--trans);
+            transition: transform var(--transition-base);
         }
 
         .share-label {
             font-size: 14px;
             font-weight: 700;
-            color: var(--text);
+            color: var(--text-primary);
             opacity: 1;
             transform: none;
             position: relative;
@@ -1038,15 +1167,15 @@ $shareUrl = urlencode($currentUrl);
         /* Share button tooltips */
         .share-tooltip {
             position: absolute !important;
-            background: var(--card) !important;
-            color: var(--text) !important;
+            background: var(--bg-card) !important;
+            color: var(--text-primary) !important;
             padding: 8px 12px !important;
             border-radius: 6px !important;
             font-size: 12px !important;
             white-space: nowrap !important;
             z-index: 1000 !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
-            border: 1px solid var(--border) !important;
+            box-shadow: var(--shadow-sm) !important;
+            border: 1px solid var(--border-color) !important;
             transform: translateX(-50%) !important;
             top: -40px !important;
             left: 50% !important;
@@ -1063,22 +1192,22 @@ $shareUrl = urlencode($currentUrl);
             height: 0;
             border-left: 5px solid transparent;
             border-right: 5px solid transparent;
-            border-top: 5px solid var(--card);
+            border-top: 5px solid var(--bg-card);
         }
         
         /* Related News Section */
         .related-news {
-            background: var(--card);
-            border-radius: var(--radius);
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
             padding: 24px;
-            border: var(--border);
+            border: 1px solid var(--border-color);
         }
         
         .related-title {
             font-size: 18px;
             font-weight: 600;
             margin-bottom: 20px;
-            color: var(--text);
+            color: var(--text-primary);
             display: flex;
             align-items: center;
             gap: 10px;
@@ -1088,7 +1217,7 @@ $shareUrl = urlencode($currentUrl);
             content: '';
             flex: 1;
             height: 1px;
-            background: var(--border);
+            background: var(--border-color);
         }
         
         .related-list {
@@ -1100,40 +1229,40 @@ $shareUrl = urlencode($currentUrl);
         .related-item {
             display: block;
             padding: 12px;
-            background: var(--card-hi);
-            border-radius: var(--radius-xs);
-            border: var(--border);
+            background: var(--bg-hover);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
             text-decoration: none;
-            transition: transform var(--trans), background var(--trans);
+            transition: transform var(--transition-base), background var(--transition-base);
         }
         
         .related-item:hover {
             transform: translateY(-2px);
-            background: var(--glass);
+            background: var(--glass-bg);
         }
         
         .related-item-title {
             font-weight: 600;
             margin-bottom: 8px;
-            color: var(--text);
+            color: var(--text-primary);
         }
         
         .related-item-time {
             font-size: 12px;
-            color: var(--muted);
+            color: var(--text-muted);
         }
         
         .comments-section {
             margin-top: 60px;
             padding-top: 30px;
-            border-top: var(--border);
+            border-top: 1px solid var(--border-color);
         }
         
         .comments-title {
             font-size: 24px;
             font-weight: 700;
             margin-bottom: 30px;
-            color: var(--text);
+            color: var(--text-primary);
             display: flex;
             align-items: center;
             gap: 10px;
@@ -1143,28 +1272,28 @@ $shareUrl = urlencode($currentUrl);
             content: '';
             flex: 1;
             height: 1px;
-            background: var(--border);
+            background: var(--border-color);
             margin-left: 15px;
         }
         
         .comment-count {
-            color: var(--red);
+            color: var(--primary-red);
             font-weight: 800;
         }
         
         .comment-form {
-            background: var(--card);
-            border-radius: var(--radius);
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
             padding: 24px;
             margin-bottom: 40px;
-            border: var(--border);
+            border: 1px solid var(--border-color);
         }
         
         .comment-form-title {
             font-size: 18px;
             font-weight: 600;
             margin-bottom: 20px;
-            color: var(--text);
+            color: var(--text-primary);
         }
         
         .form-group {
@@ -1176,24 +1305,24 @@ $shareUrl = urlencode($currentUrl);
             margin-bottom: 8px;
             font-size: 14px;
             font-weight: 600;
-            color: var(--muted);
+            color: var(--text-muted);
         }
         
         .form-control {
             width: 100%;
             padding: 12px 16px;
-            background: var(--card-hi);
-            border: var(--border);
-            border-radius: var(--radius-xs);
-            color: var(--text);
+            background: var(--bg-hover);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
             font-family: inherit;
             font-size: 15px;
-            transition: border-color var(--trans);
+            transition: border-color var(--transition-base);
         }
         
         .form-control:focus {
             outline: none;
-            border-color: var(--red);
+            border-color: var(--primary-red);
         }
         
         textarea.form-control {
@@ -1218,13 +1347,13 @@ $shareUrl = urlencode($currentUrl);
             align-items: center;
             gap: 8px;
             padding: 12px 24px;
-            background: linear-gradient(180deg, var(--red), #cc0f0f);
+            background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red));
             color: white;
             border: none;
-            border-radius: var(--radius-xs);
+            border-radius: var(--radius-sm);
             font-weight: 600;
             cursor: pointer;
-            transition: transform var(--trans), opacity var(--trans);
+            transition: transform var(--transition-base), opacity var(--transition-base);
         }
         
         .submit-btn:hover {
@@ -1239,10 +1368,10 @@ $shareUrl = urlencode($currentUrl);
         }
         
         .comment-item {
-            background: var(--card);
-            border-radius: var(--radius);
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
             padding: 20px;
-            border: var(--border);
+            border: 1px solid var(--border-color);
             position: relative;
         }
         
@@ -1257,7 +1386,7 @@ $shareUrl = urlencode($currentUrl);
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: linear-gradient(45deg, var(--red), var(--yellow));
+            background: linear-gradient(45deg, var(--primary-red), var(--accent-yellow));
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1277,7 +1406,7 @@ $shareUrl = urlencode($currentUrl);
         
         .comment-time {
             font-size: 13px;
-            color: var(--muted);
+            color: var(--text-muted);
         }
         
         .comment-actions {
@@ -1288,7 +1417,7 @@ $shareUrl = urlencode($currentUrl);
         .comment-action {
             background: none;
             border: none;
-            color: var(--muted);
+            color: var(--text-muted);
             cursor: pointer;
             font-size: 13px;
             display: flex;
@@ -1296,21 +1425,21 @@ $shareUrl = urlencode($currentUrl);
             gap: 4px;
             padding: 4px 8px;
             border-radius: 6px;
-            transition: all var(--trans);
+            transition: all var(--transition-base);
         }
         
         .comment-action:hover {
-            color: var(--text);
-            background: var(--glass);
+            color: var(--text-primary);
+            background: var(--glass-bg);
         }
         
         .comment-action.liked {
-            color: var(--red);
+            color: var(--primary-red);
         }
         
         .comment-content {
             line-height: 1.6;
-            color: var(--text);
+            color: var(--text-primary);
             white-space: pre-line; /* Preserve line breaks */
         }
         
@@ -1318,19 +1447,19 @@ $shareUrl = urlencode($currentUrl);
             margin-top: 20px;
             margin-left: 20px;
             padding-left: 20px;
-            border-left: 2px solid var(--glass);
+            border-left: 2px solid var(--glass-bg);
         }
         
         .reply-form {
             margin-top: 16px;
             padding: 16px;
-            background: var(--card-hi);
-            border-radius: var(--radius-xs);
+            background: var(--bg-hover);
+            border-radius: var(--radius-sm);
         }
         
         .show-replies {
             margin-top: 12px;
-            color: var(--red);
+            color: var(--primary-red);
             background: none;
             border: none;
             cursor: pointer;
@@ -1344,10 +1473,10 @@ $shareUrl = urlencode($currentUrl);
         .no-comments {
             text-align: center;
             padding: 40px 20px;
-            color: var(--muted);
-            background: var(--card);
-            border-radius: var(--radius);
-            border: var(--border);
+            color: var(--text-muted);
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
         }
         
         .no-comments-icon {
@@ -1360,7 +1489,7 @@ $shareUrl = urlencode($currentUrl);
             border: 1px solid rgba(0, 255, 0, 0.3);
             color: #00ff00;
             padding: 12px;
-            border-radius: var(--radius-xs);
+            border-radius: var(--radius-sm);
             margin-bottom: 20px;
             text-align: center;
         }
@@ -1370,7 +1499,7 @@ $shareUrl = urlencode($currentUrl);
             border: 1px solid rgba(255, 255, 0, 0.3);
             color: #ffff00;
             padding: 12px;
-            border-radius: var(--radius-xs);
+            border-radius: var(--radius-sm);
             margin-bottom: 20px;
             text-align: center;
         }
@@ -1378,7 +1507,7 @@ $shareUrl = urlencode($currentUrl);
         /* Comment approval handling */
         .comment-item.pending {
             opacity: 0.7;
-            border-left: 4px solid var(--yellow);
+            border-left: 4px solid var(--accent-yellow);
         }
 
         .comment-item.approved {
@@ -1386,7 +1515,7 @@ $shareUrl = urlencode($currentUrl);
         }
 
         .pending-badge {
-            background: var(--yellow);
+            background: var(--accent-yellow);
             color: var(--black);
             padding: 2px 8px;
             border-radius: 4px;
@@ -1400,7 +1529,7 @@ $shareUrl = urlencode($currentUrl);
             border: 1px solid rgba(0, 255, 0, 0.3);
             color: #00ff00;
             padding: 16px;
-            border-radius: var(--radius-xs);
+            border-radius: var(--radius-sm);
             margin-bottom: 25px;
             text-align: center;
             font-weight: 600;
@@ -1418,6 +1547,118 @@ $shareUrl = urlencode($currentUrl);
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* ===== Desktop Footer ===== */
+        .desktop-footer {
+            display: none;
+        }
+        
+        @media (min-width: 768px) {
+            .desktop-footer {
+                display: block;
+                background: var(--black);
+                color: var(--accent-yellow);
+                padding: var(--space-lg) 0;
+                border-top: 3px solid var(--primary-red);
+                margin-top: var(--space-xl);
+            }
+        }
+        
+        /* ===== Mobile Footer ===== */
+        .mobile-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(10, 10, 10, 0.98);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border-color);
+            padding: var(--space-sm) 0;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 70px;
+        }
+        
+        @media (min-width: 768px) {
+            .mobile-footer {
+                display: none;
+            }
+        }
+        
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--space-xs);
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: var(--radius-md);
+            transition: all var(--transition-fast);
+            flex: 1;
+            max-width: 80px;
+            text-decoration: none;
+            color: var(--text-secondary);
+        }
+        
+        .mobile-nav-item.active {
+            color: var(--primary-red);
+        }
+        
+        .mobile-nav-icon {
+            width: 22px;
+            height: 22px;
+        }
+        
+        .mobile-nav-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        /* ===== Search Modal ===== */
+        .search-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1100;
+            align-items: flex-start;
+            justify-content: center;
+            padding: var(--space-xl) var(--space-md);
+            overflow-y: auto;
+        }
+        
+        .search-modal.active {
+            display: flex;
+        }
+        
+        /* Animation for mobile footer */
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+        
+        .mobile-footer {
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        /* Animation for new comment highlighting */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(230, 57, 70, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(230, 57, 70, 0); }
+        }
+        
+        .comment-item.highlight {
+            animation: pulse 2s;
         }
         
         @media (max-width: 768px) {
@@ -1475,377 +1716,497 @@ $shareUrl = urlencode($currentUrl);
                 margin: 20px 0;
             }
         }
-        .title {
-            font-weight: 800; font-size: clamp(18px, 2.4vw, 28px); letter-spacing: .2px;
-        }
-        
-        /* Animation for new comment highlighting */
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(255, 17, 17, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(255, 17, 17, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 17, 17, 0); }
-        }
-        
-        .comment-item.highlight {
-            animation: pulse 2s;
-        }
         
     </style>
 </head>
 <body>
-    <!-- HEADER -->
-    <header class="appbar">
-        <div class="appbar-wrap">
-            <a href="index.php" class="brand">
-                <img src="Liked-tamil-news-logo-1 (2).png" alt="Portal Logo" class="logo" />
-                <span class="title">Liked தமிழ்</span>
-            </a>
-            <!-- Theme Toggle -->
-            <button class="theme-toggle" id="themeToggle" aria-label="Change theme">
-                <svg class="moon-icon" viewBox="0 0 24 24" fill="none">
-                    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.6"/>
-                </svg>
-                <svg class="sun-icon" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.6"/>
-                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.6"/>
-                </svg>
-            </button>
+    <!-- Header -->
+    <header class="header" role="banner">
+        <div class="container">
+            <div class="header-content">
+                <a href="index.php" class="logo-container">
+                    <img src="Liked-tamil-news-logo-1 (2).png" alt="Liked தமிழ்" class="logo" />
+                    <h1 class="site-title">Liked தமிழ்</h1>
+                </a>
+                
+                <div class="header-actions">
+                    <button class="search-btn" aria-label="தேடல்" id="searchToggle">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                    </button>
+                    
+                    <button class="subscribe-btn" onclick="openSubscription()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                            <polyline points="22,6 12,13 2,6" />
+                        </svg>
+                        சந்தா
+                    </button>
+                    <button class="theme-toggle" id="themeToggle" aria-label="Change theme">
+                        <svg class="moon-icon" viewBox="0 0 24 24" fill="none">
+                            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.6"/>
+                        </svg>
+                        <svg class="sun-icon" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.6"/>
+                            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.6"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
         </div>
     </header>
 
     <!-- Category Navigation -->
-    <nav class="catbar" aria-label="Categories">
-        <div class="catbar-wrap">
-            <a href="index.php" class="chip">முகப்பு</a>
-            <?php foreach ($categories as $category): ?>
-                <?php 
-                // Count news in this category using FIND_IN_SET
-                $countQuery = "SELECT COUNT(*) as count FROM news 
-                               WHERE FIND_IN_SET(?, categories) > 0 
-                               AND status = 'published'";
-                $countStmt = $db->prepare($countQuery);
-                $countStmt->execute([$category['id']]);
-                $count = $countStmt->fetch(PDO::FETCH_ASSOC);
-                ?>
-                <a href="categories.php?id=<?php echo $category['id']; ?>" class="chip">
-                    <?php echo htmlspecialchars($category['name']); ?>
-                    <?php if ($count['count'] > 0): ?>
-                        <span class="news-count"><?php echo $count['count']; ?></span>
-                    <?php endif; ?>
-                </a>
-            <?php endforeach; ?>
+    <nav class="category-nav" aria-label="Main categories">
+        <div class="container">
+            <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                <ul class="category-list">
+                    <li style="display: inline-block;">
+                        <a href="index.php" class="category-link">
+                            முகப்பு
+                        </a>
+                    </li>
+                    <?php foreach ($categories as $category): ?>
+                        <?php 
+                        $countQuery = "SELECT COUNT(*) as count FROM news 
+                                       WHERE FIND_IN_SET(?, categories) > 0 
+                                       AND status = 'published'";
+                        $countStmt = $db->prepare($countQuery);
+                        $countStmt->execute([$category['id']]);
+                        $count = $countStmt->fetch(PDO::FETCH_ASSOC);
+                        ?>
+                        <li style="display: inline-block;">
+                            <a href="categories.php?id=<?php echo $category['id']; ?>" class="category-link">
+                                <?php echo htmlspecialchars($category['name']); ?>
+                            </a>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
         </div>
     </nav>
 
     <!-- ARTICLE CONTENT -->
-    <main class="article-container">
-        <div class="article-main">
-            <article>
-                <div class="article-header">
-                    <span class="article-category"><?php echo htmlspecialchars($news['category_name'] ?? 'செய்திகள்'); ?></span>
-                    <h1 class="article-title"><?php echo htmlspecialchars($news['title']); ?></h1>
-                    <div class="article-meta">
-                        <span>
-                            <?php 
-                            if (!empty($news['published_at'])) {
-                                echo date('F d, Y', strtotime($news['published_at']));
-                            } else {
-                                echo date('F d, Y', strtotime($news['created_at']));
-                            }
-                            ?>
-                        </span>
-                        <span>•</span>
-                        <span>
-                            <?php 
-                            if (!empty($news['published_at'])) {
-                                echo getTamilTimeAgo($news['published_at']);
-                            } else {
-                                echo getTamilTimeAgo($news['created_at']);
-                            }
-                            ?>
-                        </span>
-                        <span>•</span>
+    <main class="container">
+        <div class="article-container">
+            <div class="article-main">
+                <article>
+                    <div class="article-header">
+                        <span class="article-category"><?php echo htmlspecialchars($news['category_name'] ?? 'செய்திகள்'); ?></span>
+                        <h1 class="article-title"><?php echo htmlspecialchars($news['title']); ?></h1>
+                        <div class="article-meta">
+                            <span>
+                                <?php 
+                                if (!empty($news['published_at'])) {
+                                    echo date('F d, Y', strtotime($news['published_at']));
+                                } else {
+                                    echo date('F d, Y', strtotime($news['created_at']));
+                                }
+                                ?>
+                            </span>
+                            <span>•</span>
+                            <span>
+                                <?php 
+                                if (!empty($news['published_at'])) {
+                                    echo getTamilTimeAgo($news['published_at']);
+                                } else {
+                                    echo getTamilTimeAgo($news['created_at']);
+                                }
+                                ?>
+                            </span>
+                            <span>•</span>
 
-                        <span id="commentCount">
-                            <?php 
-                            echo $totalComments . ' கருத்துகள்';
-                            ?>
-                        </span>
+                            <span id="commentCount">
+                                <?php 
+                                echo $totalComments . ' கருத்துகள்';
+                                ?>
+                            </span>
+                        </div>
                     </div>
-                </div>
-                
-                <!-- Main Article Image -->
-                <img src="<?php echo $mainImagePath; ?>" 
-                     alt="<?php echo htmlspecialchars($news['title']); ?>" 
-                     class="article-image">
-                
-                <!-- Article Content with Positioned Images -->
-                <div class="article-content">
-                    <?php echo $contentWithImages; ?>
-                </div>
-            </article>
+                    
+                    <!-- Main Article Image -->
+                    <img src="<?php echo $mainImagePath; ?>" 
+                         alt="<?php echo htmlspecialchars($news['title']); ?>" 
+                         class="article-image">
+                    
+                    <!-- Article Content with Positioned Images -->
+                    <div class="article-content">
+                        <?php echo $contentWithImages; ?>
+                    </div>
+                </article>
 
-            <!-- COMMENT SECTION -->
-            <section class="comments-section" id="comments">
-                <h2 class="comments-title">
-                    <span>கருத்துகள்</span>
-                    <span class="comment-count" id="totalComments"><?php echo $totalComments; ?></span>
-                </h2>
+                <!-- COMMENT SECTION -->
+                <section class="comments-section" id="comments">
+                    <h2 class="comments-title">
+                        <span>கருத்துகள்</span>
+                        <span class="comment-count" id="totalComments"><?php echo $totalComments; ?></span>
+                    </h2>
 
-                <!-- Comment Form -->
-                <div class="comment-form">
-                    <h3 class="comment-form-title">கருத்தைப் பதிவிடுக</h3>
-                    <?php if (isset($_GET['comment_submitted']) && $_GET['comment_submitted'] == 'true'): ?>
-                        <div class="feedback-success">
-                            <span class="feedback-success-icon">✓</span>
-                            உங்கள் கருத்து வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது!
-                        </div>
-                    <?php endif; ?>
-                    <?php if (isset($error_message)): ?>
-                        <div class="pending-message">
-                            <span>⚠</span>
-                            <?php echo $error_message; ?>
-                        </div>
-                    <?php endif; ?>
-                    <form method="POST" action="" id="commentForm">
-                        <input type="hidden" name="parent_id" value="0" id="parentId">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="name">பெயர் *</label>
-                                <input type="text" id="name" name="name" class="form-control" required value="<?php echo isset($_POST['name']) ? htmlspecialchars($_POST['name']) : ''; ?>">
+                    <!-- Comment Form -->
+                    <div class="comment-form">
+                        <h3 class="comment-form-title">கருத்தைப் பதிவிடுக</h3>
+                        <?php if (isset($_GET['comment_submitted']) && $_GET['comment_submitted'] == 'true'): ?>
+                            <div class="feedback-success">
+                                <span class="feedback-success-icon">✓</span>
+                                உங்கள் கருத்து வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது!
+                            </div>
+                        <?php endif; ?>
+                        <?php if (isset($error_message)): ?>
+                            <div class="pending-message">
+                                <span>⚠</span>
+                                <?php echo $error_message; ?>
+                            </div>
+                        <?php endif; ?>
+                        <form method="POST" action="" id="commentForm">
+                            <input type="hidden" name="parent_id" value="0" id="parentId">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="name">பெயர் *</label>
+                                    <input type="text" id="name" name="name" class="form-control" required value="<?php echo isset($_POST['name']) ? htmlspecialchars($_POST['name']) : ''; ?>">
+                                </div>
+                                <div class="form-group">
+                                    <label for="email">மின்னஞ்சல் (வெளிப்படையாக்கப்படாது) *</label>
+                                    <input type="email" id="email" name="email" class="form-control" required value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
+                                </div>
                             </div>
                             <div class="form-group">
-                                <label for="email">மின்னஞ்சல் (வெளிப்படையாக்கப்படாது) *</label>
-                                <input type="email" id="email" name="email" class="form-control" required value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
+                                <label for="comment">கருத்து *</label>
+                                <textarea id="comment" name="comment" class="form-control" required><?php echo isset($_POST['comment']) ? htmlspecialchars($_POST['comment']) : ''; ?></textarea>
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="comment">கருத்து *</label>
-                            <textarea id="comment" name="comment" class="form-control" required><?php echo isset($_POST['comment']) ? htmlspecialchars($_POST['comment']) : ''; ?></textarea>
-                        </div>
-                        <button type="submit" name="submit_comment" class="submit-btn">
-                            <svg class="icon" viewBox="0 0 24 24" fill="none">
-                                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="1.5"/>
-                            </svg>
-                            கருத்தை சமர்ப்பிக்கவும்
-                        </button>
-                    </form>
-                </div>
+                            <button type="submit" name="submit_comment" class="submit-btn">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                                </svg>
+                                கருத்தை சமர்ப்பிக்கவும்
+                            </button>
+                        </form>
+                    </div>
 
-                <!-- Comments List -->
-                <div class="comments-list" id="commentsList">
-                    <?php if (empty($comments)): ?>
-                        <div class="no-comments">
-                            <div class="no-comments-icon">💬</div>
-                            <h3>இன்னும் கருத்துகள் இல்லை</h3>
-                            <p>முதல் கருத்தைப் பதிவிட நீங்கள் தயாரா?</p>
-                        </div>
-                    <?php else: ?>
-                        <?php foreach ($comments as $comment): ?>
-                            <div class="comment-item <?php echo isset($_GET['new_comment']) && $_GET['new_comment'] == $comment['id'] ? 'highlight' : ''; ?>" 
-                                 id="comment-<?php echo $comment['id']; ?>">
-                                <div class="comment-header">
-                                    <div class="comment-avatar"><?php echo getInitials($comment['name']); ?></div>
-                                    <div class="comment-user">
-                                        <div class="comment-name"><?php echo htmlspecialchars($comment['name']); ?></div>
-                                        <div class="comment-time"><?php echo getTamilTimeAgo($comment['created_at']); ?></div>
-                                    </div>
-                                    <div class="comment-actions">
-                                        <a href="?id=<?php echo $newsId; ?>&like_comment=<?php echo $comment['id']; ?>" 
-                                           class="comment-action <?php echo isset($_SESSION['liked_comment_' . $comment['id']]) ? 'liked' : ''; ?>">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="<?php echo isset($_SESSION['liked_comment_' . $comment['id']]) ? 'currentColor' : 'none'; ?>" stroke="currentColor">
-                                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                                            </svg>
-                                            <span class="like-count"><?php echo $comment['likes']; ?></span>
-                                        </a>
-                                        <button class="comment-action reply-btn" data-id="<?php echo $comment['id']; ?>">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>
-                                            </svg>
-                                            பதில்
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="comment-content"><?php echo $comment['comment']; ?></div>
-                                
-                                <!-- Reply Form (Initially Hidden) -->
-                                <div class="reply-form" id="reply-form-<?php echo $comment['id']; ?>" style="display: none;">
-                                    <form method="POST" action="">
-                                        <input type="hidden" name="parent_id" value="<?php echo $comment['id']; ?>">
-                                        <div class="form-group">
-                                            <label for="reply-name-<?php echo $comment['id']; ?>">பெயர் *</label>
-                                            <input type="text" id="reply-name-<?php echo $comment['id']; ?>" name="name" class="form-control" required>
+                    <!-- Comments List -->
+                    <div class="comments-list" id="commentsList">
+                        <?php if (empty($comments)): ?>
+                            <div class="no-comments">
+                                <div class="no-comments-icon">💬</div>
+                                <h3>இன்னும் கருத்துகள் இல்லை</h3>
+                                <p>முதல் கருத்தைப் பதிவிட நீங்கள் தயாரா?</p>
+                            </div>
+                        <?php else: ?>
+                            <?php foreach ($comments as $comment): ?>
+                                <div class="comment-item <?php echo isset($_GET['new_comment']) && $_GET['new_comment'] == $comment['id'] ? 'highlight' : ''; ?>" 
+                                     id="comment-<?php echo $comment['id']; ?>">
+                                    <div class="comment-header">
+                                        <div class="comment-avatar"><?php echo getInitials($comment['name']); ?></div>
+                                        <div class="comment-user">
+                                            <div class="comment-name"><?php echo htmlspecialchars($comment['name']); ?></div>
+                                            <div class="comment-time"><?php echo getTamilTimeAgo($comment['created_at']); ?></div>
                                         </div>
-                                        <div class="form-group">
-                                            <label for="reply-comment-<?php echo $comment['id']; ?>">பதில் *</label>
-                                            <textarea id="reply-comment-<?php echo $comment['id']; ?>" name="comment" class="form-control" required></textarea>
-                                        </div>
-                                        <input type="email" name="email" style="display:none;" value="reply@example.com">
-                                        <div style="display: flex; gap: 10px;">
-                                            <button type="submit" name="submit_comment" class="submit-btn" style="padding: 8px 16px;">
-                                                பதிலிடுக
-                                            </button>
-                                            <button type="button" class="cancel-reply-btn" data-id="<?php echo $comment['id']; ?>" style="padding: 8px 16px; background: var(--card); border: var(--border); color: var(--text); border-radius: var(--radius-xs);">
-                                                ரத்துசெய்
+                                        <div class="comment-actions">
+                                            <a href="?id=<?php echo $newsId; ?>&like_comment=<?php echo $comment['id']; ?>" 
+                                               class="comment-action <?php echo isset($_SESSION['liked_comment_' . $comment['id']]) ? 'liked' : ''; ?>">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="<?php echo isset($_SESSION['liked_comment_' . $comment['id']]) ? 'currentColor' : 'none'; ?>" stroke="currentColor">
+                                                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                                </svg>
+                                                <span class="like-count"><?php echo $comment['likes']; ?></span>
+                                            </a>
+                                            <button class="comment-action reply-btn" data-id="<?php echo $comment['id']; ?>">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>
+                                                </svg>
+                                                பதில்
                                             </button>
                                         </div>
-                                    </form>
-                                </div>
-                                
-                                <!-- Replies -->
-                                <?php if (!empty($comment['replies'])): ?>
-                                    <div class="comment-replies">
-                                        <?php foreach ($comment['replies'] as $reply): ?>
-                                            <div class="comment-item comment-reply <?php echo isset($_GET['new_comment']) && $_GET['new_comment'] == $reply['id'] ? 'highlight' : ''; ?>" 
-                                                 id="comment-<?php echo $reply['id']; ?>">
-                                                <div class="comment-header">
-                                                    <div class="comment-avatar"><?php echo getInitials($reply['name']); ?></div>
-                                                    <div class="comment-user">
-                                                        <div class="comment-name"><?php echo htmlspecialchars($reply['name']); ?></div>
-                                                        <div class="comment-time"><?php echo getTamilTimeAgo($reply['created_at']); ?></div>
-                                                    </div>
-                                                    <div class="comment-actions">
-                                                        <a href="?id=<?php echo $newsId; ?>&like_comment=<?php echo $reply['id']; ?>" 
-                                                           class="comment-action <?php echo isset($_SESSION['liked_comment_' . $reply['id']]) ? 'liked' : ''; ?>">
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="<?php echo isset($_SESSION['liked_comment_' . $reply['id']]) ? 'currentColor' : 'none'; ?>" stroke="currentColor">
-                                                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                                                            </svg>
-                                                            <span class="like-count"><?php echo $reply['likes']; ?></span>
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                                <div class="comment-content"><?php echo $reply['comment']; ?></div>
+                                    </div>
+                                    <div class="comment-content"><?php echo $comment['comment']; ?></div>
+                                    
+                                    <!-- Reply Form (Initially Hidden) -->
+                                    <div class="reply-form" id="reply-form-<?php echo $comment['id']; ?>" style="display: none;">
+                                        <form method="POST" action="">
+                                            <input type="hidden" name="parent_id" value="<?php echo $comment['id']; ?>">
+                                            <div class="form-group">
+                                                <label for="reply-name-<?php echo $comment['id']; ?>">பெயர் *</label>
+                                                <input type="text" id="reply-name-<?php echo $comment['id']; ?>" name="name" class="form-control" required>
                                             </div>
-                                        <?php endforeach; ?>
+                                            <div class="form-group">
+                                                <label for="reply-comment-<?php echo $comment['id']; ?>">பதில் *</label>
+                                                <textarea id="reply-comment-<?php echo $comment['id']; ?>" name="comment" class="form-control" required></textarea>
+                                            </div>
+                                            <input type="email" name="email" style="display:none;" value="reply@example.com">
+                                            <div style="display: flex; gap: 10px;">
+                                                <button type="submit" name="submit_comment" class="submit-btn" style="padding: 8px 16px;">
+                                                    பதிலிடுக
+                                                </button>
+                                                <button type="button" class="cancel-reply-btn" data-id="<?php echo $comment['id']; ?>" style="padding: 8px 16px; background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: var(--radius-sm);">
+                                                    ரத்துசெய்
+                                                </button>
+                                            </div>
+                                        </form>
                                     </div>
-                                <?php endif; ?>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
-            </section>
-        </div>
-
-        <!-- SIDEBAR -->
-        <div class="sidebar">
-            <!-- Share Buttons -->
-            <div class="share-section">
-                <h3 class="share-title">பகிர்</h3>
-                <div class="share-buttons">
-                    <a href="https://api.whatsapp.com/send?text=<?php echo $shareTextEncoded; ?>" 
-                       target="_blank" class="share-button whatsapp" title="WhatsApp இல் பகிரவும்">
-                        <svg class="share-icon" viewBox="0 0 24 24">
-                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.76.982.998-3.677-.236-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.826 9.826 0 012.9 6.994c-.004 5.45-4.438 9.88-9.888 9.88m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.333 .157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.333 11.893-11.893 0-3.18-1.24-6.162-3.495-8.411"/>
-                        </svg>
-                        <span class="share-label">WhatsApp</span>
-                    </a>
-                    
-                    <a href="https://www.facebook.com/sharer/sharer.php?u=<?php echo $shareUrl; ?>&quote=<?php echo $shareTextEncoded; ?>" 
-                       target="_blank" class="share-button facebook" title="Facebook இல் பகிரவும்">
-                        <svg class="share-icon" viewBox="0 0 24 24">
-                            <path d="M18.77 7.46H14.5v-1.9c0-.9.6-1.1 1-1.1h3V.5h-4.33C10.24.5 9.5 3.44 9.5 5.32v2.15h-3v4h3v12h5v-12h3.85l.42-4z"/>
-                        </svg>
-                        <span class="share-label">Facebook</span>
-                    </a>
-                    
-                    <a href="https://twitter.com/intent/tweet?text=<?php echo $shareTextEncoded; ?>" 
-                       target="_blank" class="share-button twitter" title="Twitter இல் பகிரவும்">
-                        <svg class="share-icon" viewBox="0 0 24 24">
-                            <path d="M23.44 4.83c-.8.37-1.5.38-2.22.02.93-.56.98-.96 1.32-2.02-.88.52-1.86.9-2.9 1.1-.82-.88-2-1.43-3.3-1.43-2.5 0-4.55 2.04-4.55 4.54 0 .36.03.7.1 1.04-3.77-.2-7.12-2-9.36-4.75-.4.67-.6 1.45-.6 2.3 0 1.56.8 2.95 2 3.77-.74-.03-1.44-.23-2.05-.57v.06c0 2.2 1.56 4.03 3.64 4.44-.67.2-1.37.2-2.06.08.58 1.8 2.26 3.12 4.25 3.16C5.78 18.1 3.37 18.74 1 18.46c2 1.3 4.4 2.04 6.97 2.04 8.35 0 12.92-6.92 12.92-12.93 0-.2 0-.4-.02-.6.9-.63 1.96-1.22 2.56-2.14z"/>
-                        </svg>
-                        <span class="share-label">Twitter</span>
-                    </a>
-                    
-                    <a href="https://www.linkedin.com/shareArticle?mini=true&url=<?php echo $shareUrl; ?>&title=<?php echo $shareTextEncoded; ?>&summary=<?php echo $shareTextEncoded; ?>" 
-                       target="_blank" class="share-button linkedin" title="LinkedIn இல் பகிரவும்">
-                        <svg class="share-icon" viewBox="0 0 24 24">
-                            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-                        </svg>
-                        <span class="share-label">LinkedIn</span>
-                    </a>
-                    
-                    <a href="https://t.me/share/url?url=<?php echo $shareUrl; ?>&text=<?php echo $shareTextEncoded; ?>" 
-                       target="_blank" class="share-button telegram" title="Telegram இல் பகிரவும்">
-                        <svg class="share-icon" viewBox="0 0 24 24">
-                            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.295-.605.295l.213-3.054 5.56-5.022c.242-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.135-.954l11.57-4.461c.538-.196 1.006.128.832.941z"/>
-                        </svg>
-                        <span class="share-label">Telegram</span>
-                    </a>
-                    
-                    <a href="https://pinterest.com/pin/create/button/?url=<?php echo $shareUrl; ?>&media=<?php echo urlencode($mainImagePath); ?>&description=<?php echo $shareTextEncoded; ?>" 
-                       target="_blank" class="share-button pinterest" title="Pinterest இல் பகிரவும்">
-                        <svg class="share-icon" viewBox="0 0 24 24">
-                            <path d="M12.14.5C5.86.5 2.7 5 2.7 8.75c0 2.27.86 4.3 2.7 5.05.3.12.57 0 .66-.33l.27-1.06c.1-.32.06-.44-.2-.73-.52-.62-.86-1.44-.86-2.6 0-3.33 2.5-6.32 6.5-6.32 3.55 0 5.5 2.17 5.5 5.07 0 3.8-1.7 7.02-4.2 7.02-1.37 0-2.4-1.14-2.07-2.54.4-1.68 1.16-3.48 1.16-4.7 0-1.07-.58-1.98-1.78-1.98-1.4 0-2.55 1.47-2.55 3.42 0 1.25.43 2.1.43 2.1l-1.7 7.2c-.5 2.13-.08 4.75-.04 5 .02.17.22.2.3.1.14-.18 1.82-2.26 2.4-4.33.16-.58.93-3.63.93-3.63.45.88 1.8 1.65 3.22 1.65 4.25 0 7.13-3.87 7.13-9.05C20.5 4.15 17.18.5 12.14.5z"/>
-                        </svg>
-                        <span class="share-label">Pinterest</span>
-                    </a>
-                </div>
+                                    
+                                    <!-- Replies -->
+                                    <?php if (!empty($comment['replies'])): ?>
+                                        <div class="comment-replies">
+                                            <?php foreach ($comment['replies'] as $reply): ?>
+                                                <div class="comment-item comment-reply <?php echo isset($_GET['new_comment']) && $_GET['new_comment'] == $reply['id'] ? 'highlight' : ''; ?>" 
+                                                     id="comment-<?php echo $reply['id']; ?>">
+                                                    <div class="comment-header">
+                                                        <div class="comment-avatar"><?php echo getInitials($reply['name']); ?></div>
+                                                        <div class="comment-user">
+                                                            <div class="comment-name"><?php echo htmlspecialchars($reply['name']); ?></div>
+                                                            <div class="comment-time"><?php echo getTamilTimeAgo($reply['created_at']); ?></div>
+                                                        </div>
+                                                        <div class="comment-actions">
+                                                            <a href="?id=<?php echo $newsId; ?>&like_comment=<?php echo $reply['id']; ?>" 
+                                                               class="comment-action <?php echo isset($_SESSION['liked_comment_' . $reply['id']]) ? 'liked' : ''; ?>">
+                                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="<?php echo isset($_SESSION['liked_comment_' . $reply['id']]) ? 'currentColor' : 'none'; ?>" stroke="currentColor">
+                                                                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                                                </svg>
+                                                                <span class="like-count"><?php echo $reply['likes']; ?></span>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                    <div class="comment-content"><?php echo $reply['comment']; ?></div>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </section>
             </div>
 
-            <!-- Related News -->
-            <?php
-            // Fetch related news from the same category
-            $relatedQuery = "SELECT n.id, n.title, n.created_at 
-                            FROM news n 
-                            WHERE FIND_IN_SET(?, n.categories) > 0 
-                            AND n.id != ? 
-                            AND n.status = 'published' 
-                            ORDER BY n.created_at DESC 
-                            LIMIT 5";
-            $relatedStmt = $db->prepare($relatedQuery);
-            $relatedStmt->execute([$news['categories'], $newsId]);
-            $relatedNews = $relatedStmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            if (!empty($relatedNews)): ?>
-                <div class="related-news">
-                    <h3 class="related-title">தொடர்புடைய செய்திகள்</h3>
-                    <div class="related-list">
-                        <?php foreach ($relatedNews as $related): ?>
-                            <a href="news-detail.php?id=<?php echo $related['id']; ?>" class="related-item">
-                                <div class="related-item-title"><?php echo htmlspecialchars(cleanTamilText($related['title'])); ?></div>
-                                <div class="related-item-time"><?php echo getTamilTimeAgo($related['created_at']); ?></div>
-                            </a>
-                        <?php endforeach; ?>
+            <!-- SIDEBAR -->
+            <div class="sidebar">
+                <!-- Share Buttons -->
+                <div class="share-section">
+                    <h3 class="share-title">பகிர்</h3>
+                    <div class="share-buttons">
+                        <a href="https://api.whatsapp.com/send?text=<?php echo $shareTextEncoded; ?>" 
+                           target="_blank" class="share-button whatsapp" title="WhatsApp இல் பகிரவும்">
+                            <svg class="share-icon" viewBox="0 0 24 24">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.76.982.998-3.677-.236-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.826 9.826 0 012.9 6.994c-.004 5.45-4.438 9.88-9.888 9.88m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.333 .157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.333 11.893-11.893 0-3.18-1.24-6.162-3.495-8.411"/>
+                            </svg>
+                            <span class="share-label">WhatsApp</span>
+                        </a>
+                        
+                        <a href="https://www.facebook.com/sharer/sharer.php?u=<?php echo $shareUrl; ?>&quote=<?php echo $shareTextEncoded; ?>" 
+                           target="_blank" class="share-button facebook" title="Facebook இல் பகிரவும்">
+                            <svg class="share-icon" viewBox="0 0 24 24">
+                                <path d="M18.77 7.46H14.5v-1.9c0-.9.6-1.1 1-1.1h3V.5h-4.33C10.24.5 9.5 3.44 9.5 5.32v2.15h-3v4h3v12h5v-12h3.85l.42-4z"/>
+                            </svg>
+                            <span class="share-label">Facebook</span>
+                        </a>
+                        
+                        <a href="https://twitter.com/intent/tweet?text=<?php echo $shareTextEncoded; ?>" 
+                           target="_blank" class="share-button twitter" title="Twitter இல் பகிரவும்">
+                            <svg class="share-icon" viewBox="0 0 24 24">
+                                <path d="M23.44 4.83c-.8.37-1.5.38-2.22.02.93-.56.98-.96 1.32-2.02-.88.52-1.86.9-2.9 1.1-.82-.88-2-1.43-3.3-1.43-2.5 0-4.55 2.04-4.55 4.54 0 .36.03.7.1 1.04-3.77-.2-7.12-2-9.36-4.75-.4.67-.6 1.45-.6 2.3 0 1.56.8 2.95 2 3.77-.74-.03-1.44-.23-2.05-.57v.06c0 2.2 1.56 4.03 3.64 4.44-.67.2-1.37.2-2.06.08.58 1.8 2.26 3.12 4.25 3.16C5.78 18.1 3.37 18.74 1 18.46c2 1.3 4.4 2.04 6.97 2.04 8.35 0 12.92-6.92 12.92-12.93 0-.2 0-.4-.02-.6.9-.63 1.96-1.22 2.56-2.14z"/>
+                            </svg>
+                            <span class="share-label">Twitter</span>
+                        </a>
+                        
+                        <a href="https://www.linkedin.com/shareArticle?mini=true&url=<?php echo $shareUrl; ?>&title=<?php echo $shareTextEncoded; ?>&summary=<?php echo $shareTextEncoded; ?>" 
+                           target="_blank" class="share-button linkedin" title="LinkedIn இல் பகிரவும்">
+                            <svg class="share-icon" viewBox="0 0 24 24">
+                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                            </svg>
+                            <span class="share-label">LinkedIn</span>
+                        </a>
+                        
+                        <a href="https://t.me/share/url?url=<?php echo $shareUrl; ?>&text=<?php echo $shareTextEncoded; ?>" 
+                           target="_blank" class="share-button telegram" title="Telegram இல் பகிரவும்">
+                            <svg class="share-icon" viewBox="0 0 24 24">
+                                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.295-.605.295l.213-3.054 5.56-5.022c.242-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.135-.954l11.57-4.461c.538-.196 1.006.128.832.941z"/>
+                            </svg>
+                            <span class="share-label">Telegram</span>
+                        </a>
+                        
+                        <a href="https://pinterest.com/pin/create/button/?url=<?php echo $shareUrl; ?>&media=<?php echo urlencode($mainImagePath); ?>&description=<?php echo $shareTextEncoded; ?>" 
+                           target="_blank" class="share-button pinterest" title="Pinterest இல் பகிரவும்">
+                            <svg class="share-icon" viewBox="0 0 24 24">
+                                <path d="M12.14.5C5.86.5 2.7 5 2.7 8.75c0 2.27.86 4.3 2.7 5.05.3.12.57 0 .66-.33l.27-1.06c.1-.32.06-.44-.2-.73-.52-.62-.86-1.44-.86-2.6 0-3.33 2.5-6.32 6.5-6.32 3.55 0 5.5 2.17 5.5 5.07 0 3.8-1.7 7.02-4.2 7.02-1.37 0-2.4-1.14-2.07-2.54.4-1.68 1.16-3.48 1.16-4.7 0-1.07-.58-1.98-1.78-1.98-1.4 0-2.55 1.47-2.55 3.42 0 1.25.43 2.1.43 2.1l-1.7 7.2c-.5 2.13-.08 4.75-.04 5 .02.17.22.2.3.1.14-.18 1.82-2.26 2.4-4.33.16-.58.93-3.63.93-3.63.45.88 1.8 1.65 3.22 1.65 4.25 0 7.13-3.87 7.13-9.05C20.5 4.15 17.18.5 12.14.5z"/>
+                            </svg>
+                            <span class="share-label">Pinterest</span>
+                        </a>
                     </div>
                 </div>
-            <?php endif; ?>
+
+                <!-- Related News -->
+                <?php
+                // Fetch related news from the same category
+                $relatedQuery = "SELECT n.id, n.title, n.created_at 
+                                FROM news n 
+                                WHERE FIND_IN_SET(?, n.categories) > 0 
+                                AND n.id != ? 
+                                AND n.status = 'published' 
+                                ORDER BY n.created_at DESC 
+                                LIMIT 5";
+                $relatedStmt = $db->prepare($relatedQuery);
+                $relatedStmt->execute([$news['categories'], $newsId]);
+                $relatedNews = $relatedStmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                if (!empty($relatedNews)): ?>
+                    <div class="related-news">
+                        <h3 class="related-title">தொடர்புடைய செய்திகள்</h3>
+                        <div class="related-list">
+                            <?php foreach ($relatedNews as $related): ?>
+                                <a href="news-detail.php?id=<?php echo $related['id']; ?>" class="related-item">
+                                    <div class="related-item-title"><?php echo htmlspecialchars(cleanTamilText($related['title'])); ?></div>
+                                    <div class="related-item-time"><?php echo getTamilTimeAgo($related['created_at']); ?></div>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            </div>
         </div>
     </main>
 
-    <!-- FOOTER -->
-    <footer class="likedtamil-footer">
-        <div class="likedtamil-footer-wrap">
-            © 2026 All Rights Reserved by <a href="https://likedtamil.lk" target="_blank">Likedtamil.lk</a> | Developed by <a href="https://webbuilders.lk" target="_blank">Webbuilders.lk</a>
+    <!-- Desktop Footer -->
+    <footer class="desktop-footer">
+        <div class="container">
+            <div style="text-align: center;">
+                <p>&copy; <?php echo date('Y'); ?> Liked தமிழ். அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.</p>
+                <div style="display: flex; justify-content: center; gap: var(--space-lg); margin-top: var(--space-sm);">
+                    <a href="about.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">எங்களைப் பற்றி</a>
+                    <a href="contact.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">தொடர்பு கொள்ள</a>
+                    <a href="privacy.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">தனியுரிமைக் கொள்கை</a>
+                    <a href="terms.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">பயன்பாட்டு விதிமுறைகள்</a>
+                </div>
+            </div>
         </div>
     </footer>
 
-    <!-- MOBILE FOOTER -->
-    <footer class="mobile-footer" role="navigation" aria-label="மொபைல் அடிக்குறிப்பு">
-        <div class="foot-wrap">
-            <a href="index.php" class="foot-item">
-                <svg class="foot-icon" viewBox="0 0 24 24" fill="none"><path d="M3 10l9-7 9 7v9a2 2 0 01-2 2H5a2 2 0 01-2-2v-9z" stroke="#fff" stroke-width="1.6"/></svg>
-                <span class="foot-label">முகப்பு</span>
-            </a>
-            <a href="#" class="foot-item">
-                <svg class="foot-icon" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="#fff" stroke-width="1.6"/></svg>
-                <span class="foot-label">பிரிவுகள்</span>
-            </a>
-            <a href="#" class="foot-item">
-                <svg class="foot-icon" viewBox="0 0 24 24" fill="none"><path d="M11 5a6 6 0 016 6c0 1.3-.41 2.5-1.11 3.48l4.32 4.32-1.41 1.41-4.32-4.32A6 6 0 1111 5z" stroke="#fff" stroke-width="1.6"/></svg>
-                <span class="foot-label">தேடல்</span>
-            </a>
-            <a href="#" class="foot-item">
-                <svg class="foot-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="6" stroke="#fff" stroke-width="1.6"/></svg>
-                <span class="foot-label">சுயவிவரம்</span>
-            </a>
-            <a href="#" class="foot-item">
-                <svg class="foot-icon" viewBox="0 0 24 24" fill="none"><path d="M6 19l6-6 6 6M6 12l6-6 6 6" stroke="#fff" stroke-width="1.6"/></svg>
-                <span class="foot-label">வீடியோ</span>
-            </a>
-        </div>
+    <!-- Mobile Footer Navigation -->
+    <footer class="mobile-footer" role="navigation" aria-label="மொபைல் வழிசெலுத்தல்">
+        <a href="index.php" class="mobile-nav-item">
+            <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+            <span class="mobile-nav-label">முகப்பு</span>
+        </a>
+        
+        <a href="categories.php" class="mobile-nav-item">
+            <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+            </svg>
+            <span class="mobile-nav-label">பிரிவுகள்</span>
+        </a>
+        
+        <button class="mobile-nav-item" onclick="toggleSearch()">
+            <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <span class="mobile-nav-label">தேடல்</span>
+        </button>
+        
+        <a href="video.php" class="mobile-nav-item">
+            <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="23 7 16 12 23 17 23 7" />
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+            </svg>
+            <span class="mobile-nav-label">வீடியோ</span>
+        </a>
+        
+        <a href="about.php" class="mobile-nav-item">
+            <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+            </svg>
+            <span class="mobile-nav-label">சுயவிவரம்</span>
+        </a>
     </footer>
+
+    <!-- Search Modal -->
+    <div class="search-modal" id="searchModal">
+        <div style="width: 100%; max-width: 600px; background: var(--bg-card); border-radius: var(--radius-lg); padding: var(--space-lg); box-shadow: var(--shadow-lg); animation: slideDown 0.3s ease; margin-top: var(--space-xl);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
+                <h3 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">தேடல்</h3>
+                <button onclick="toggleSearch()" aria-label="மூடு" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; padding: var(--space-xs); border-radius: var(--radius-sm); transition: all var(--transition-fast);">
+                    &times;
+                </button>
+            </div>
+            
+            <form method="GET" action="search.php" style="display: flex; gap: var(--space-sm); margin-bottom: var(--space-lg);">
+                <input type="search" 
+                       name="q" 
+                       placeholder="செய்திகளைத் தேடுங்கள்..." 
+                       style="flex: 1; padding: var(--space-md); background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); font-size: 1rem; outline: none; transition: all var(--transition-fast);"
+                       autocomplete="off"
+                       autofocus />
+                <button type="submit" style="padding: var(--space-md) var(--space-lg); background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red)); color: var(--white); border: none; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; transition: all var(--transition-fast);">
+                    தேடு
+                </button>
+            </form>
+            
+            <div style="color: var(--text-muted); font-size: 0.875rem; text-align: center;">
+                உதாரணம்: "விளையாட்டு", "அரசியல்", "பொருளாதாரம்"
+            </div>
+        </div>
+    </div>
 
     <script>
+        // Search functionality
+        function toggleSearch() {
+            const searchModal = document.getElementById('searchModal');
+            searchModal.classList.toggle('active');
+            
+            if (searchModal.classList.contains('active')) {
+                document.body.style.overflow = 'hidden';
+                searchModal.querySelector('input').focus();
+            } else {
+                document.body.style.overflow = '';
+            }
+        }
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const searchModal = document.getElementById('searchModal');
+                if (searchModal.classList.contains('active')) {
+                    toggleSearch();
+                }
+            }
+        });
+        
+        document.getElementById('searchModal')?.addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                toggleSearch();
+            }
+        });
+
+        document.getElementById('searchToggle')?.addEventListener('click', toggleSearch);
+
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        
+        // Check for saved theme or prefer color scheme
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (savedTheme === 'light' || (!savedTheme && !prefersDark)) {
+            body.classList.add('light-mode');
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('light-mode');
+            
+            // Save preference
+            if (body.classList.contains('light-mode')) {
+                localStorage.setItem('theme', 'light');
+            } else {
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+
         // JavaScript for comment reply functionality
         document.addEventListener('DOMContentLoaded', function() {
             // Highlight new comment if exists in URL
@@ -1910,15 +2271,15 @@ $shareUrl = urlencode($currentUrl);
                         tooltip.className = 'share-tooltip';
                         tooltip.textContent = title;
                         tooltip.style.position = 'absolute';
-                        tooltip.style.background = 'var(--card)';
-                        tooltip.style.color = 'var(--text)';
+                        tooltip.style.background = 'var(--bg-card)';
+                        tooltip.style.color = 'var(--text-primary)';
                         tooltip.style.padding = '8px 12px';
                         tooltip.style.borderRadius = '6px';
                         tooltip.style.fontSize = '12px';
                         tooltip.style.whiteSpace = 'nowrap';
                         tooltip.style.zIndex = '1000';
-                        tooltip.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-                        tooltip.style.border = '1px solid var(--border)';
+                        tooltip.style.boxShadow = 'var(--shadow-sm)';
+                        tooltip.style.border = '1px solid var(--border-color)';
                         
                         const rect = this.getBoundingClientRect();
                         tooltip.style.top = (rect.top - 40) + 'px';
@@ -1948,7 +2309,7 @@ $shareUrl = urlencode($currentUrl);
                 content.querySelectorAll('strong, b').forEach(boldText => {
                     boldText.style.color = '#ffffff';
                     boldText.style.fontWeight = '700';
-                    boldText.style.background = 'linear-gradient(45deg, var(--red), var(--yellow))';
+                    boldText.style.background = 'linear-gradient(45deg, var(--primary-red), var(--accent-yellow))';
                     boldText.style.webkitBackgroundClip = 'text';
                     boldText.style.webkitTextFillColor = 'transparent';
                     boldText.style.backgroundClip = 'text';
@@ -1963,7 +2324,7 @@ $shareUrl = urlencode($currentUrl);
                 // Style underlined text in comments
                 content.querySelectorAll('u').forEach(underlinedText => {
                     underlinedText.style.textDecoration = 'underline';
-                    underlinedText.style.textDecorationColor = 'var(--yellow)';
+                    underlinedText.style.textDecorationColor = 'var(--accent-yellow)';
                     underlinedText.style.textDecorationThickness = '2px';
                 });
             });
@@ -1989,6 +2350,10 @@ $shareUrl = urlencode($currentUrl);
                 updateCommentCounts(currentCount);
             }
         });
+
+        function openSubscription() {
+            alert('சந்தா செயல்பாடு விரைவில் கிடைக்கும்');
+        }
     </script>
 </body>
 </html>

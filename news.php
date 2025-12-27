@@ -57,6 +57,9 @@ if (!empty($categoryIds)) {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title><?php echo htmlspecialchars($news['title']); ?> - Liked தமிழ்</title>
   
+  <!-- Favicon -->
+  <?php include 'includes/favicon.php'; ?>
+  
   <style>
     :root {
       --red: #ff1111;

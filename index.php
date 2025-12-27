@@ -86,6 +86,9 @@ require 'config/config.php';
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
   <title>Liked தமிழ் - உங்கள் நம்பகமான செய்தி மூலம்</title>
   
+  <!-- Favicon -->
+  <?php include 'includes/favicon.php'; ?>
+  
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1700,7 +1703,7 @@ require 'config/config.php';
       <span class="mobile-nav-label">வீடியோ</span>
     </a>
     
-    <a href="profile.php" class="mobile-nav-item">
+    <a href="about.php" class="mobile-nav-item">
       <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
         <circle cx="12" cy="7" r="4" />

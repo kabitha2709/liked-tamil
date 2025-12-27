@@ -26,6 +26,10 @@ echo json_encode($news);
 <html>
 <head>
     <title>News</title>
+    
+    <!-- Favicon -->
+    <?php include '../includes/favicon.php'; ?>
+    
     <style>
         .news-card {
             width: 300px;

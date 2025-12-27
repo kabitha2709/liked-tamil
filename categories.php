@@ -330,7 +330,7 @@ function getNewsCategories($news) {
     <title><?php echo $current_category ? htmlspecialchars($current_category['name']) . ' - ' : ''; ?>Liked தமிழ்</title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="Liked-tamil-news-logo-1 (2).png">
+    <?php include 'includes/favicon.php'; ?>
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -339,438 +339,478 @@ function getNewsCategories($news) {
     
     <style>
         :root {
-            --primary: #ff1111;
-            --primary-dark: #cc0f0f;
-            --secondary: #fffc00;
-            --secondary-dark: #e6e300;
-            --bg-dark: #0a0a0a;
-            --bg-light: #f8f9fa;
-            --card-dark: #121314;
-            --card-light: #ffffff;
-            --card-hi-dark: #16181a;
-            --card-hi-light: #f0f1f3;
-            --text-dark: #f5f7fa;
-            --text-light: #1a1a1a;
-            --muted-dark: #b8bfc8;
-            --muted-light: #6c757d;
-            --border-dark: rgba(255,255,255,.06);
-            --border-light: rgba(0,0,0,.1);
-            --glass-dark: rgba(255,255,255,.06);
-            --glass-light: rgba(0,0,0,.05);
-            --shadow-dark: 0 12px 32px rgba(0,0,0,.45);
-            --shadow-light: 0 8px 24px rgba(0,0,0,.1);
-            --radius: 16px;
-            --radius-sm: 12px;
-            --trans: 240ms cubic-bezier(.2,.8,.2,1);
+            --primary-red: #e63946;
+            --primary-dark-red: #c1121f;
+            --accent-yellow: #ffd166;
+            --black: #000000;
+            --white: #ffffff;
+            
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #121212;
+            --bg-card: #1a1a1a;
+            --bg-hover: #222222;
+            
+            --text-primary: #f8f9fa;
+            --text-secondary: #adb5bd;
+            --text-muted: #6c757d;
+            
+            --border-color: rgba(255, 255, 255, 0.1);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+            
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            --space-2xl: 48px;
+            
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --radius-full: 9999px;
+            
+            --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+            
+            --font-heading: 'Noto Sans Tamil', 'Inter', system-ui, sans-serif;
+            --font-body: 'Noto Sans Tamil', 'Inter', system-ui, sans-serif;
         }
-
+        
         /* Light mode variables */
-        body.light-mode {
-            --bg: var(--bg-light);
-            --card: var(--card-light);
-            --card-hi: var(--card-hi-light);
-            --text: var(--text-light);
-            --muted: var(--muted-light);
-            --border: 1px solid var(--border-light);
-            --glass: var(--glass-light);
-            --shadow: var(--shadow-light);
+        .light-mode {
+            --primary-red: #e63946;
+            --primary-dark-red: #c1121f;
+            --accent-yellow: #ffaa00;
+            --black: #000000;
+            --white: #ffffff;
+            
+            --bg-primary: #f8f9fa;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --bg-hover: #f8f9fa;
+            
+            --text-primary: #1a1a1a;
+            --text-secondary: #495057;
+            --text-muted: #6c757d;
+            
+            --border-color: rgba(0, 0, 0, 0.12);
+            --glass-bg: rgba(0, 0, 0, 0.04);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.15);
         }
-
-        /* Dark mode variables (default) */
-        body:not(.light-mode) {
-            --bg: var(--bg-dark);
-            --card: var(--card-dark);
-            --card-hi: var(--card-hi-dark);
-            --text: var(--text-dark);
-            --muted: var(--muted-dark);
-            --border: 1px solid var(--border-dark);
-            --glass: var(--glass-dark);
-            --shadow: var(--shadow-dark);
+        
+        /* ===== Reset & Base Styles ===== */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body { height: 100%; }
+        
+        html {
+            -webkit-text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
+            scroll-behavior: smooth;
+        }
+        
         body {
-            font-family: "Noto Sans Tamil", Inter, system-ui, -apple-system, sans-serif;
-            color: var(--text);
-            background: var(--bg);
+            font-family: var(--font-body);
+            color: var(--text-primary);
+            background: var(--bg-primary);
             line-height: 1.6;
             min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            transition: background-color var(--transition-base), color var(--transition-base);
+        }
+        
+        /* Background gradient - only for dark mode */
+        body:not(.light-mode)::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100vh;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(230, 57, 70, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 209, 102, 0.1) 0%, transparent 50%);
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* ===== Header Fixes ===== */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(10, 10, 10, 0.98);
+            backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid var(--border-color);
+            padding: var(--space-sm) 0;
+        }
+        
+        .header-content {
             display: flex;
-            flex-direction: column;
-            transition: background-color var(--trans), color var(--trans);
-        }
-
-        /* Main content wrapper */
-        .main-wrapper {
-            flex: 1 0 auto;
-            width: 100%;
-        }
-
-        /* App bar - Updated with theme toggle */
-        .appbar {
-            position: sticky; top: 0; z-index: 90;
-            backdrop-filter: saturate(1.25) blur(12px);
-            background: linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.25));
-            border-bottom: var(--border);
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-md);
+            height: 60px;
         }
         
-        .light-mode .appbar {
-            background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.85));
-            border-bottom: 1px solid rgba(0,0,0,.08);
-        }
-        
-        .appbar-wrap {
-            display: grid; grid-template-columns: auto 1fr auto; gap: 16px;
-            align-items: center; padding: 12px clamp(14px, 3vw, 24px);
-            max-width: 1200px; margin: 0 auto;
-        }
-        
-        .brand {
-            display:flex; align-items:center; gap: 12px; text-decoration:none; color: var(--text);
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            flex: 1;
+            min-width: 0;
         }
         
         .logo {
+            height: 40px;
+            width: auto;
+            object-fit: contain;
+            border-radius: var(--radius-sm);
+            max-width: 150px;
+        }
+        
+        @media (min-width: 640px) {
+            .logo {
+                height: 48px;
+                max-width: 200px;
+            }
+        }
+        
+        .site-title {
+            font-family: var(--font-heading);
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-shrink: 1;
+        }
+        
+        @media (min-width: 640px) {
+            .site-title {
+                font-size: 1.5rem;
+            }
+        }
+        
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            flex-shrink: 0;
+        }
+        
+        .search-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
             width: 40px;
             height: 40px;
-            border-radius: 8px;
-            object-fit: cover;
-            background: var(--secondary);
-            padding: 2px;
-        }
-        
-        .title {
-            font-weight: 800; font-size: clamp(18px, 2.4vw, 24px); letter-spacing: .2px;
-            font-family: "Noto Sans Tamil", sans-serif;
-            color: var(--text);
-        }
-        
-        .search {
-            display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px;
-            background: var(--glass); border: var(--border);
-            max-width: 400px; width: 100%;
-        }
-        
-        .search input {
-            flex:1; background:transparent; border:0; color: var(--text); outline:none;
-            font-family: "Noto Sans Tamil", sans-serif; font-size: 14px;
-        }
-        
-        .search input::placeholder {
-            color: var(--muted);
-        }
-        
-        .actions { 
-            display:flex; 
-            gap: 10px; 
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            display: flex;
             align-items: center;
+            justify-content: center;
+            transition: all var(--transition-fast);
         }
         
-        /* Theme Toggle Button */
+        .search-btn:hover {
+            color: var(--text-primary);
+            background: var(--glass-bg);
+        }
+        
+        /* Theme toggle button */
         .theme-toggle {
-            background: var(--glass);
-            border: var(--border);
-            color: var(--text);
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-full);
+            width: 40px;
+            height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all var(--trans);
-            font-size: 20px;
+            transition: all var(--transition-fast);
+            color: var(--text-secondary);
         }
         
         .theme-toggle:hover {
             transform: translateY(-2px);
-            background: var(--card-hi);
-            box-shadow: var(--shadow);
+            box-shadow: var(--shadow-sm);
+            background: var(--bg-hover);
+            color: var(--text-primary);
         }
         
-        .light-mode .theme-toggle .moon-icon,
-        .dark-mode .theme-toggle .sun-icon {
+        .theme-toggle svg {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .theme-toggle .sun-icon {
             display: none;
         }
         
-        .light-mode .theme-toggle .sun-icon,
-        .dark-mode .theme-toggle .moon-icon {
+        .light-mode .theme-toggle .moon-icon {
+            display: none;
+        }
+        
+        .light-mode .theme-toggle .sun-icon {
             display: block;
         }
         
-        .btn {
-            display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:12px;
-            background: var(--card); border: var(--border); color: var(--text); cursor:pointer;
-            transition: transform var(--trans), box-shadow var(--trans), background var(--trans);
-            text-decoration: none; font-family: "Noto Sans Tamil", sans-serif; font-weight: 600;
-            font-size: 14px; white-space: nowrap;
-        }
-        
-        .btn:hover { 
-            transform: translateY(-2px); 
-            box-shadow: var(--shadow); 
-            background: var(--card-hi); 
-        }
-        
-        .btn.primary {
-            background: linear-gradient(180deg, var(--primary), var(--primary-dark));
-            color: #fff; border: 0;
-        }
-        
-        .btn.primary:hover {
-            background: linear-gradient(180deg, #ff3333, #e00f0f);
-        }
-        
-        .icon { width: 20px; height: 20px; }
-
-        /* Category bar */
-        .catbar {
-            background: var(--card);
-            border-top: var(--border); border-bottom: var(--border);
-            position: sticky;
-            top: 64px;
-            z-index: 80;
-        }
-        
-        .light-mode .catbar {
-            background: var(--card);
-        }
-        
-        .catbar-wrap {
-            max-width: 1200px; margin: 0 auto; padding: 10px clamp(14px, 3vw, 24px);
-            display:flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
-            -webkit-overflow-scrolling: touch;
-        }
-        
-        .catbar-wrap::-webkit-scrollbar {
+        .subscribe-btn {
             display: none;
         }
         
-        .chip {
-            flex: 0 0 auto;
-            display:inline-flex; align-items:center; justify-content: center; gap:8px; 
-            padding:8px 16px; border-radius:999px;
-            background: var(--glass); border: var(--border); color: var(--text); 
-            font-weight:600; font-size: 14px;
-            transition: all var(--trans);
-            cursor: pointer; text-decoration: none; white-space: nowrap;
-            font-family: "Noto Sans Tamil", sans-serif;
-            min-height: 36px;
-        }
-        
-        .chip:hover { 
-            transform: translateY(-2px); 
-            background: rgba(255,17,17,.18); 
-            color: var(--text);
-        }
-        
-        .light-mode .chip:hover {
-            background: rgba(255,17,17,.1);
-        }
-        
-        .chip.active { 
-            background: linear-gradient(180deg, var(--primary), var(--primary-dark)); 
-            color: #fff; border: 0; 
-            box-shadow: 0 4px 12px rgba(255,17,17,.25);
-        }
-
-        /* Breaking news ticker - Updated colors */
-        .ticker {
-            background: var(--secondary); 
-            color: #000;
-            border-bottom: var(--border);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .light-mode .ticker {
-            border-bottom: 1px solid rgba(0,0,0,.1);
-        }
-        
-        .ticker-wrap {
-            max-width: 1200px; margin: 0 auto; 
-            padding: 8px clamp(14px, 3vw, 24px);
-            display: grid; grid-template-columns: auto 1fr auto; 
-            gap: 12px; align-items: center;
-        }
-        
-        .tag-chip {
-            background: #000; color: var(--secondary);
-            border-radius: 999px; padding:6px 10px; font-weight: 700; 
-            border: 1px solid rgba(255,255,255,.08);
-            font-size: 12px; font-family: "Noto Sans Tamil", sans-serif;
-            white-space: nowrap;
-        }
-        
-        .marquee { 
-            overflow: hidden; height: 28px; position: relative;
-        }
-        
-        .marquee-track {
-            display: inline-flex; gap: 28px; white-space: nowrap;
-            animation: track 24s linear infinite;
-        }
-        
-        .marquee:hover .marquee-track { animation-play-state: paused; }
-        
-        @keyframes track { 
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-        }
-        
-        .dot { 
-            width:6px; height:6px; border-radius:50%; display:inline-block; 
-            background: rgba(0,0,0,.5); margin: 0 10px;
-        }
-
-        /* Category Header */
-        .category-header {
-            max-width: 1200px; margin: 30px auto 20px; padding: 0 clamp(14px, 3vw, 24px);
-        }
-        
-        .category-title {
-            font-weight: 800; font-size: clamp(28px, 3vw, 36px); 
-            color: var(--primary); margin-bottom: 10px;
-            font-family: "Noto Sans Tamil", sans-serif;
-            line-height: 1.2;
-        }
-        
-        .light-mode .category-title {
-            color: var(--primary);
-        }
-        
-        .category-meta {
-            display: flex; gap: 20px; color: var(--muted); font-size: 14px;
-            flex-wrap: wrap;
-        }
-        
-        .category-subcategories {
-            margin-top: 15px; display: flex; flex-wrap: wrap; gap: 8px;
-        }
-        
-        .subcategory-chip {
-            padding: 6px 12px; border-radius: 999px;
-            background: rgba(255,17,17,.1); color: var(--primary);
-            font-size: 13px; font-weight: 600; text-decoration: none;
-            transition: transform var(--trans), background var(--trans);
-            font-family: "Noto Sans Tamil", sans-serif;
-            border: 1px solid rgba(255,17,17,.2);
-        }
-        
-        .subcategory-chip:hover {
-            transform: translateY(-2px); background: rgba(255,17,17,.2);
-        }
-
-        /* News Grid */
-        .section { 
-            max-width: 1200px; margin: 20px auto 40px; 
-            padding: 0 clamp(14px, 3vw, 24px);
-        }
-        
-        .section-head { 
-            display: flex; justify-content: space-between; align-items: center; 
-            margin-bottom: 20px; 
-        }
-        
-        .section-title { 
-            font-weight: 800; font-size: clamp(20px, 2.2vw, 26px); 
-            font-family: "Noto Sans Tamil", sans-serif;
-            color: var(--text);
-        }
-        
-        .news-count {
-            background: var(--primary); color: #fff;
-            padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700;
-            font-family: "Noto Sans Tamil", sans-serif;
-        }
-
-        .grid-news {
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
-            gap: 24px; margin-bottom: 40px;
-        }
-        
-        @media (max-width: 768px) {
-            .grid-news {
-                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-                gap: 20px;
+        @media (min-width: 768px) {
+            .subscribe-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: var(--space-xs);
+                padding: var(--space-sm) var(--space-md);
+                background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red));
+                color: var(--white);
+                border: none;
+                border-radius: var(--radius-md);
+                font-family: var(--font-body);
+                font-weight: 600;
+                font-size: 0.875rem;
+                cursor: pointer;
+                transition: all var(--transition-base);
+            }
+            
+            .subscribe-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: var(--shadow-md);
             }
         }
         
-        @media (max-width: 640px) {
-            .grid-news {
-                grid-template-columns: 1fr;
-                gap: 16px;
+        /* ===== Category Navigation Fixes ===== */
+        .category-nav {
+            position: sticky;
+            top: 60px; /* Match header height */
+            z-index: 900;
+            background: rgba(18, 18, 18, 0.98);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            padding: var(--space-sm) 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        
+        .category-nav::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .category-list {
+            display: flex;
+            gap: var(--space-xs);
+            padding: 0 var(--space-md);
+            list-style: none;
+            min-width: max-content;
+        }
+        
+        @media (min-width: 640px) {
+            .category-list {
+                gap: var(--space-sm);
+                padding: 0 var(--space-lg);
+                justify-content: center;
+            }
+        }
+        
+        .category-link {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-xs);
+            padding: var(--space-sm) var(--space-md);
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-full);
+            color: var(--text-secondary);
+            font-family: var(--font-body);
+            font-weight: 500;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            transition: all var(--transition-base);
+        }
+        
+        .category-link:hover,
+        .category-link.active {
+            background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red));
+            color: var(--white);
+            border-color: transparent;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        /* ===== Main Content ===== */
+        .container {
+            width: 100%;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 var(--space-md);
+        }
+        
+        @media (min-width: 640px) {
+            .container {
+                padding: 0 var(--space-lg);
+            }
+        }
+        
+        .main-content {
+            padding: var(--space-xl) 0;
+            min-height: calc(100vh - 180px);
+        }
+        
+        /* Category Header */
+        .category-header {
+            margin-bottom: var(--space-xl);
+        }
+        
+        .category-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: var(--space-sm);
+            font-family: var(--font-heading);
+        }
+        
+        .category-meta {
+            display: flex;
+            gap: var(--space-lg);
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: var(--space-lg);
+        }
+        
+        .category-subcategories {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-sm);
+        }
+        
+        .subcategory-chip {
+            padding: var(--space-xs) var(--space-md);
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-full);
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            transition: all var(--transition-fast);
+        }
+        
+        .subcategory-chip:hover {
+            background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red));
+            color: var(--white);
+            border-color: transparent;
+        }
+        
+        /* News Grid */
+        .news-grid {
+            display: grid;
+            gap: var(--space-lg);
+            margin-bottom: var(--space-xl);
+        }
+        
+        @media (min-width: 640px) {
+            .news-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .news-grid {
+                grid-template-columns: repeat(3, 1fr);
             }
         }
         
         .news-card {
-            display: flex; flex-direction: column; overflow: hidden;
-            border-radius: var(--radius-sm); background: var(--card); border: var(--border);
-            box-shadow: var(--shadow); transition: all var(--trans);
-            text-decoration: none; color: inherit;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            transition: all var(--transition-base);
+            border: 1px solid var(--border-color);
             height: 100%;
+            display: flex;
+            flex-direction: column;
         }
         
-        .news-card:hover { 
-            transform: translateY(-4px); 
-            box-shadow: 0 14px 40px rgba(0,0,0,.50); 
-            background: var(--card-hi);
+        .news-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary-red);
         }
         
-        .light-mode .news-card:hover {
-            box-shadow: 0 14px 40px rgba(0,0,0,.15);
+        .news-image {
+            position: relative;
+            width: 100%;
+            height: 180px;
+            overflow: hidden;
+            flex-shrink: 0;
         }
         
-        .news-thumb {
-            position: relative; aspect-ratio: 16/9; overflow: hidden;
-            background: linear-gradient(45deg, #2a2a2a, #1a1a1a);
+        .news-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform var(--transition-slow);
         }
         
-        .light-mode .news-thumb {
-            background: linear-gradient(45deg, #e0e0e0, #f0f0f0);
+        .news-card:hover .news-image img {
+            transform: scale(1.05);
         }
-        
-        .news-thumb img {
-            width: 100%; height: 100%; object-fit: cover;
-            transition: transform .7s ease;
-        }
-        
-        .news-card:hover .news-thumb img { transform: scale(1.08); }
         
         .news-badge {
-            position: absolute; top: 12px; left: 12px; z-index: 2;
-            padding: 6px 12px; border-radius: 999px;
-            background: rgba(0,0,0,.85); color: #fff;
-            font-size: 12px; font-weight: 600; backdrop-filter: blur(4px);
-            font-family: "Noto Sans Tamil", sans-serif;
-            max-width: calc(100% - 24px);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            position: absolute;
+            top: var(--space-sm);
+            left: var(--space-sm);
+            padding: var(--space-xs) var(--space-sm);
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius-full);
+            color: var(--white);
+            font-size: 0.75rem;
+            font-weight: 600;
+            z-index: 1;
         }
         
-        .light-mode .news-badge {
-            background: rgba(0,0,0,.85);
+        .news-content {
+            padding: var(--space-lg);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
         
-        .news-content { 
-            padding: 20px; flex: 1; display: flex; flex-direction: column; 
-        }
-        
-        .news-title { 
-            font-weight: 700; font-size: 18px; line-height: 1.4; 
-            margin-bottom: 12px; color: var(--text);
-            font-family: "Noto Sans Tamil", sans-serif;
+        .news-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: var(--space-sm);
+            color: var(--text-primary);
             display: -webkit-box;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            flex: 1;
         }
         
         .news-excerpt {
-            font-size: 14px; color: var(--muted); line-height: 1.5;
-            margin-bottom: 15px; flex: 1;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: var(--space-md);
             display: -webkit-box;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
@@ -778,361 +818,279 @@ function getNewsCategories($news) {
         }
         
         .news-meta {
-            display: flex; justify-content: space-between; align-items: center;
-            font-size: 12px; color: var(--muted); padding-top: 12px;
-            border-top: 1px solid var(--border);
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        
-        .news-meta span {
-            font-family: "Noto Sans Tamil", sans-serif;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            padding-top: var(--space-md);
+            border-top: 1px solid var(--border-color);
         }
         
         /* No News Message */
         .no-news {
-            grid-column: 1 / -1; text-align: center; padding: 60px 20px;
-            color: var(--muted); background: var(--glass);
-            border-radius: var(--radius-sm); margin: 20px 0;
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: var(--space-2xl);
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            border: 2px dashed var(--border-color);
         }
-        
-        .no-news h3 { 
-            font-size: 24px; margin-bottom: 10px; 
-            font-family: "Noto Sans Tamil", sans-serif;
-        }
-        
-        .no-news p { margin-bottom: 20px; }
         
         /* Pagination */
         .pagination {
-            display: flex; justify-content: center; align-items: center; gap: 8px; 
-            margin: 40px 0 60px; flex-wrap: wrap;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-xl) 0;
+            flex-wrap: wrap;
         }
         
         .page {
-            padding: 10px 16px; border-radius: 10px;
-            background: var(--glass); border: var(--border);
-            color: var(--text); text-decoration: none;
-            transition: all var(--trans);
-            min-width: 44px; text-align: center;
-            font-family: "Noto Sans Tamil", sans-serif;
-            font-weight: 600;
-            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            height: 40px;
+            padding: 0 var(--space-sm);
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.875rem;
+            text-decoration: none;
+            transition: all var(--transition-fast);
         }
         
-        .page:hover { 
-            transform: translateY(-2px); 
-            background: var(--card-hi); 
-            box-shadow: var(--shadow);
-        }
-        
-        .page.active { 
-            background: linear-gradient(180deg, var(--primary), var(--primary-dark)); 
-            color: #fff; border: 0;
+        .page:hover {
+            background: var(--bg-hover);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(255,17,17,.25);
         }
         
-        .page.disabled { 
-            opacity: 0.5; cursor: not-allowed; 
-            pointer-events: none;
+        .page.active {
+            background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red));
+            color: var(--white);
+            border-color: transparent;
         }
         
-        /* Mobile Footer - Updated colors */
-        .mobile-footer {
-            position: fixed; bottom: 0; left: 0; right: 0; z-index: 99;
-            backdrop-filter: blur(12px) saturate(1.1);
-            background: linear-gradient(180deg, rgba(255,17,17,.95), rgba(255,17,17,1));
-            border-top: 2px solid rgba(255,252,0,.55);
+        /* ===== Desktop Footer ===== */
+        .desktop-footer {
             display: none;
-            box-shadow: 0 -4px 20px rgba(0,0,0,.3);
         }
         
-        @media (max-width: 768px) {
-            .mobile-footer { display: block; }
-            body { padding-bottom: 70px; }
-            .search, .actions .btn:not(.theme-toggle) { display: none; }
-            .appbar-wrap { grid-template-columns: auto 1fr auto; }
-            .catbar {
-                top: 56px;
+        @media (min-width: 768px) {
+            .desktop-footer {
+                display: block;
+                background: var(--black);
+                color: var(--accent-yellow);
+                padding: var(--space-lg) 0;
+                border-top: 3px solid var(--primary-red);
+                margin-top: var(--space-xl);
             }
         }
         
-        .foot-wrap { 
-            max-width: 1200px; margin: 0 auto; padding: 8px clamp(12px, 4vw, 18px); 
-            display: flex; justify-content: space-between; gap: 4px;
+        /* ===== Mobile Footer ===== */
+        .mobile-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(10, 10, 10, 0.98);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border-color);
+            padding: var(--space-sm) 0;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 70px;
         }
         
-        .foot-item {
-            flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;
-            color: #fff; text-decoration: none; padding: 8px 4px; border-radius: 12px;
-            transition: transform var(--trans), background var(--trans);
+        @media (min-width: 768px) {
+            .mobile-footer {
+                display: none;
+            }
         }
         
-        .foot-item:hover, .foot-item.active { 
-            background: rgba(0,0,0,.18); transform: translateY(-2px); 
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--space-xs);
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: var(--radius-md);
+            transition: all var(--transition-fast);
+            flex: 1;
+            max-width: 80px;
+            text-decoration: none;
+            color: var(--text-secondary);
         }
         
-        .foot-icon { width: 22px; height: 22px; stroke: #fff; }
-        .foot-label { 
-            font-size: 11px; font-weight: 700; 
-            font-family: "Noto Sans Tamil", sans-serif;
+        .mobile-nav-item.active {
+            color: var(--primary-red);
         }
         
-        /* Subscription Modal */
-        .subscription-modal {
+        .mobile-nav-icon {
+            width: 22px;
+            height: 22px;
+        }
+        
+        .mobile-nav-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        /* ===== Search Modal ===== */
+        .search-modal {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            z-index: 1000;
-            align-items: center;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1100;
+            align-items: flex-start;
             justify-content: center;
-            padding: 20px;
+            padding: var(--space-xl) var(--space-md);
+            overflow-y: auto;
         }
         
-        .subscription-content {
-            background: var(--card);
-            border-radius: var(--radius);
-            padding: 30px;
-            width: 90%;
-            max-width: 500px;
-            border: var(--border);
-            box-shadow: var(--shadow);
-            position: relative;
-        }
-        
-        .subscription-content h3 {
-            color: var(--primary);
-            margin-bottom: 20px;
-            text-align: center;
-            font-family: "Noto Sans Tamil", sans-serif;
-            font-size: 22px;
-        }
-        
-        .subscription-form {
+        .search-modal.active {
             display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 20px;
         }
         
-        @media (min-width: 480px) {
-            .subscription-form {
-                flex-direction: row;
+        /* ===== Responsive Adjustments ===== */
+        @media (max-width: 767px) {
+            .header {
+                height: 60px;
             }
-        }
-        
-        .subscription-form input {
-            flex: 1;
-            padding: 14px;
-            border-radius: var(--radius-sm);
-            background: var(--glass);
-            border: var(--border);
-            color: var(--text);
-            outline: none;
-            font-family: "Noto Sans Tamil", sans-serif;
-            font-size: 16px;
-        }
-        
-        .subscription-form button {
-            background: linear-gradient(180deg, var(--primary), var(--primary-dark));
-            color: white;
-            border: none;
-            padding: 14px 24px;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            font-weight: 600;
-            font-family: "Noto Sans Tamil", sans-serif;
-            font-size: 16px;
-            transition: all var(--trans);
-        }
-        
-        .subscription-form button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(255,17,17,.25);
-        }
-        
-        .close-modal {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: transparent;
-            border: none;
-            color: var(--muted);
-            cursor: pointer;
-            font-size: 24px;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: all var(--trans);
-        }
-        
-        .close-modal:hover {
-            background: var(--glass);
-            color: var(--text);
-        }
-        
-        .subscription-success {
-            color: var(--primary);
-            text-align: center;
-            padding: 10px;
-            font-family: "Noto Sans Tamil", sans-serif;
-            display: none;
-        }
-        
-        /* Bottom padding for mobile */
-        .bottom-padding {
-            height: 80px;
-            display: none;
-        }
-        
-        @media (max-width: 768px) {
-            .bottom-padding {
-                display: block;
-            }
-        }
-
-        /* Responsive improvements */
-        @media (max-width: 480px) {
-            .appbar-wrap {
-                padding: 10px 14px;
-            }
+            
             .logo {
-                width: 36px;
-                height: 36px;
+                max-width: 120px;
             }
-            .title {
-                font-size: 18px;
+            
+            .site-title {
+                font-size: 1rem;
             }
+            
+            .category-nav {
+                height: 50px;
+                top: 60px;
+            }
+            
             .category-title {
-                font-size: 24px;
+                font-size: 1.75rem;
             }
-            .section-title {
-                font-size: 20px;
+            
+            .news-image {
+                height: 150px;
             }
-            .news-title {
-                font-size: 16px;
-            }
+            
             .news-content {
-                padding: 16px;
+                padding: var(--space-md);
             }
-            .pagination {
-                margin: 30px 0 50px;
+            
+            .news-title {
+                font-size: 1rem;
+                -webkit-line-clamp: 2;
             }
-            .page {
-                padding: 8px 12px;
-                min-width: 36px;
-                font-size: 13px;
-            }
-        }
-        
-        /* Accessibility improvements */
-        @media (prefers-reduced-motion: reduce) {
-            * {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
+            
+            .mobile-footer {
+                height: 70px;
             }
         }
         
-        /* Focus styles for accessibility */
-        button:focus,
-        input:focus,
-        a:focus {
-            outline: 2px solid var(--secondary);
-            outline-offset: 2px;
+        /* Animation for mobile footer */
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+            to {
+                transform: translateY(0);
+            }
         }
         
-        /* Loading state */
-        .loading {
-            opacity: 0.7;
-            pointer-events: none;
+        .mobile-footer {
+            animation: slideUp 0.3s ease-out;
         }
-        
-        /* Theme transition */
-        * {
-            transition: background-color var(--trans), border-color var(--trans), color var(--trans);
-        }
-        
     </style>
 </head>
-<body class="dark-mode">
-    <div class="main-wrapper">
-
-        <!-- App bar -->
-        <header class="appbar">
-            <div class="appbar-wrap">
-                <a href="index.php" class="brand">
-                    <img src="Liked-tamil-news-logo-1 (2).png" alt="Liked தமிழ் Logo" class="logo" />
-                    <span class="title">Liked தமிழ்</span>
+<body>
+    <!-- Header -->
+    <header class="header" role="banner">
+        <div class="container">
+            <div class="header-content">
+                <a href="index.php" class="logo-container">
+                    <img src="Liked-tamil-news-logo-1 (2).png" alt="Liked தமிழ்" class="logo" />
+                    <h1 class="site-title">Liked தமிழ்</h1>
                 </a>
                 
-                <!-- Search Form -->
-                <form method="GET" action="search.php" class="search" role="search">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M11 5a6 6 0 016 6c0 1.3-.41 2.5-1.11 3.48l4.32 4.32-1.41 1.41-4.32-4.32A6 6 0 1111 5z" stroke-width="1.5"/>
-                    </svg>
-                    <input type="search" name="q" placeholder="தேடல்…" aria-label="தேடல்" value="<?php echo isset($_GET['q']) ? htmlspecialchars($_GET['q']) : ''; ?>" />
-                    <?php if (!empty($category_id) && $category_id > 0): ?>
-                        <input type="hidden" name="category" value="<?php echo (int)$category_id; ?>" />
-                    <?php endif; ?>
-                </form>
-                
-                <div class="actions">
-                    <!-- Theme Toggle Button -->
-                    <button class="theme-toggle" id="themeToggle" aria-label="Theme Toggle">
-                        <span class="sun-icon">☀️</span>
-                        <span class="moon-icon">🌙</span>
+                <div class="header-actions">
+                    <button class="search-btn" aria-label="தேடல்" id="searchToggle">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
                     </button>
-                    <a href="login.php" class="btn">உள்நுழைக</a>
-                    <a href="register.php" class="btn primary">பதிவு</a>
+                    
+                    <button class="subscribe-btn" onclick="openSubscription()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                            <polyline points="22,6 12,13 2,6" />
+                        </svg>
+                        சந்தா
+                    </button>
+                    <button class="theme-toggle" id="themeToggle" aria-label="Change theme">
+                        <svg class="moon-icon" viewBox="0 0 24 24" fill="none">
+                            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.6"/>
+                        </svg>
+                        <svg class="sun-icon" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.6"/>
+                            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.6"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
-        </header>
+        </div>
+    </header>
 
-        <!-- Category Navigation -->
-        <nav class="catbar" aria-label="Categories">
-            <div class="catbar-wrap">
-                <a href="index.php" class="chip">முகப்பு</a>
-                <?php foreach ($categories as $category): ?>
-                    <a href="categories.php?id=<?php echo $category['id']; ?>" 
-                       class="chip <?php echo ($category_id == $category['id']) ? 'active' : ''; ?>">
-                        <?php echo htmlspecialchars($category['name']); ?>
-                    </a>
-                <?php endforeach; ?>
+    <!-- Category Navigation -->
+    <nav class="category-nav" aria-label="Main categories">
+        <div class="container">
+            <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                <ul class="category-list">
+                    <li style="display: inline-block;">
+                        <a href="index.php" class="category-link <?php echo (!isset($_GET['category'])) ? 'active' : ''; ?>">
+                            முகப்பு
+                        </a>
+                    </li>
+                    <?php foreach ($categories as $category): ?>
+                        <?php 
+                        $countQuery = "SELECT COUNT(*) as count FROM news 
+                                       WHERE FIND_IN_SET(?, categories) > 0 
+                                       AND status = 'published'";
+                        $countStmt = $db->prepare($countQuery);
+                        $countStmt->execute([$category['id']]);
+                        $count = $countStmt->fetch(PDO::FETCH_ASSOC);
+                        ?>
+                        <li style="display: inline-block;">
+                            <a href="categories.php?id=<?php echo $category['id']; ?>" 
+                               class="category-link <?php echo ($category_id == $category['id']) ? 'active' : ''; ?>">
+                                <?php echo htmlspecialchars($category['name']); ?>
+                            </a>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
             </div>
-        </nav>
+        </div>
+    </nav>
 
-        <!-- Breaking news ticker -->
-        <section class="ticker">
-            <div class="ticker-wrap">
-                <span class="tag-chip">Breaking</span>
-                <div class="marquee" aria-label="Breaking news">
-                    <div class="marquee-track" id="tickerTrack">
-                        <span>சிறப்பு: புதிய திட்டம் அறிவிப்பு வெளியீடு<span class="dot"></span></span>
-                        <span>விளையாட்டு: கடைசி ஓவரில் த்ரில்லர் வெற்றி<span class="dot"></span></span>
-                        <span>தொழில்நுட்பம்: AI கருவி வெளியீடு<span class="dot"></span></span>
-                        <span>உலக செய்திகள்: வர்த்தக உடன்பாடு கையெழுத்து<span class="dot"></span></span>
-                        <!-- duplicate for seamless loop -->
-                        <span>சிறப்பு: புதிய திட்டம் அறிவிப்பு வெளியீடு<span class="dot"></span></span>
-                        <span>விளையாட்டு: கடைசி ஓவரில் த்ரில்லர் வெற்றி<span class="dot"></span></span>
-                        <span>தொழில்நுட்பம்: AI கருவி வெளியீடு<span class="dot"></span></span>
-                        <span>உலக செய்திகள்: வர்த்தக உடன்பாடு கையெழுத்து<span class="dot"></span></span>
-                    </div>
-                </div>
-                <span class="tag-chip">Live • 24/7</span>
-            </div>
-        </section>
-
-        <!-- Category Content -->
-        <main>
+    <!-- Main Content Area -->
+    <main class="main-content" role="main">
+        <div class="container">
             <?php if ($current_category): ?>
                 <div class="category-header">
                     <h1 class="category-title"><?php echo htmlspecialchars($current_category['name']); ?></h1>
@@ -1152,85 +1110,104 @@ function getNewsCategories($news) {
                     <?php endif; ?>
                 </div>
 
-                <div class="section">
-                    <div class="section-head">
-                        <div class="section-title">அனைத்து செய்திகள்</div>
-                        <span class="news-count"><?php echo $news_count; ?> செய்திகள்</span>
+                <?php if (!empty($category_news)): ?>
+                    <div class="news-grid">
+                        <?php foreach ($category_news as $news): ?>
+                            <?php 
+                            $news_subcategory = extractSubcategory($news, $category_subcategories);
+                            $news_image = getNewsImage($news);
+                            $news_categories = getNewsCategories($news);
+                            ?>
+                            <a href="news-detail.php?id=<?php echo $news['id']; ?>" class="news-card">
+                                <div class="news-image">
+                                    <img src="<?php echo $news_image; ?>" 
+                                         alt="<?php echo htmlspecialchars($news['title']); ?>" 
+                                         loading="lazy" 
+                                         onerror="this.src='https://picsum.photos/id/<?php echo rand(1000, 1100); ?>/800/500'" />
+                                    <?php if ($news_categories): ?>
+                                        <span class="news-badge"><?php echo htmlspecialchars($news_categories); ?></span>
+                                    <?php else: ?>
+                                        <span class="news-badge"><?php echo htmlspecialchars($news_subcategory); ?></span>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="news-content">
+                                    <h3 class="news-title"><?php echo htmlspecialchars($news['title']); ?></h3>
+                                    <div class="news-excerpt">
+                                        <?php 
+                                        $content = strip_tags($news['content'] ?? '');
+                                        echo mb_strlen($content) > 120 ? mb_substr($content, 0, 120) . '...' : $content;
+                                        ?>
+                                    </div>
+                                    <div class="news-meta">
+                                        <span><?php echo timeAgoTamil($news['published_at'], $news['created_at']); ?></span>
+                                        <span><?php echo !empty($news['published_at']) ? formatTamilDate($news['published_at']) : formatTamilDate($news['created_at']); ?></span>
+                                    </div>
+                                </div>
+                            </a>
+                        <?php endforeach; ?>
                     </div>
 
-                    <?php if (!empty($category_news)): ?>
-                        <div class="grid-news">
-                            <?php foreach ($category_news as $news): ?>
-                                <?php 
-                                $news_subcategory = extractSubcategory($news, $category_subcategories);
-                                $news_image = getNewsImage($news);
-                                $news_categories = getNewsCategories($news);
-                                ?>
-                                <a href="news-detail.php?id=<?php echo $news['id']; ?>" class="news-card">
-                                    <div class="news-thumb">
-                                        <img src="<?php echo $news_image; ?>" 
-                                             alt="<?php echo htmlspecialchars($news['title']); ?>" 
-                                             loading="lazy" 
-                                             onerror="this.src='https://picsum.photos/id/<?php echo rand(1000, 1100); ?>/800/500'" />
-                                        <?php if ($news_categories): ?>
-                                            <span class="news-badge"><?php echo htmlspecialchars($news_categories); ?></span>
-                                        <?php else: ?>
-                                            <span class="news-badge"><?php echo htmlspecialchars($news_subcategory); ?></span>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="news-content">
-                                        <h3 class="news-title"><?php echo htmlspecialchars($news['title']); ?></h3>
-                                        <div class="news-excerpt">
-                                            <?php 
-                                            $content = strip_tags($news['content'] ?? '');
-                                            echo mb_strlen($content) > 120 ? mb_substr($content, 0, 120) . '...' : $content;
-                                            ?>
-                                        </div>
-                                        <div class="news-meta">
-                                            <span><?php echo timeAgoTamil($news['published_at'], $news['created_at']); ?></span>
-                                            <span><?php echo !empty($news['published_at']) ? formatTamilDate($news['published_at']) : formatTamilDate($news['created_at']); ?></span>
-                                        </div>
-                                    </div>
+                    <!-- Pagination -->
+                    <?php if ($total_pages > 1): ?>
+                        <div class="pagination">
+                            <?php if ($page > 1): ?>
+                                <a href="categories.php?id=<?php echo $category_id; ?>&page=<?php echo $page - 1; ?>" 
+                                   class="page" aria-label="முந்தைய பக்கம்">
+                                    &larr;
                                 </a>
-                            <?php endforeach; ?>
-                        </div>
+                            <?php endif; ?>
 
-                        <!-- Pagination -->
-                        <?php if ($total_pages > 1): ?>
-                            <div class="pagination">
-                                <?php if ($page > 1): ?>
-                                    <a href="categories.php?id=<?php echo $category_id; ?>&page=<?php echo $page - 1; ?>" class="page">
-                                        ← முந்தைய
-                                    </a>
+                            <?php
+                            $startPage = max(1, $page - 2);
+                            $endPage = min($total_pages, $page + 2);
+                            
+                            if ($startPage > 1): ?>
+                                <a href="categories.php?id=<?php echo $category_id; ?>&page=1" class="page">
+                                    1
+                                </a>
+                                <?php if ($startPage > 2): ?>
+                                    <span class="page" style="cursor: default; background: transparent; border: none;">...</span>
                                 <?php endif; ?>
+                            <?php endif; ?>
 
-                                <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                                    <?php if ($i == 1 || $i == $total_pages || ($i >= $page - 2 && $i <= $page + 2)): ?>
-                                        <a href="categories.php?id=<?php echo $category_id; ?>&page=<?php echo $i; ?>" 
-                                           class="page <?php echo ($i == $page) ? 'active' : ''; ?>">
-                                            <?php echo $i; ?>
-                                        </a>
-                                    <?php elseif ($i == $page - 3 || $i == $page + 3): ?>
-                                        <span class="page disabled">...</span>
-                                    <?php endif; ?>
-                                <?php endfor; ?>
+                            <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
+                                <a href="categories.php?id=<?php echo $category_id; ?>&page=<?php echo $i; ?>" 
+                                   class="page <?php echo ($i == $page) ? 'active' : ''; ?>"
+                                   aria-label="பக்கம் <?php echo $i; ?>"
+                                   aria-current="<?php echo ($i == $page) ? 'page' : 'false'; ?>">
+                                    <?php echo $i; ?>
+                                </a>
+                            <?php endfor; ?>
 
-                                <?php if ($page < $total_pages): ?>
-                                    <a href="categories.php?id=<?php echo $category_id; ?>&page=<?php echo $page + 1; ?>" class="page">
-                                        அடுத்த →
-                                    </a>
+                            <?php if ($endPage < $total_pages): ?>
+                                <?php if ($endPage < $total_pages - 1): ?>
+                                    <span class="page" style="cursor: default; background: transparent; border: none;">...</span>
                                 <?php endif; ?>
-                            </div>
-                        <?php endif; ?>
+                                <a href="categories.php?id=<?php echo $category_id; ?>&page=<?php echo $total_pages; ?>" class="page">
+                                    <?php echo $total_pages; ?>
+                                </a>
+                            <?php endif; ?>
 
-                    <?php else: ?>
-                        <div class="no-news">
-                            <h3>செய்திகள் இல்லை</h3>
-                            <p>இந்த வகைக்கான செய்திகள் இன்னும் சேர்க்கப்படவில்லை.</p>
-                            <a href="index.php" class="btn primary">முகப்பு பக்கத்திற்குச் செல்லவும்</a>
+                            <?php if ($page < $total_pages): ?>
+                                <a href="categories.php?id=<?php echo $category_id; ?>&page=<?php echo $page + 1; ?>" 
+                                   class="page" aria-label="அடுத்த பக்கம்">
+                                    &rarr;
+                                </a>
+                            <?php endif; ?>
                         </div>
                     <?php endif; ?>
-                </div>
+
+                <?php else: ?>
+                    <div class="no-news">
+                        <h3 style="font-size: 1.5rem; color: var(--text-primary); margin-bottom: var(--space-sm);">செய்திகள் இல்லை</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: var(--space-lg);">
+                            இந்த வகைக்கான செய்திகள் இன்னும் சேர்க்கப்படவில்லை.
+                        </p>
+                        <a href="index.php" style="display: inline-flex; align-items: center; gap: var(--space-xs); padding: var(--space-sm) var(--space-md); background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red)); color: var(--white); border: none; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; transition: all var(--transition-base);">
+                            முகப்பு பக்கத்திற்குச் செல்லவும்
+                        </a>
+                    </div>
+                <?php endif; ?>
             <?php else: ?>
                 <!-- No category selected - show all categories -->
                 <div class="category-header">
@@ -1240,221 +1217,283 @@ function getNewsCategories($news) {
                     </div>
                 </div>
 
-                <div class="section">
-                    <div class="grid-news">
-                        <?php foreach ($categories as $category): ?>
-                            <?php 
-                            // Count news in this category
-                            $cat_name = "%" . $category['name'] . "%";
-                            $countQuery = "SELECT COUNT(*) as total FROM news 
-                                          WHERE status = 'published' 
-                                          AND (categories LIKE :cat_name 
-                                               OR categories LIKE CONCAT(:cat_name_only, ',%')
-                                               OR categories LIKE CONCAT('%,', :cat_name_only, ',%')
-                                               OR categories LIKE CONCAT('%,', :cat_name_only)
-                                               OR categories LIKE :cat_id_pattern)";
-                            $countStmt = $db->prepare($countQuery);
-                            $countStmt->bindValue(':cat_name', $cat_name, PDO::PARAM_STR);
-                            $countStmt->bindValue(':cat_name_only', $category['name'], PDO::PARAM_STR);
-                            $countStmt->bindValue(':cat_id_pattern', '%' . $category['id'] . '%', PDO::PARAM_STR);
-                            $countStmt->execute();
-                            $countResult = $countStmt->fetch(PDO::FETCH_ASSOC);
-                            $cat_news_count = $countResult ? $countResult['total'] : 0;
-                            
-                            // Get a sample news item for category image
-                            $sampleQuery = "SELECT n.id FROM news n
-                                          WHERE n.status = 'published' 
-                                          AND (n.categories LIKE :cat_name 
-                                               OR n.categories LIKE CONCAT(:cat_name_only, ',%')
-                                               OR n.categories LIKE CONCAT('%,', :cat_name_only, ',%')
-                                               OR n.categories LIKE CONCAT('%,', :cat_name_only)
-                                               OR n.categories LIKE :cat_id_pattern)
-                                          ORDER BY COALESCE(n.published_at, n.created_at) DESC 
-                                          LIMIT 1";
-                            $sampleStmt = $db->prepare($sampleQuery);
-                            $sampleStmt->bindValue(':cat_name', $cat_name, PDO::PARAM_STR);
-                            $sampleStmt->bindValue(':cat_name_only', $category['name'], PDO::PARAM_STR);
-                            $sampleStmt->bindValue(':cat_id_pattern', '%' . $category['id'] . '%', PDO::PARAM_STR);
-                            $sampleStmt->execute();
-                            $sampleNews = $sampleStmt->fetch(PDO::FETCH_ASSOC);
-                            
-                            if ($sampleNews) {
-                                $category_image = getNewsImage($sampleNews);
-                            } else {
-                                $placeholder_id = rand(1000, 1100);
-                                $category_image = 'https://picsum.photos/id/' . $placeholder_id . '/800/500';
-                            }
-                            ?>
-                            <a href="categories.php?id=<?php echo $category['id']; ?>" class="news-card">
-                                <div class="news-thumb">
-                                    <img src="<?php echo $category_image; ?>" 
-                                         alt="<?php echo htmlspecialchars($category['name']); ?>" 
-                                         loading="lazy"
-                                         onerror="this.src='https://picsum.photos/id/<?php echo rand(1000, 1100); ?>/800/500'" />
-                                    <span class="news-badge"><?php echo htmlspecialchars($category['name']); ?></span>
+                <div class="news-grid">
+                    <?php foreach ($categories as $category): ?>
+                        <?php 
+                        // Count news in this category
+                        $cat_name = "%" . $category['name'] . "%";
+                        $countQuery = "SELECT COUNT(*) as total FROM news 
+                                      WHERE status = 'published' 
+                                      AND (categories LIKE :cat_name 
+                                           OR categories LIKE CONCAT(:cat_name_only, ',%')
+                                           OR categories LIKE CONCAT('%,', :cat_name_only, ',%')
+                                           OR categories LIKE CONCAT('%,', :cat_name_only)
+                                           OR categories LIKE :cat_id_pattern)";
+                        $countStmt = $db->prepare($countQuery);
+                        $countStmt->bindValue(':cat_name', $cat_name, PDO::PARAM_STR);
+                        $countStmt->bindValue(':cat_name_only', $category['name'], PDO::PARAM_STR);
+                        $countStmt->bindValue(':cat_id_pattern', '%' . $category['id'] . '%', PDO::PARAM_STR);
+                        $countStmt->execute();
+                        $countResult = $countStmt->fetch(PDO::FETCH_ASSOC);
+                        $cat_news_count = $countResult ? $countResult['total'] : 0;
+                        
+                        // Get a sample news item for category image
+                        $sampleQuery = "SELECT n.id FROM news n
+                                      WHERE n.status = 'published' 
+                                      AND (n.categories LIKE :cat_name 
+                                           OR n.categories LIKE CONCAT(:cat_name_only, ',%')
+                                           OR n.categories LIKE CONCAT('%,', :cat_name_only, ',%')
+                                           OR n.categories LIKE CONCAT('%,', :cat_name_only)
+                                           OR n.categories LIKE :cat_id_pattern)
+                                      ORDER BY COALESCE(n.published_at, n.created_at) DESC 
+                                      LIMIT 1";
+                        $sampleStmt = $db->prepare($sampleQuery);
+                        $sampleStmt->bindValue(':cat_name', $cat_name, PDO::PARAM_STR);
+                        $sampleStmt->bindValue(':cat_name_only', $category['name'], PDO::PARAM_STR);
+                        $sampleStmt->bindValue(':cat_id_pattern', '%' . $category['id'] . '%', PDO::PARAM_STR);
+                        $sampleStmt->execute();
+                        $sampleNews = $sampleStmt->fetch(PDO::FETCH_ASSOC);
+                        
+                        if ($sampleNews) {
+                            $category_image = getNewsImage($sampleNews);
+                        } else {
+                            $placeholder_id = rand(1000, 1100);
+                            $category_image = 'https://picsum.photos/id/' . $placeholder_id . '/800/500';
+                        }
+                        ?>
+                        <a href="categories.php?id=<?php echo $category['id']; ?>" class="news-card">
+                            <div class="news-image">
+                                <img src="<?php echo $category_image; ?>" 
+                                     alt="<?php echo htmlspecialchars($category['name']); ?>" 
+                                     loading="lazy"
+                                     onerror="this.src='https://picsum.photos/id/<?php echo rand(1000, 1100); ?>/800/500'" />
+                                <span class="news-badge"><?php echo htmlspecialchars($category['name']); ?></span>
+                            </div>
+                            <div class="news-content">
+                                <h3 class="news-title"><?php echo htmlspecialchars($category['name']); ?></h3>
+                                <div class="news-excerpt">
+                                    <p><?php echo $cat_news_count; ?> செய்திகள்</p>
                                 </div>
-                                <div class="news-content">
-                                    <h3 class="news-title"><?php echo htmlspecialchars($category['name']); ?></h3>
-                                    <div class="news-excerpt">
-                                        <p><?php echo $cat_news_count; ?> செய்திகள்</p>
-                                    </div>
-                                    <div class="news-meta">
-                                        <span>பிரிவு</span>
-                                        <span>செய்திகள்: <?php echo $cat_news_count; ?></span>
-                                    </div>
+                                <div class="news-meta">
+                                    <span>பிரிவு</span>
+                                    <span>செய்திகள்: <?php echo $cat_news_count; ?></span>
                                 </div>
-                            </a>
-                        <?php endforeach; ?>
-                    </div>
+                            </div>
+                        </a>
+                    <?php endforeach; ?>
                 </div>
             <?php endif; ?>
-        </main>
+        </div>
+    </main>
 
-        <!-- Bottom padding for mobile -->
-        <div class="bottom-padding"></div>
-    </div>
+    <!-- Desktop Footer -->
+    <footer class="desktop-footer">
+        <div class="container">
+            <div style="text-align: center;">
+                <p>&copy; <?php echo date('Y'); ?> Liked தமிழ். அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.</p>
+                <div style="display: flex; justify-content: center; gap: var(--space-lg); margin-top: var(--space-sm);">
+                    <a href="about.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">எங்களைப் பற்றி</a>
+                    <a href="contact.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">தொடர்பு கொள்ள</a>
+                    <a href="privacy.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">தனியுரிமைக் கொள்கை</a>
+                    <a href="terms.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">பயன்பாட்டு விதிமுறைகள்</a>
+                </div>
+            </div>
+        </div>
+    </footer>
 
-    <!-- Subscription Modal -->
-    <div class="subscription-modal" id="subscriptionModal">
-        <div class="subscription-content">
-            <button class="close-modal" onclick="closeSubscription()">&times;</button>
-            <h3>Subscribe to Liked தமிழ்</h3>
-            <form method="POST" class="subscription-form">
-                <input type="email" name="email" placeholder="உங்கள் மின்னஞ்சல்" required>
-                <input type="hidden" name="subscribe" value="1">
-                <button type="submit">Subscribe</button>
+    <!-- Mobile Footer Navigation -->
+    <footer class="mobile-footer" role="navigation" aria-label="மொபைல் வழிசெலுத்தல்">
+        <a href="index.php" class="mobile-nav-item <?php echo (!isset($_GET['category']) && !isset($_GET['page'])) ? 'active' : ''; ?>">
+            <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+            <span class="mobile-nav-label">முகப்பு</span>
+        </a>
+        
+        <a href="categories.php" class="mobile-nav-item active">
+            <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+            </svg>
+            <span class="mobile-nav-label">பிரிவுகள்</span>
+        </a>
+        
+        <button class="mobile-nav-item" onclick="toggleSearch()">
+            <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <span class="mobile-nav-label">தேடல்</span>
+        </button>
+        
+        <a href="video.php" class="mobile-nav-item">
+            <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="23 7 16 12 23 17 23 7" />
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+            </svg>
+            <span class="mobile-nav-label">வீடியோ</span>
+        </a>
+        
+        <a href="profile.php" class="mobile-nav-item">
+            <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+            </svg>
+            <span class="mobile-nav-label">சுயவிவரம்</span>
+        </a>
+    </footer>
+
+    <!-- Search Modal -->
+    <div class="search-modal" id="searchModal">
+        <div style="width: 100%; max-width: 600px; background: var(--bg-card); border-radius: var(--radius-lg); padding: var(--space-lg); box-shadow: var(--shadow-lg); animation: slideDown 0.3s ease; margin-top: var(--space-xl);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
+                <h3 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">தேடல்</h3>
+                <button onclick="toggleSearch()" aria-label="மூடு" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; padding: var(--space-xs); border-radius: var(--radius-sm); transition: all var(--transition-fast);">
+                    &times;
+                </button>
+            </div>
+            
+            <form method="GET" action="search.php" style="display: flex; gap: var(--space-sm); margin-bottom: var(--space-lg);">
+                <input type="search" 
+                       name="q" 
+                       placeholder="செய்திகளைத் தேடுங்கள்..." 
+                       style="flex: 1; padding: var(--space-md); background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); font-size: 1rem; outline: none; transition: all var(--transition-fast);"
+                       autocomplete="off"
+                       autofocus />
+                <button type="submit" style="padding: var(--space-md) var(--space-lg); background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red)); color: var(--white); border: none; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; transition: all var(--transition-fast);">
+                    தேடு
+                </button>
             </form>
-            <div class="subscription-success" id="subscriptionSuccess">
-                நன்றி! உங்கள் சந்தா வெற்றிகரமாக பதிவு செய்யப்பட்டது.
+            
+            <div style="color: var(--text-muted); font-size: 0.875rem; text-align: center;">
+                உதாரணம்: "விளையாட்டு", "அரசியல்", "பொருளாதாரம்"
             </div>
         </div>
     </div>
 
-    <!-- Mobile Footer -->
-    <footer class="mobile-footer" role="navigation" aria-label="மொபைல் அடிக்குறிப்பு">
-        <div class="foot-wrap">
-            <a href="index.php" class="foot-item">
-                <svg class="foot-icon" viewBox="0 0 24 24" fill="none">
-                    <path d="M3 10l9-7 9 7v9a2 2 0 01-2 2H5a2 2 0 01-2-2v-9z" stroke-width="1.6"/>
-                </svg>
-                <span class="foot-label">முகப்பு</span>
-            </a>
-            <a href="categories.php" class="foot-item active">
-                <svg class="foot-icon" viewBox="0 0 24 24" fill="none">
-                    <path d="M4 6h16M4 12h16M4 18h16" stroke-width="1.6"/>
-                </svg>
-                <span class="foot-label">பிரிவுகள்</span>
-            </a>
-            <a href="search.php" class="foot-item">
-                <svg class="foot-icon" viewBox="0 0 24 24" fill="none">
-                    <path d="M11 5a6 6 0 016 6c0 1.3-.41 2.5-1.11 3.48l4.32 4.32-1.41 1.41-4.32-4.32A6 6 0 1111 5z" stroke-width="1.6"/>
-                </svg>
-                <span class="foot-label">தேடல்</span>
-            </a>
-            <a href="about.php" class="foot-item">
-                <svg class="foot-icon" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="6" stroke-width="1.6"/>
-                </svg>
-                <span class="foot-label">சுயவிவரம்</span>
-            </a>
-        </div>
-    </footer>
-
     <script>
-        // Theme Toggle Functionality
+        // Search functionality
+        function toggleSearch() {
+            const searchModal = document.getElementById('searchModal');
+            searchModal.classList.toggle('active');
+            
+            if (searchModal.classList.contains('active')) {
+                document.body.style.overflow = 'hidden';
+                searchModal.querySelector('input').focus();
+            } else {
+                document.body.style.overflow = '';
+            }
+        }
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const searchModal = document.getElementById('searchModal');
+                if (searchModal.classList.contains('active')) {
+                    toggleSearch();
+                }
+            }
+        });
+        
+        document.getElementById('searchModal')?.addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                toggleSearch();
+            }
+        });
+
+        document.getElementById('searchToggle')?.addEventListener('click', toggleSearch);
+
+        // Theme toggle functionality
         const themeToggle = document.getElementById('themeToggle');
         const body = document.body;
         
-        // Check for saved theme or prefer-color-scheme
+        // Check for saved theme or prefer color scheme
         const savedTheme = localStorage.getItem('theme');
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         
         if (savedTheme === 'light' || (!savedTheme && !prefersDark)) {
-            body.classList.remove('dark-mode');
             body.classList.add('light-mode');
         }
         
         themeToggle.addEventListener('click', () => {
+            body.classList.toggle('light-mode');
+            
+            // Save preference
             if (body.classList.contains('light-mode')) {
-                body.classList.remove('light-mode');
-                body.classList.add('dark-mode');
-                localStorage.setItem('theme', 'dark');
-            } else {
-                body.classList.remove('dark-mode');
-                body.classList.add('light-mode');
                 localStorage.setItem('theme', 'light');
+            } else {
+                localStorage.setItem('theme', 'dark');
             }
         });
+
+        // Fix for mobile viewport height
+        function setViewportHeight() {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        }
         
-        // Subscription modal functions
+        setViewportHeight();
+        window.addEventListener('resize', setViewportHeight);
+        
         function openSubscription() {
-            document.getElementById('subscriptionModal').style.display = 'flex';
+            alert('சந்தா செயல்பாடு விரைவில் கிடைக்கும்');
         }
-        
-        function closeSubscription() {
-            document.getElementById('subscriptionModal').style.display = 'none';
-        }
-        
-        // Ticker width check
-        const track = document.getElementById('tickerTrack');
-        function ensureTickerLoop() {
-            if (!track) return;
-            const width = track.scrollWidth;
-            const container = track.parentElement.clientWidth;
-            if (width < container * 2) {
-                track.innerHTML = track.innerHTML + track.innerHTML;
+
+        // Ensure content fits screen
+        function adjustContentHeight() {
+            const headerHeight = document.querySelector('.header').offsetHeight;
+            const categoryNavHeight = document.querySelector('.category-nav').offsetHeight;
+            const mobileFooterHeight = document.querySelector('.mobile-footer').offsetHeight;
+            
+            const totalStickyHeight = headerHeight + categoryNavHeight;
+            const mainContent = document.querySelector('.main-content');
+            
+            if (mainContent) {
+                const windowHeight = window.innerHeight;
+                const availableHeight = windowHeight - totalStickyHeight - mobileFooterHeight;
+                mainContent.style.minHeight = availableHeight + 'px';
             }
         }
         
-        // Initialize on load
-        window.addEventListener('load', function() {
-            ensureTickerLoop();
+        // Run after page loads
+        window.addEventListener('load', () => {
+            setTimeout(adjustContentHeight, 100);
             
-            // Image error handling
-            document.querySelectorAll('img').forEach(img => {
-                img.addEventListener('error', function() {
-                    this.src = 'https://picsum.photos/id/' + Math.floor(Math.random() * 1000) + '/800/500';
-                    this.onerror = null;
-                });
-            });
-            
-            // Add active class to current category in mobile footer
+            // Update mobile footer active state
             const currentPath = window.location.pathname;
-            const footerLinks = document.querySelectorAll('.mobile-footer .foot-item');
-            footerLinks.forEach(link => {
-                link.classList.remove('active');
-                if (link.getAttribute('href') === currentPath || 
-                    (currentPath.includes('categories.php') && link.getAttribute('href') === 'categories.php')) {
-                    link.classList.add('active');
+            const mobileNavItems = document.querySelectorAll('.mobile-nav-item');
+            
+            mobileNavItems.forEach(item => {
+                if (item.getAttribute('href') === currentPath) {
+                    item.classList.add('active');
+                } else if (currentPath.includes('categories.php')) {
+                    // Remove active from other items when on categories page
+                    if (item.getAttribute('href') === 'categories.php') {
+                        item.classList.add('active');
+                    } else {
+                        item.classList.remove('active');
+                    }
                 }
             });
         });
         
-        // Recheck on resize
-        window.addEventListener('resize', ensureTickerLoop);
-        
-        // Close modal on escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeSubscription();
-            }
+        window.addEventListener('resize', adjustContentHeight);
+
+        // Image error handling
+        document.querySelectorAll('img').forEach(img => {
+            img.addEventListener('error', function() {
+                this.src = 'https://picsum.photos/id/' + Math.floor(Math.random() * 1000) + '/800/500';
+                this.onerror = null;
+            });
         });
-        
-        // Close modal when clicking outside
-        document.getElementById('subscriptionModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeSubscription();
-            }
-        });
-        
-        // Smooth scroll to top for pagination links
+
+        // Smooth scroll for pagination links
         document.querySelectorAll('.pagination a').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 const target = this.getAttribute('href');
-                
-                // Add loading state
-                document.body.classList.add('loading');
                 
                 // Scroll to top
                 window.scrollTo({
@@ -1468,21 +1507,6 @@ function getNewsCategories($news) {
                 }, 300);
             });
         });
-        
-        // Theme system preference listener
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-            if (!localStorage.getItem('theme')) {
-                if (e.matches) {
-                    body.classList.remove('light-mode');
-                    body.classList.add('dark-mode');
-                } else {
-                    body.classList.remove('dark-mode');
-                    body.classList.add('light-mode');
-                }
-            }
-        });
-        
     </script>
-
 </body>
 </html>

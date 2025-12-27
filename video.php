@@ -25,520 +25,236 @@ require 'config/config.php'; // To get $base_url
 <html lang="ta">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>வீடியோக்கள் - Liked தமிழ்</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Favicon -->
+    <?php include 'includes/favicon.php'; ?>
+    
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+Tamil:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Tamil:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
+    /* ===== CSS Variables ===== */
     :root {
-      --red: #ff1111;        /* primary red */
-      --yellow: #fffc00;     /* accent yellow */
-      --black: #000000;      /* base black */
-      --fb-blue: #1877f2;    /* Facebook blue */
-
-      --bg: #0a0a0a;         /* deep black for background */
-      --text: #f5f7fa;       /* white-ish text */
-      --muted: #b8bfc8;      /* muted text */
-      --card: #121314;       /* card surface */
-      --card-hi: #16181a;    /* hover surface */
-      --border: 1px solid rgba(255,255,255,.06);
-      --glass: rgba(255,255,255,.06);
-      --shadow: 0 12px 32px rgba(0,0,0,.45);
-
-      --radius: 16px;
-      --radius-sm: 12px;
-      --radius-xs: 10px;
-      --trans: 240ms cubic-bezier(.2,.8,.2,1);
-    }
-
-    * { box-sizing: border-box }
-    html, body { height: 100%; width:100%; margin: 0; padding: 0 }
-    body {
-      font-family: "Noto Sans Tamil", Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(800px 420px at 10% -10%, rgba(255,17,17,.12), transparent 42%),
-        radial-gradient(600px 380px at 95% 0%, rgba(255,252,0,.10), transparent 52%),
-        var(--bg);
-      background-attachment: fixed;
-      line-height: 1.6;
-    }
-
-    /* App bar */
-    .logo {
-      width: 20%;       /* adjust size */
-      height: 20%;
-      border-radius: 8px; /* optional rounded corners */
-      object-fit: contain; /* keeps aspect ratio */
-    }
-
-    .appbar {
-      position: sticky; top: 0; z-index: 90;
-      backdrop-filter: saturate(1.25) blur(12px);
-      background: linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.25));
-      border-bottom: var(--border);
-    }
-    .appbar-wrap {
-      display: grid; grid-template-columns: auto 1fr auto auto; gap: 16px;
-      align-items: center; padding: 12px clamp(14px, 3vw, 24px);
-      max-width: 1200px; margin: 0 auto;
-    }
-    .brand {
-      display:flex; align-items:center; gap: 12px; text-decoration:none; color: var(--text);
-    }
-    .title {
-      font-weight: 800; font-size: clamp(18px, 2.4vw, 28px); letter-spacing: .2px;
-    }
-    .search {
-      display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px;
-      background: var(--glass); border: var(--border);
-    }
-    .search input {
-      flex:1; background:transparent; border:0; color: var(--text); outline:none;
-    }
-    .icon { width: 20px; height: 20px }
-
-    /* Category bar (chips) */
-    .catbar {
-      background: linear-gradient(180deg, rgba(255,252,0,.08), transparent);
-      border-top: var(--border);
-      border-bottom: var(--border);
-    }
-    .catbar-wrap {
-      max-width: 1200px; margin: 0 auto; padding: 10px clamp(14px, 3vw, 24px);
-      display:flex; gap: 8px; overflow-x: auto; scrollbar-width: thin;
-    }
-    .chip {
-      flex: 0 0 auto;
-      display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px;
-      background: var(--glass); border: var(--border); color: var(--text); font-weight:600; font-size: 13px;
-      transition: background var(--trans), transform var(--trans), color var(--trans);
-      cursor: pointer;
-      text-decoration: none;
-      white-space: nowrap;
-    }
-    .chip:hover { transform: translateY(-2px); background: rgba(255,17,17,.18) }
-    .chip.active { background: linear-gradient(180deg, var(--red), #d10f0f); color: #fff; border: 0 }
-
-    /* Video Page Header */
-    .video-header {
-      max-width: 1200px;
-      margin: 30px auto 20px;
-      padding: 0 clamp(14px, 3vw, 24px);
-    }
-    
-    .video-header h1 {
-      font-size: 2.5rem;
-      margin-bottom: 10px;
-      background: linear-gradient(90deg, var(--red), var(--yellow));
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      letter-spacing: -0.5px;
-    }
-    
-    .video-header p {
-      color: var(--muted);
-      font-size: 1.1rem;
-      margin-bottom: 20px;
-    }
-    
-    .video-stats {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background-color: var(--card);
-      padding: 15px 25px;
-      border-radius: var(--radius-sm);
-      margin-bottom: 30px;
-      border: var(--border);
-    }
-    
-    .total-videos {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .total-videos i {
-      color: var(--red);
-      font-size: 1.2rem;
-    }
-    
-    .sort-options select {
-      background-color: var(--card-hi);
-      color: var(--text);
-      border: var(--border);
-      padding: 10px 20px;
-      border-radius: var(--radius-xs);
-      font-size: 0.95rem;
-      cursor: pointer;
-      transition: var(--trans);
-      font-family: "Noto Sans Tamil", Inter, sans-serif;
-    }
-    
-    .sort-options select:hover {
-      border-color: var(--red);
-    }
-    
-    /* Video Grid */
-    .video-grid {
-      max-width: 1200px;
-      margin: 0 auto 40px;
-      padding: 0 clamp(14px, 3vw, 24px);
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 25px;
-    }
-    
-    .video-card {
-      background-color: var(--card);
-      border-radius: var(--radius);
-      overflow: hidden;
-      border: var(--border);
-      transition: var(--trans);
-      box-shadow: var(--shadow);
-    }
-    
-    .video-card:hover {
-      transform: translateY(-8px);
-      background-color: var(--card-hi);
-      border-color: rgba(255,255,255,.1);
-    }
-    
-    .video-thumbnail {
-      position: relative;
-      height: 200px;
-      overflow: hidden;
-    }
-    
-    .video-thumbnail img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: var(--trans);
-    }
-    
-    .video-card:hover .video-thumbnail img {
-      transform: scale(1.05);
-    }
-    
-    .play-btn {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background-color: var(--red);
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.5rem;
-      color: white;
-      opacity: 0.9;
-      transition: var(--trans);
-      cursor: pointer;
-      border: none;
-      outline: none;
-    }
-    
-    .video-card:hover .play-btn {
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1.1);
-    }
-    
-    .video-info {
-      padding: 20px;
-    }
-    
-    .video-title {
-      font-size: 1.2rem;
-      font-weight: 600;
-      margin-bottom: 10px;
-      color: var(--text);
-      line-height: 1.4;
-      font-family: "Noto Sans Tamil", Inter, sans-serif;
-    }
-    
-    .video-date {
-      color: var(--muted);
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .video-date i {
-      color: var(--yellow);
-    }
-    
-    .no-videos {
-      grid-column: 1 / -1;
-      text-align: center;
-      padding: 60px 20px;
-      background-color: var(--card);
-      border-radius: var(--radius);
-      border: var(--border);
-    }
-    
-    .no-videos i {
-      font-size: 4rem;
-      color: var(--muted);
-      margin-bottom: 20px;
-    }
-    
-    .no-videos h3 {
-      font-size: 1.8rem;
-      margin-bottom: 10px;
-      color: var(--text);
-      font-family: "Noto Sans Tamil", Inter, sans-serif;
-    }
-    
-    .no-videos p {
-      color: var(--muted);
-      max-width: 500px;
-      margin: 0 auto;
-      font-family: "Noto Sans Tamil", Inter, sans-serif;
-    }
-    
-    /* Modal for video player */
-    .video-modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.85);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    
-    .modal-content {
-      background-color: var(--card);
-      border-radius: var(--radius);
-      padding: 30px;
-      max-width: 900px;
-      width: 100%;
-      position: relative;
-      border: var(--border);
-    }
-    
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    
-    .modal-title {
-      font-size: 1.5rem;
-      color: var(--text);
-      font-family: "Noto Sans Tamil", Inter, sans-serif;
-    }
-    
-    .close-modal {
-      background: none;
-      border: none;
-      color: var(--muted);
-      font-size: 1.8rem;
-      cursor: pointer;
-      transition: var(--trans);
-    }
-    
-    .close-modal:hover {
-      color: var(--red);
-    }
-    
-    .modal-video-container {
-      position: relative;
-      padding-bottom: 56.25%; /* 16:9 aspect ratio */
-      height: 0;
-      overflow: hidden;
-      border-radius: var(--radius-sm);
-    }
-    
-    .modal-video-container iframe {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      border: none;
-    }
-    
-    /* Loading */
-    .loading {
-      text-align: center;
-      padding: 40px;
-      font-size: 1.2rem;
-      color: var(--muted);
-    }
-    
-    .loading i {
-      color: var(--yellow);
-      margin-right: 10px;
-    }
-    
-    /* Desktop Footer */
-    .likedtamil-footer {
-      display: block;
-      background: #000000;
-      color: #fffc00;
-      text-align: center;
-      padding: 8px 10px;
-      font-size: 13px;
-      border-top: 2px solid #ff1111;
-      font-family: "Noto Sans Tamil", Inter, sans-serif;
-      margin-top: 20px;
-    }
-    
-    .likedtamil-footer-wrap {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    
-    .likedtamil-footer a {
-      color: #ff1111;
-      text-decoration: none;
-      font-weight: 600;
-      transition: color 0.2s ease;
-    }
-    
-    .likedtamil-footer a:hover {
-      color: #fffc00;
-    }
-    
-    @media (max-width: 740px) {
-      .likedtamil-footer {
-        display: none;
-      }
-    }
-    
-    /* Sticky mobile footer */
-    .mobile-footer {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 99;
-      backdrop-filter: blur(12px) saturate(1.1);
-      background: linear-gradient(180deg, rgba(255,17,17,.85), rgba(255,17,17,.98));
-      border-top: 2px solid rgba(255,252,0,.55);
-      display:none;
-    }
-    @media (max-width: 740px) {
-      .mobile-footer { display:block }
-      body { padding-bottom: 90px }
-      .search { display:none }
-    }
-    .video-grid{
-      padding-bottom: 100px;
-    }
-    .foot-wrap { max-width: 1200px; margin: 0 auto; padding: 10px clamp(12px, 4vw, 18px); display:flex; justify-content: space-between; gap: 6px }
-    .foot-item {
-      flex:1; display:flex; flex-direction: column; align-items:center; gap: 6px;
-      color: #fff; text-decoration:none; padding:8px; border-radius: 12px;
-      transition: transform var(--trans), background var(--trans)
-    }
-    .foot-item:hover, .foot-item.active { background: rgba(0,0,0,.18); transform: translateY(-2px) }
-    .foot-icon { width: 22px; height: 22px }
-    .foot-label { font-size: 12px; font-weight:700 }
-    
-    /* Responsive styles */
-    @media (max-width: 1100px) {
-      .video-grid {
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      }
+      /* Colors */
+      --primary-red: #e63946;
+      --primary-dark-red: #c1121f;
+      --accent-yellow: #ffd166;
+      --black: #000000;
+      --white: #ffffff;
       
-      .video-header h1 {
-        font-size: 2.2rem;
-      }
-    }
-    
-    @media (max-width: 768px) {
-      .video-header h1 {
-        font-size: 1.8rem;
-      }
+      /* UI Colors */
+      --bg-primary: #0a0a0a;
+      --bg-secondary: #121212;
+      --bg-card: #1a1a1a;
+      --bg-hover: #222222;
       
-      .video-stats {
-        flex-direction: column;
-        gap: 15px;
-        align-items: flex-start;
-      }
+      --text-primary: #f8f9fa;
+      --text-secondary: #adb5bd;
+      --text-muted: #6c757d;
       
-      .video-grid {
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 20px;
-      }
+      --border-color: rgba(255, 255, 255, 0.1);
+      --glass-bg: rgba(255, 255, 255, 0.05);
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+      --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
       
-      .video-thumbnail {
-        height: 180px;
-      }
-    }
-    
-    @media (max-width: 576px) {
-      .video-grid {
-        grid-template-columns: 1fr;
-      }
+      /* Spacing */
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+      --space-2xl: 48px;
       
-      .modal-content {
-        padding: 20px;
-      }
+      /* Border Radius */
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --radius-full: 9999px;
       
-      .video-header {
-        margin: 15px auto 10px;
-      }
-    }
-    
-    /* News Count Badge */
-    .news-count {
-      background: var(--yellow);
-      color: var(--black);
-      padding: 2px 6px;
-      border-radius: 10px;
-      font-size: 11px;
-      font-weight: 700;
-      margin-left: 5px;
+      /* Transitions */
+      --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+      
+      /* Typography */
+      --font-heading: 'Noto Sans Tamil', 'Inter', system-ui, sans-serif;
+      --font-body: 'Noto Sans Tamil', 'Inter', system-ui, sans-serif;
     }
     
     /* Light mode variables */
     .light-mode {
-      --red: #ff1111;
-      --yellow: #ffaa00;
+      --primary-red: #e63946;
+      --primary-dark-red: #c1121f;
+      --accent-yellow: #ffaa00;
       --black: #000000;
-      --bg: #f8f9fa;
-      --text: #1a1a1a;
-      --muted: #6c757d;
-      --card: #ffffff;
-      --card-hi: #f8f9fa;
-      --border: 1px solid rgba(0,0,0,.12);
-      --glass: rgba(0,0,0,.04);
-      --shadow: 0 12px 32px rgba(0,0,0,.08);
+      --white: #ffffff;
+      
+      --bg-primary: #f8f9fa;
+      --bg-secondary: #ffffff;
+      --bg-card: #ffffff;
+      --bg-hover: #f8f9fa;
+      
+      --text-primary: #1a1a1a;
+      --text-secondary: #495057;
+      --text-muted: #6c757d;
+      
+      --border-color: rgba(0, 0, 0, 0.12);
+      --glass-bg: rgba(0, 0, 0, 0.04);
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+      --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* ===== Reset & Base Styles ===== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    html {
+      -webkit-text-size-adjust: 100%;
+      -webkit-tap-highlight-color: transparent;
+      scroll-behavior: smooth;
+    }
+    
+    body {
+      font-family: var(--font-body);
+      color: var(--text-primary);
+      background: var(--bg-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+      transition: background-color var(--transition-base), color var(--transition-base);
+    }
+    
+    /* Background gradient - only for dark mode */
+    body:not(.light-mode)::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 100vh;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(230, 57, 70, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 209, 102, 0.1) 0%, transparent 50%);
+      z-index: -1;
+      pointer-events: none;
+    }
+    
+    /* ===== Header Fixes ===== */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(10, 10, 10, 0.98);
+      backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid var(--border-color);
+      padding: var(--space-sm) 0;
+    }
+    
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+      height: 60px;
+    }
+    
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .logo {
+      height: 40px;
+      width: auto;
+      object-fit: contain;
+      border-radius: var(--radius-sm);
+      max-width: 150px;
+    }
+    
+    @media (min-width: 640px) {
+      .logo {
+        height: 48px;
+        max-width: 200px;
+      }
+    }
+    
+    .site-title {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 1;
+    }
+    
+    @media (min-width: 640px) {
+      .site-title {
+        font-size: 1.5rem;
+      }
+    }
+    
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      flex-shrink: 0;
+    }
+    
+    .search-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition-fast);
+    }
+    
+    .search-btn:hover {
+      color: var(--text-primary);
+      background: var(--glass-bg);
     }
     
     /* Theme toggle button */
     .theme-toggle {
-      background: var(--card);
-      border: var(--border);
-      border-radius: 12px;
-      width: 44px;
-      height: 44px;
+      background: var(--glass-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      width: 40px;
+      height: 40px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all var(--trans);
-      color: var(--text);
+      transition: all var(--transition-fast);
+      color: var(--text-secondary);
     }
     
     .theme-toggle:hover {
       transform: translateY(-2px);
-      box-shadow: var(--shadow);
-      background: var(--card-hi);
+      box-shadow: var(--shadow-sm);
+      background: var(--bg-hover);
+      color: var(--text-primary);
     }
     
     .theme-toggle svg {
@@ -557,428 +273,994 @@ require 'config/config.php'; // To get $base_url
     .light-mode .theme-toggle .sun-icon {
       display: block;
     }
+    
+    .subscribe-btn {
+      display: none;
+    }
+    
+    @media (min-width: 768px) {
+      .subscribe-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-xs);
+        padding: var(--space-sm) var(--space-md);
+        background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red));
+        color: var(--white);
+        border: none;
+        border-radius: var(--radius-md);
+        font-family: var(--font-body);
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all var(--transition-base);
+      }
+      
+      .subscribe-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+      }
+    }
+    
+    /* ===== Category Navigation Fixes ===== */
+    .category-nav {
+      position: sticky;
+      top: 60px; /* Match header height */
+      z-index: 900;
+      background: rgba(18, 18, 18, 0.98);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-color);
+      padding: var(--space-sm) 0;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    
+    .category-nav::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .category-list {
+      display: flex;
+      gap: var(--space-xs);
+      padding: 0 var(--space-md);
+      list-style: none;
+      min-width: max-content;
+    }
+    
+    @media (min-width: 640px) {
+      .category-list {
+        gap: var(--space-sm);
+        padding: 0 var(--space-lg);
+        justify-content: center;
+      }
+    }
+    
+    .category-link {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: var(--space-sm) var(--space-md);
+      background: var(--glass-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      color: var(--text-secondary);
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: 0.875rem;
+      white-space: nowrap;
+      transition: all var(--transition-base);
+    }
+    
+    .category-link:hover,
+    .category-link.active {
+      background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red));
+      color: var(--white);
+      border-color: transparent;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    /* ===== Main Content ===== */
+    .container {
+      width: 100%;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 var(--space-md);
+    }
+    
+    @media (min-width: 640px) {
+      .container {
+        padding: 0 var(--space-lg);
+      }
+    }
+    
+    .main-content {
+      padding: var(--space-xl) 0;
+      min-height: calc(100vh - 180px);
+    }
+    
+    /* Video Page Header */
+    .video-header {
+      margin-bottom: var(--space-xl);
+    }
+    
+    .video-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: var(--space-sm);
+      font-family: var(--font-heading);
+    }
+    
+    .video-description {
+      color: var(--text-secondary);
+      font-size: 1.125rem;
+      margin-bottom: var(--space-lg);
+    }
+    
+    .video-stats {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card);
+      padding: var(--space-md) var(--space-lg);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+      margin-bottom: var(--space-xl);
+    }
+    
+    .video-count {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+    
+    .video-count svg {
+      color: var(--primary-red);
+    }
+    
+    .sort-options select {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: var(--space-sm) var(--space-md);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    
+    .sort-options select:hover {
+      border-color: var(--primary-red);
+    }
+    
+    /* Video Grid */
+    .video-grid {
+      display: grid;
+      gap: var(--space-lg);
+      margin-bottom: var(--space-xl);
+    }
+    
+    @media (min-width: 640px) {
+      .video-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    @media (min-width: 1024px) {
+      .video-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    
+    @media (min-width: 1280px) {
+      .video-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+    
+    .video-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      transition: all var(--transition-base);
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+      color: inherit;
+    }
+    
+    .video-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--primary-red);
+    }
+    
+    .video-thumbnail {
+      position: relative;
+      width: 100%;
+      height: 180px;
+      overflow: hidden;
+    }
+    
+    .video-thumbnail img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform var(--transition-slow);
+    }
+    
+    .video-card:hover .video-thumbnail img {
+      transform: scale(1.05);
+    }
+    
+    .play-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 56px;
+      height: 56px;
+      background: rgba(230, 57, 70, 0.9);
+      border-radius: var(--radius-full);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all var(--transition-base);
+    }
+    
+    .play-btn svg {
+      width: 24px;
+      height: 24px;
+      color: var(--white);
+    }
+    
+    .video-card:hover .play-btn {
+      background: var(--primary-red);
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+    
+    .video-info {
+      padding: var(--space-lg);
+    }
+    
+    .video-card-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      line-height: 1.4;
+      margin-bottom: var(--space-sm);
+      color: var(--text-primary);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    
+    .video-meta {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+    }
+    
+    .video-meta svg {
+      color: var(--accent-yellow);
+    }
+    
+    /* No Videos Message */
+    .no-videos {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: var(--space-2xl) var(--space-lg);
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      border: 2px dashed var(--border-color);
+    }
+    
+    .no-videos h3 {
+      font-size: 1.5rem;
+      color: var(--text-primary);
+      margin-bottom: var(--space-sm);
+      font-family: var(--font-heading);
+    }
+    
+    .no-videos p {
+      color: var(--text-secondary);
+      margin-bottom: var(--space-lg);
+    }
+    
+    /* ===== Video Modal ===== */
+    .video-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 1100;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-xl) var(--space-md);
+    }
+    
+    .video-modal.active {
+      display: flex;
+    }
+    
+    .modal-content {
+      width: 100%;
+      max-width: 900px;
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: var(--space-xl);
+      position: relative;
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-lg);
+    }
+    
+    .modal-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      font-family: var(--font-heading);
+    }
+    
+    .close-modal {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: var(--space-xs);
+      border-radius: var(--radius-sm);
+      transition: all var(--transition-fast);
+    }
+    
+    .close-modal:hover {
+      color: var(--text-primary);
+      background: var(--glass-bg);
+    }
+    
+    .modal-video-container {
+      position: relative;
+      padding-bottom: 56.25%; /* 16:9 aspect ratio */
+      height: 0;
+      overflow: hidden;
+      border-radius: var(--radius-md);
+      background: var(--black);
+    }
+    
+    .modal-video-container iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    
+    /* ===== Desktop Footer ===== */
+    .desktop-footer {
+      display: none;
+    }
+    
+    @media (min-width: 768px) {
+      .desktop-footer {
+        display: block;
+        background: var(--black);
+        color: var(--accent-yellow);
+        padding: var(--space-lg) 0;
+        border-top: 3px solid var(--primary-red);
+        margin-top: var(--space-xl);
+      }
+    }
+    
+    /* ===== Mobile Footer ===== */
+    .mobile-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      background: rgba(10, 10, 10, 0.98);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border-color);
+      padding: var(--space-sm) 0;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      height: 70px;
+    }
+    
+    @media (min-width: 768px) {
+      .mobile-footer {
+        display: none;
+      }
+    }
+    
+    .mobile-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-md);
+      transition: all var(--transition-fast);
+      flex: 1;
+      max-width: 80px;
+      text-decoration: none;
+      color: var(--text-secondary);
+    }
+    
+    .mobile-nav-item.active {
+      color: var(--primary-red);
+    }
+    
+    .mobile-nav-icon {
+      width: 22px;
+      height: 22px;
+    }
+    
+    .mobile-nav-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    /* ===== Search Modal ===== */
+    .search-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 1100;
+      align-items: flex-start;
+      justify-content: center;
+      padding: var(--space-xl) var(--space-md);
+      overflow-y: auto;
+    }
+    
+    .search-modal.active {
+      display: flex;
+    }
+    
+    /* ===== Responsive Adjustments ===== */
+    @media (max-width: 767px) {
+      .header {
+        height: 60px;
+      }
+      
+      .logo {
+        max-width: 120px;
+      }
+      
+      .site-title {
+        font-size: 1rem;
+      }
+      
+      .category-nav {
+        height: 50px;
+        top: 60px;
+      }
+      
+      .video-title {
+        font-size: 1.75rem;
+      }
+      
+      .video-description {
+        font-size: 1rem;
+      }
+      
+      .video-stats {
+        flex-direction: column;
+        gap: var(--space-md);
+        align-items: flex-start;
+      }
+      
+      .video-thumbnail {
+        height: 150px;
+      }
+      
+      .video-info {
+        padding: var(--space-md);
+      }
+      
+      .video-card-title {
+        font-size: 1rem;
+        -webkit-line-clamp: 2;
+      }
+      
+      .mobile-footer {
+        height: 70px;
+      }
+    }
+    
+    /* Animation for mobile footer */
+    @keyframes slideUp {
+      from {
+        transform: translateY(100%);
+      }
+      to {
+        transform: translateY(0);
+      }
+    }
+    
+    .mobile-footer {
+      animation: slideUp 0.3s ease-out;
+    }
     </style>
 </head>
 <body>
-
-<!-- App bar -->
-<header class="appbar">
-  <div class="appbar-wrap">
-    <a href="index.php" class="brand">
-      <img src="Liked-tamil-news-logo-1 (2).png" alt="Portal Logo" class="logo" />
-      <span class="title">Liked தமிழ்</span>
-    </a>
-    <!-- Search Form -->
-    <form method="GET" action="search.php" class="search" role="search">
-      <svg class="icon" viewBox="0 0 24 24" fill="none">
-        <path d="M11 5a6 6 0 016 6c0 1.3-.41 2.5-1.11 3.48l4.32 4.32-1.41 1.41-4.32-4.32A6 6 0 1111 5z" stroke="currentColor" stroke-width="1.5"/>
-      </svg>
-      <input type="search" name="q" placeholder="தேடல்…" aria-label="தேடல்" />
-    </form>
-    <button class="theme-toggle" id="themeToggle" aria-label="Change theme">
-      <svg class="moon-icon" viewBox="0 0 24 24" fill="none">
-        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.6"/>
-      </svg>
-      <svg class="sun-icon" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.6"/>
-        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.6"/>
-      </svg>
-    </button>
-  </div>
-</header>
-
-<script>
-// Theme toggle functionality
-const themeToggle = document.getElementById('themeToggle');
-const body = document.body;
-
-// Check for saved theme or prefer color scheme
-const savedTheme = localStorage.getItem('theme');
-const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-if (savedTheme === 'light' || (!savedTheme && !prefersDark)) {
-    body.classList.add('light-mode');
-}
-
-themeToggle.addEventListener('click', () => {
-    body.classList.toggle('light-mode');
-    
-    // Save preference
-    if (body.classList.contains('light-mode')) {
-        localStorage.setItem('theme', 'light');
-    } else {
-        localStorage.setItem('theme', 'dark');
-    }
-});
-</script>
-
-<!-- Category Navigation -->
-<nav class="catbar" aria-label="Categories">
-  <div class="catbar-wrap">
-    <a href="index.php" class="chip">முகப்பு</a>
-    <a href="video.php" class="chip active">வீடியோ</a>
-    <?php foreach ($categories as $category): ?>
-      <a href="categories.php?id=<?php echo $category['id']; ?>" class="chip">
-        <?php echo htmlspecialchars($category['name']); ?>
-      </a>
-    <?php endforeach; ?>
-  </div>
-</nav>
-
-<!-- Video Page Header -->
-<div class="video-header">
-    <h1>வீடியோ செய்திகள்</h1>
-    <p>Liked தமிழில் வெளியான அனைத்து வீடியோ செய்திகளையும் இங்கே பார்க்கலாம்</p>
-    
-    <div class="video-stats">
-        <div class="total-videos">
-            <i class="fas fa-play-circle"></i>
-            <span id="video-count"><?php echo count($videos); ?> வீடியோக்கள்</span>
-        </div>
-        <div class="sort-options">
-            <select id="sort-by">
-                <option value="newest">புதியது முதலில்</option>
-                <option value="oldest">பழையது முதலில்</option>
-                <option value="title">பெயர் வரிசை (அ-ஹ)</option>
-            </select>
-        </div>
-    </div>
-</div>
-
-<!-- Video Grid -->
-<div class="video-grid" id="video-container">
-    <?php if (!empty($videos)): ?>
-        <?php foreach ($videos as $video): ?>
-            <div class="video-card" data-id="<?php echo $video['id']; ?>">
-                <div class="video-thumbnail">
-                    <?php
-                    // Get image URL
-                    $imageSrc = '';
-                    if (!empty($video['image'])) {
-                        if (filter_var($video['image'], FILTER_VALIDATE_URL)) {
-                            $imageSrc = $video['image'];
-                        } else {
-                            $imageSrc = $base_url . 'uploads/news/' . htmlspecialchars($video['image']);
-                        }
-                    } else {
-                        $imageSrc = 'https://images.unsplash.com/photo-1588681664899-f142ff2dc9b1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
-                    }
-                    ?>
-                    <img src="<?php echo $imageSrc; ?>" alt="<?php echo htmlspecialchars($video['title']); ?>">
-                    <button class="play-btn" data-video-url="<?php echo htmlspecialchars($video['video']); ?>">
-                        <i class="fas fa-play"></i>
+    <!-- Header -->
+    <header class="header" role="banner">
+        <div class="container">
+            <div class="header-content">
+                <a href="index.php" class="logo-container">
+                    <img src="Liked-tamil-news-logo-1 (2).png" alt="Liked தமிழ்" class="logo" />
+                    <h1 class="site-title">Liked தமிழ்</h1>
+                </a>
+                
+                <div class="header-actions">
+                    <button class="search-btn" aria-label="தேடல்" id="searchToggle">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                    </button>
+                    
+                    <button class="subscribe-btn" onclick="openSubscription()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                            <polyline points="22,6 12,13 2,6" />
+                        </svg>
+                        சந்தா
+                    </button>
+                    <button class="theme-toggle" id="themeToggle" aria-label="Change theme">
+                        <svg class="moon-icon" viewBox="0 0 24 24" fill="none">
+                            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.6"/>
+                        </svg>
+                        <svg class="sun-icon" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.6"/>
+                            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.6"/>
+                        </svg>
                     </button>
                 </div>
-                <div class="video-info">
-                    <h3 class="video-title"><?php echo htmlspecialchars($video['title']); ?></h3>
-                    <div class="video-date">
-                        <i class="far fa-calendar-alt"></i>
-                        <span>
-                            <?php 
-                            $publishTime = new DateTime($video['published_at']);
-                            $now = new DateTime();
-                            $interval = $now->diff($publishTime);
-                            
-                            if ($interval->days > 0) {
-                                echo $interval->days . ' நாட்கள் முன்';
-                            } elseif ($interval->h > 0) {
-                                echo $interval->h . ' மணி முன்';
-                            } else {
-                                echo $interval->i . ' நிமிடங்கள் முன்';
-                            }
-                            ?>
-                        </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Category Navigation -->
+    <nav class="category-nav" aria-label="Main categories">
+        <div class="container">
+            <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                <ul class="category-list">
+                    <li style="display: inline-block;">
+                        <a href="index.php" class="category-link">
+                            முகப்பு
+                        </a>
+                    </li>
+                    <?php foreach ($categories as $category): ?>
+                        <li style="display: inline-block;">
+                            <a href="categories.php?id=<?php echo $category['id']; ?>" 
+                               class="category-link">
+                                <?php echo htmlspecialchars($category['name']); ?>
+                            </a>
+                        </li>
+                    <?php endforeach; ?>
+                    <li style="display: inline-block;">
+                        <a href="video.php" class="category-link active">
+                            வீடியோ
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content" role="main">
+        <div class="container">
+            <!-- Video Header -->
+            <div class="video-header">
+                <h1 class="video-title">வீடியோ செய்திகள்</h1>
+                <p class="video-description">Liked தமிழில் வெளியான அனைத்து வீடியோ செய்திகளையும் இங்கே பார்க்கலாம்</p>
+                
+                <div class="video-stats">
+                    <div class="video-count">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="23 7 16 12 23 17 23 7" />
+                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                        </svg>
+                        <span id="video-count"><?php echo count($videos); ?> வீடியோ<?php echo count($videos) != 1 ? 'க்கள்' : ''; ?></span>
+                    </div>
+                    <div class="sort-options">
+                        <select id="sort-by">
+                            <option value="newest">புதியது முதலில்</option>
+                            <option value="oldest">பழையது முதலில்</option>
+                            <option value="title">பெயர் வரிசை (அ-ஹ)</option>
+                        </select>
                     </div>
                 </div>
             </div>
-        <?php endforeach; ?>
-    <?php else: ?>
-        <div class="no-videos">
-            <i class="fas fa-video-slash"></i>
-            <h3>வீடியோக்கள் இல்லை</h3>
-            <p>தற்போது வீடியோ செய்திகள் எதுவும் இல்லை. பின்னர் சரிபார்க்கவும்.</p>
-        </div>
-    <?php endif; ?>
-</div>
 
-<!-- Video Modal -->
-<div class="video-modal" id="video-modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 class="modal-title" id="modal-video-title">வீடியோ</h3>
-            <button class="close-modal" id="close-modal">&times;</button>
-        </div>
-        <div class="modal-video-container">
-            <iframe id="modal-video-player" allowfullscreen></iframe>
-        </div>
-    </div>
-</div>
-
-<!-- Desktop Footer -->
-<footer class="likedtamil-footer">
-    <div class="likedtamil-footer-wrap">
-        © <?php echo date('Y'); ?> All Rights Reserved by <a href="https://likedtamil.lk" target="_blank">Likedtamil.lk</a> | Developed by <a href="https://webbuilders.lk" target="_blank">Webbuilders.lk</a>
-    </div>
-</footer>
-
-<!-- Mobile Footer -->
-<footer class="mobile-footer" role="navigation" aria-label="மொபைல் அடிக்குறிப்பு">
-    <div class="foot-wrap">
-        <a href="index.php" class="foot-item">
-            <svg class="foot-icon" viewBox="0 0 24 24" fill="none"><path d="M3 10l9-7 9 7v9a2 2 0 01-2 2H5a2 2 0 01-2-2v-9z" stroke="#fff" stroke-width="1.6"/></svg>
-            <span class="foot-label">முகப்பு</span>
-        </a>
-        <a href="categories.php" class="foot-item">
-            <svg class="foot-icon" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="#fff" stroke-width="1.6"/></svg>
-            <span class="foot-label">பிரிவுகள்</span>
-        </a>
-        <a href="search.php" class="foot-item">
-            <svg class="foot-icon" viewBox="0 0 24 24" fill="none"><path d="M11 5a6 6 0 016 6c0 1.3-.41 2.5-1.11 3.48l4.32 4.32-1.41 1.41-4.32-4.32A6 6 0 1111 5z" stroke="#fff" stroke-width="1.6"/></svg>
-            <span class="foot-label">தேடல்</span>
-        </a>
-        <a href="about.php" class="foot-item">
-            <svg class="foot-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="6" stroke="#fff" stroke-width="1.6"/></svg>
-            <span class="foot-label">சுயவிவரம்</span>
-        </a>
-        <a href="video.php" class="foot-item active">
-            <svg class="foot-icon" viewBox="0 0 24 24" fill="none"><path d="M6 19l6-6 6 6M6 12l6-6 6 6" stroke="#fff" stroke-width="1.6"/></svg>
-            <span class="foot-label">வீடியோ</span>
-        </a>
-    </div>
-</footer>
-
-<script>
-// Function to render video cards
-function renderVideos(videos) {
-    const container = document.getElementById('video-container');
-    const countElement = document.getElementById('video-count');
-    
-    if (!videos || videos.length === 0) {
-        container.innerHTML = `
-            <div class="no-videos">
-                <i class="fas fa-video-slash"></i>
-                <h3>வீடியோக்கள் இல்லை</h3>
-                <p>தற்போது வீடியோ செய்திகள் எதுவும் இல்லை. பின்னர் சரிபார்க்கவும்.</p>
+            <!-- Video Grid -->
+            <div class="video-grid" id="video-container">
+                <?php if (!empty($videos)): ?>
+                    <?php foreach ($videos as $video): ?>
+                        <?php
+                        // Get image URL
+                        $imageSrc = '';
+                        if (!empty($video['image'])) {
+                            if (filter_var($video['image'], FILTER_VALIDATE_URL)) {
+                                $imageSrc = $video['image'];
+                            } else {
+                                $imageSrc = $base_url . 'uploads/news/' . htmlspecialchars($video['image']);
+                            }
+                        } else {
+                            $imageSrc = 'https://images.unsplash.com/photo-1588681664899-f142ff2dc9b1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+                        }
+                        
+                        // Format time ago in Tamil
+                        $publishTime = new DateTime($video['published_at']);
+                        $now = new DateTime();
+                        $interval = $now->diff($publishTime);
+                        $timeAgo = '';
+                        
+                        if ($interval->days > 0) {
+                            $timeAgo = $interval->days . ' நாட்கள் முன்';
+                        } elseif ($interval->h > 0) {
+                            $timeAgo = $interval->h . ' மணி முன்';
+                        } else {
+                            $timeAgo = $interval->i . ' நிமிடம் முன்';
+                        }
+                        ?>
+                        <div class="video-card" data-video-url="<?php echo htmlspecialchars($video['video']); ?>" data-video-title="<?php echo htmlspecialchars($video['title']); ?>">
+                            <div class="video-thumbnail">
+                                <img src="<?php echo $imageSrc; ?>" alt="<?php echo htmlspecialchars($video['title']); ?>" loading="lazy">
+                                <button class="play-btn">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="5 3 19 12 5 21 5 3" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="video-info">
+                                <h3 class="video-card-title"><?php echo htmlspecialchars($video['title']); ?></h3>
+                                <div class="video-meta">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <polyline points="12 6 12 12 16 14" />
+                                    </svg>
+                                    <span><?php echo $timeAgo; ?></span>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="no-videos">
+                        <h3>வீடியோக்கள் இல்லை</h3>
+                        <p>தற்போது வீடியோ செய்திகள் எதுவும் இல்லை. பின்னர் சரிபார்க்கவும்.</p>
+                        <a href="index.php" style="display: inline-flex; align-items: center; gap: var(--space-xs); padding: var(--space-sm) var(--space-md); background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red)); color: var(--white); border: none; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; transition: all var(--transition-base);">
+                            முகப்பு பக்கத்திற்குச் செல்லவும்
+                        </a>
+                    </div>
+                <?php endif; ?>
             </div>
-        `;
-        countElement.textContent = "0 வீடியோக்கள்";
-        return;
-    }
-    
-    // Update video count
-    countElement.textContent = `${videos.length} வீடியோ${videos.length !== 1 ? 'க்கள்' : ''}`;
-    
-    // Clear container
-    container.innerHTML = '';
-    
-    // Render each video
-    videos.forEach(video => {
-        // Format date in Tamil
-        const publishTime = new Date(video.published_at);
-        const now = new Date();
-        const diffMs = now - publishTime;
-        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        </div>
+    </main>
+
+    <!-- Desktop Footer -->
+    <footer class="desktop-footer">
+        <div class="container">
+            <div style="text-align: center;">
+                <p>&copy; <?php echo date('Y'); ?> Liked தமிழ். அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.</p>
+                <div style="display: flex; justify-content: center; gap: var(--space-lg); margin-top: var(--space-sm);">
+                    <a href="about.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">எங்களைப் பற்றி</a>
+                    <a href="contact.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">தொடர்பு கொள்ள</a>
+                    <a href="privacy.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">தனியுரிமைக் கொள்கை</a>
+                    <a href="terms.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">பயன்பாட்டு விதிமுறைகள்</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Mobile Footer Navigation -->
+    <footer class="mobile-footer" role="navigation" aria-label="மொபைல் வழிசெலுத்தல்">
+        <a href="index.php" class="mobile-nav-item">
+            <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+            <span class="mobile-nav-label">முகப்பு</span>
+        </a>
         
-        let timeAgo = '';
-        if (diffDays > 0) {
-            timeAgo = diffDays + ' நாட்கள் முன்';
-        } else if (diffHours > 0) {
-            timeAgo = diffHours + ' மணி முன்';
-        } else {
-            timeAgo = Math.floor(diffMs / (1000 * 60)) + ' நிமிடங்கள் முன்';
-        }
+        <a href="categories.php" class="mobile-nav-item">
+            <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+            </svg>
+            <span class="mobile-nav-label">பிரிவுகள்</span>
+        </a>
         
-        // Get image URL
-        let imageSrc = '';
-        if (video.image) {
-            if (video.image.startsWith('http')) {
-                imageSrc = video.image;
-            } else {
-                imageSrc = '<?php echo $base_url; ?>uploads/news/' + video.image;
-            }
-        } else {
-            imageSrc = 'https://images.unsplash.com/photo-1588681664899-f142ff2dc9b1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
-        }
+        <button class="mobile-nav-item" onclick="toggleSearch()">
+            <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <span class="mobile-nav-label">தேடல்</span>
+        </button>
         
-        const videoCard = document.createElement('div');
-        videoCard.className = 'video-card';
-        videoCard.setAttribute('data-id', video.id);
-        videoCard.innerHTML = `
-            <div class="video-thumbnail">
-                <img src="${imageSrc}" alt="${video.title}">
-                <button class="play-btn" data-video-url="${video.video}">
-                    <i class="fas fa-play"></i>
+        <a href="video.php" class="mobile-nav-item active">
+            <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="23 7 16 12 23 17 23 7" />
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+            </svg>
+            <span class="mobile-nav-label">வீடியோ</span>
+        </a>
+        
+        <a href="about.php" class="mobile-nav-item">
+            <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+            </svg>
+            <span class="mobile-nav-label">சுயவிவரம்</span>
+        </a>
+    </footer>
+
+    <!-- Search Modal -->
+    <div class="search-modal" id="searchModal">
+        <div style="width: 100%; max-width: 600px; background: var(--bg-card); border-radius: var(--radius-lg); padding: var(--space-lg); box-shadow: var(--shadow-lg); animation: slideDown 0.3s ease; margin-top: var(--space-xl);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
+                <h3 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">தேடல்</h3>
+                <button onclick="toggleSearch()" aria-label="மூடு" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; padding: var(--space-xs); border-radius: var(--radius-sm); transition: all var(--transition-fast);">
+                    &times;
                 </button>
             </div>
-            <div class="video-info">
-                <h3 class="video-title">${video.title}</h3>
-                <div class="video-date">
-                    <i class="far fa-calendar-alt"></i>
-                    <span>${timeAgo}</span>
-                </div>
+            
+            <form method="GET" action="search.php" style="display: flex; gap: var(--space-sm); margin-bottom: var(--space-lg);">
+                <input type="search" 
+                       name="q" 
+                       placeholder="செய்திகளைத் தேடுங்கள்..." 
+                       style="flex: 1; padding: var(--space-md); background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); font-size: 1rem; outline: none; transition: all var(--transition-fast);"
+                       autocomplete="off"
+                       autofocus />
+                <button type="submit" style="padding: var(--space-md) var(--space-lg); background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red)); color: var(--white); border: none; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; transition: all var(--transition-fast);">
+                    தேடு
+                </button>
+            </form>
+            
+            <div style="color: var(--text-muted); font-size: 0.875rem; text-align: center;">
+                உதாரணம்: "விளையாட்டு", "அரசியல்", "பொருளாதாரம்"
             </div>
-        `;
+        </div>
+    </div>
+
+    <!-- Video Modal -->
+    <div class="video-modal" id="videoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalVideoTitle">வீடியோ</h3>
+                <button class="close-modal" id="closeVideoModal">&times;</button>
+            </div>
+            <div class="modal-video-container">
+                <iframe id="modalVideoPlayer" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize variables
+        const videoData = <?php echo json_encode($videos ?: []); ?>;
         
-        container.appendChild(videoCard);
-    });
-    
-    // Add event listeners to play buttons
-    document.querySelectorAll('.play-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const videoUrl = this.getAttribute('data-video-url');
-            const videoCard = this.closest('.video-card');
-            const videoTitle = videoCard.querySelector('.video-title').textContent;
-            openVideoModal(videoUrl, videoTitle);
-        });
-    });
-}
-
-// Function to open video modal
-function openVideoModal(videoUrl, videoTitle) {
-    const modal = document.getElementById('video-modal');
-    const videoPlayer = document.getElementById('modal-video-player');
-    const modalTitle = document.getElementById('modal-video-title');
-    const closeBtn = document.getElementById('close-modal');
-    
-    // Convert YouTube URL to embed URL if needed
-    let embedUrl = videoUrl;
-    if (videoUrl.includes('youtube.com/watch?v=')) {
-        const videoId = videoUrl.split('v=')[1].split('&')[0];
-        embedUrl = `https://www.youtube.com/embed/${videoId}`;
-    } else if (videoUrl.includes('youtu.be/')) {
-        const videoId = videoUrl.split('youtu.be/')[1].split('?')[0];
-        embedUrl = `https://www.youtube.com/embed/${videoId}`;
-    }
-    
-    videoPlayer.src = embedUrl;
-    modalTitle.textContent = videoTitle;
-    modal.style.display = 'flex';
-    
-    // Close modal when clicking X
-    closeBtn.onclick = closeVideoModal;
-    
-    // Close modal when clicking outside the content
-    modal.onclick = function(e) {
-        if (e.target === modal) {
-            closeVideoModal();
+        // Search functionality
+        function toggleSearch() {
+            const searchModal = document.getElementById('searchModal');
+            searchModal.classList.toggle('active');
+            
+            if (searchModal.classList.contains('active')) {
+                document.body.style.overflow = 'hidden';
+                searchModal.querySelector('input').focus();
+            } else {
+                document.body.style.overflow = '';
+            }
         }
-    };
-    
-    // Close modal with Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeVideoModal();
-        }
-    });
-}
-
-// Function to close video modal
-function closeVideoModal() {
-    const modal = document.getElementById('video-modal');
-    const videoPlayer = document.getElementById('modal-video-player');
-    
-    modal.style.display = 'none';
-    videoPlayer.src = ''; // Stop video playback
-}
-
-// Function to sort videos
-function sortVideos(videos, sortBy) {
-    const sortedVideos = [...videos];
-    
-    switch(sortBy) {
-        case 'newest':
-            return sortedVideos.sort((a, b) => new Date(b.published_at) - new Date(a.published_at));
-        case 'oldest':
-            return sortedVideos.sort((a, b) => new Date(a.published_at) - new Date(b.published_at));
-        case 'title':
-            return sortedVideos.sort((a, b) => a.title.localeCompare(b.title, 'ta'));
-        default:
-            return sortedVideos;
-    }
-}
-
-    // Theme toggle functionality
-    const themeToggle = document.getElementById('themeToggle');
-    const body = document.body;
-    
-    // Check for saved theme or prefer color scheme
-    const savedTheme = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    if (savedTheme === 'light' || (!savedTheme && !prefersDark)) {
-        body.classList.add('light-mode');
-    }
-    
-    themeToggle.addEventListener('click', () => {
-        body.classList.toggle('light-mode');
         
-        // Save preference
-        if (body.classList.contains('light-mode')) {
-            localStorage.setItem('theme', 'light');
-        } else {
-            localStorage.setItem('theme', 'dark');
-        }
-    });
-    
-    // Initialize the page
-document.addEventListener('DOMContentLoaded', function() {
-    // Convert PHP videos to JavaScript array
-    const videoData = <?php echo json_encode($videos ?: []); ?>;
-    
-    // Initial render
-    renderVideos(sortVideos(videoData, 'newest'));
-    
-    // Sort functionality
-    const sortSelect = document.getElementById('sort-by');
-    sortSelect.addEventListener('change', function() {
-        const sortedVideos = sortVideos(videoData, this.value);
-        renderVideos(sortedVideos);
-    });
-    
-    // Search functionality
-    const searchForm = document.querySelector('.search');
-    if (searchForm) {
-        searchForm.addEventListener('submit', function(e) {
-            const searchInput = this.querySelector('input[name="q"]');
-            if (!searchInput.value.trim()) {
-                e.preventDefault();
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const searchModal = document.getElementById('searchModal');
+                if (searchModal.classList.contains('active')) {
+                    toggleSearch();
+                }
             }
         });
-    }
-    
-    // Mobile search functionality
-    document.querySelectorAll('.foot-item').forEach(item => {
-        if (item.querySelector('.foot-label')?.textContent === 'தேடல்') {
-            item.addEventListener('click', function(e) {
-                e.preventDefault();
-                // Create search modal for mobile
-                const searchModal = document.createElement('div');
-                searchModal.className = 'video-modal';
-                searchModal.style.display = 'flex';
-                searchModal.style.zIndex = '1001';
-                searchModal.innerHTML = `
-                    <div class="modal-content" style="max-width: 90%;">
-                        <button class="close-modal" onclick="this.parentElement.parentElement.remove()">&times;</button>
-                        <h3 style="color: var(--yellow); text-align: center; margin-bottom: 20px;">தேடல்</h3>
-                        <form method="GET" action="search.php" class="search" style="display: flex; gap: 10px; margin-bottom: 20px;">
-                            <input type="search" name="q" placeholder="தேடல்..." style="flex: 1; padding: 12px; border-radius: var(--radius-sm); background: var(--glass); border: var(--border); color: var(--text);" autofocus>
-                            <button type="submit" style="background: linear-gradient(180deg, var(--red), #cc0f0f); color: white; border: none; padding: 12px 20px; border-radius: var(--radius-sm); cursor: pointer;">தேடு</button>
-                        </form>
-                    </div>
-                `;
-                document.body.appendChild(searchModal);
-                
-                // Close modal when clicking outside
-                searchModal.onclick = function(e) {
-                    if (e.target === searchModal) {
-                        searchModal.remove();
-                    }
-                };
+        
+        document.getElementById('searchModal')?.addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                toggleSearch();
+            }
+        });
+
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        
+        // Check for saved theme or prefer color scheme
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (savedTheme === 'light' || (!savedTheme && !prefersDark)) {
+            body.classList.add('light-mode');
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('light-mode');
+            
+            // Save preference
+            if (body.classList.contains('light-mode')) {
+                localStorage.setItem('theme', 'light');
+            } else {
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+
+        // Video modal functionality
+        function openVideoModal(videoUrl, videoTitle) {
+            const modal = document.getElementById('videoModal');
+            const videoPlayer = document.getElementById('modalVideoPlayer');
+            const modalTitle = document.getElementById('modalVideoTitle');
+            const closeBtn = document.getElementById('closeVideoModal');
+            
+            // Convert YouTube URL to embed URL if needed
+            let embedUrl = videoUrl;
+            if (videoUrl.includes('youtube.com/watch?v=')) {
+                const videoId = videoUrl.split('v=')[1].split('&')[0];
+                embedUrl = `https://www.youtube.com/embed/${videoId}`;
+            } else if (videoUrl.includes('youtu.be/')) {
+                const videoId = videoUrl.split('youtu.be/')[1].split('?')[0];
+                embedUrl = `https://www.youtube.com/embed/${videoId}`;
+            }
+            
+            videoPlayer.src = embedUrl;
+            modalTitle.textContent = videoTitle;
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            // Close modal when clicking X
+            closeBtn.onclick = closeVideoModal;
+            
+            // Close modal when clicking outside the content
+            modal.onclick = function(e) {
+                if (e.target === modal) {
+                    closeVideoModal();
+                }
+            };
+            
+            // Close modal with Escape key
+            document.addEventListener('keydown', function closeOnEscape(e) {
+                if (e.key === 'Escape') {
+                    closeVideoModal();
+                    document.removeEventListener('keydown', closeOnEscape);
+                }
             });
         }
-    });
-});
-</script>
+        
+        function closeVideoModal() {
+            const modal = document.getElementById('videoModal');
+            const videoPlayer = document.getElementById('modalVideoPlayer');
+            
+            modal.classList.remove('active');
+            videoPlayer.src = ''; // Stop video playback
+            document.body.style.overflow = '';
+        }
+
+        // Video sorting functionality
+        function sortVideos(videos, sortBy) {
+            const sortedVideos = [...videos];
+            
+            switch(sortBy) {
+                case 'newest':
+                    return sortedVideos.sort((a, b) => new Date(b.published_at) - new Date(a.published_at));
+                case 'oldest':
+                    return sortedVideos.sort((a, b) => new Date(a.published_at) - new Date(b.published_at));
+                case 'title':
+                    return sortedVideos.sort((a, b) => a.title.localeCompare(b.title, 'ta'));
+                default:
+                    return sortedVideos;
+            }
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add event listeners to play buttons
+            document.querySelectorAll('.play-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const videoCard = this.closest('.video-card');
+                    const videoUrl = videoCard.getAttribute('data-video-url');
+                    const videoTitle = videoCard.getAttribute('data-video-title');
+                    openVideoModal(videoUrl, videoTitle);
+                });
+            });
+            
+            // Add click event to entire video card
+            document.querySelectorAll('.video-card').forEach(card => {
+                card.addEventListener('click', function(e) {
+                    if (!e.target.closest('.play-btn')) {
+                        const videoUrl = this.getAttribute('data-video-url');
+                        const videoTitle = this.getAttribute('data-video-title');
+                        openVideoModal(videoUrl, videoTitle);
+                    }
+                });
+            });
+            
+            // Sort functionality
+            const sortSelect = document.getElementById('sort-by');
+            sortSelect.addEventListener('change', function() {
+                const sortedVideos = sortVideos(videoData, this.value);
+                renderVideos(sortedVideos);
+            });
+            
+            // Search toggle button
+            document.getElementById('searchToggle')?.addEventListener('click', toggleSearch);
+            
+            // Mobile footer search button
+            document.querySelectorAll('.mobile-nav-item').forEach(item => {
+                const label = item.querySelector('.mobile-nav-label')?.textContent;
+                if (label === 'தேடல்') {
+                    item.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        toggleSearch();
+                    });
+                }
+            });
+
+            // Fix for mobile viewport height
+            function setViewportHeight() {
+                const vh = window.innerHeight * 0.01;
+                document.documentElement.style.setProperty('--vh', `${vh}px`);
+            }
+            
+            setViewportHeight();
+            window.addEventListener('resize', setViewportHeight);
+            
+            // Ensure content fits screen
+            function adjustContentHeight() {
+                const headerHeight = document.querySelector('.header').offsetHeight;
+                const categoryNavHeight = document.querySelector('.category-nav').offsetHeight;
+                const mobileFooterHeight = document.querySelector('.mobile-footer').offsetHeight;
+                
+                const totalStickyHeight = headerHeight + categoryNavHeight;
+                const mainContent = document.querySelector('.main-content');
+                
+                if (mainContent) {
+                    const windowHeight = window.innerHeight;
+                    const availableHeight = windowHeight - totalStickyHeight - mobileFooterHeight;
+                    mainContent.style.minHeight = availableHeight + 'px';
+                }
+            }
+            
+            // Run after page loads
+            setTimeout(adjustContentHeight, 100);
+            window.addEventListener('resize', adjustContentHeight);
+        });
+
+        function openSubscription() {
+            alert('சந்தா செயல்பாடு விரைவில் கிடைக்கும்');
+        }
+    </script>
 </body>
 </html>
