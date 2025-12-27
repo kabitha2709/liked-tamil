@@ -142,6 +142,30 @@ require 'config/config.php';
       --font-body: 'Noto Sans Tamil', 'Inter', system-ui, sans-serif;
     }
     
+    /* Light mode variables */
+    .light-mode {
+      --primary-red: #e63946;
+      --primary-dark-red: #c1121f;
+      --accent-yellow: #ffaa00;
+      --black: #000000;
+      --white: #ffffff;
+      
+      --bg-primary: #f8f9fa;
+      --bg-secondary: #ffffff;
+      --bg-card: #ffffff;
+      --bg-hover: #f8f9fa;
+      
+      --text-primary: #1a1a1a;
+      --text-secondary: #495057;
+      --text-muted: #6c757d;
+      
+      --border-color: rgba(0, 0, 0, 0.12);
+      --glass-bg: rgba(0, 0, 0, 0.04);
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+      --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.15);
+    }
+    
     /* ===== Reset & Base Styles ===== */
     *, *::before, *::after {
       box-sizing: border-box;
@@ -163,6 +187,7 @@ require 'config/config.php';
       min-height: 100vh;
       overflow-x: hidden;
       position: relative;
+      transition: background-color var(--transition-base), color var(--transition-base);
     }
     
     /* Remove default padding-bottom for desktop */
@@ -172,8 +197,8 @@ require 'config/config.php';
       }
     }
     
-    /* Background gradient */
-    body::before {
+    /* Background gradient - only for dark mode */
+    body:not(.light-mode)::before {
       content: '';
       position: fixed;
       top: 0;
@@ -313,6 +338,45 @@ require 'config/config.php';
     .search-btn:hover {
       color: var(--text-primary);
       background: var(--glass-bg);
+    }
+    
+    /* Theme toggle button */
+    .theme-toggle {
+      background: var(--glass-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      color: var(--text-secondary);
+    }
+    
+    .theme-toggle:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+    
+    .theme-toggle svg {
+      width: 20px;
+      height: 20px;
+    }
+    
+    .theme-toggle .sun-icon {
+      display: none;
+    }
+    
+    .light-mode .theme-toggle .moon-icon {
+      display: none;
+    }
+    
+    .light-mode .theme-toggle .sun-icon {
+      display: block;
     }
     
     .subscribe-btn {
@@ -1187,6 +1251,15 @@ require 'config/config.php';
             </svg>
             சந்தா
           </button>
+          <button class="theme-toggle" id="themeToggle" aria-label="Change theme">
+            <svg class="moon-icon" viewBox="0 0 24 24" fill="none">
+              <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.6"/>
+            </svg>
+            <svg class="sun-icon" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.6"/>
+            </svg>
+          </button>
         </div>
       </div>
     </div>
@@ -1868,6 +1941,32 @@ require 'config/config.php';
     });
     
     window.addEventListener('resize', adjustContentHeight);
+
+
+
+    
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        
+        // Check for saved theme or prefer color scheme
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (savedTheme === 'light' || (!savedTheme && !prefersDark)) {
+            body.classList.add('light-mode');
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('light-mode');
+            
+            // Save preference
+            if (body.classList.contains('light-mode')) {
+                localStorage.setItem('theme', 'light');
+            } else {
+                localStorage.setItem('theme', 'dark');
+            }
+        });
   </script>
 </body>
 </html>

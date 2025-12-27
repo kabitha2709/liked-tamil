@@ -82,7 +82,7 @@ require 'config/config.php'; // To get $base_url
       border-bottom: var(--border);
     }
     .appbar-wrap {
-      display: grid; grid-template-columns: auto 1fr auto; gap: 16px;
+      display: grid; grid-template-columns: auto 1fr auto auto; gap: 16px;
       align-items: center; padding: 12px clamp(14px, 3vw, 24px);
       max-width: 1200px; margin: 0 auto;
     }
@@ -504,6 +504,59 @@ require 'config/config.php'; // To get $base_url
       font-weight: 700;
       margin-left: 5px;
     }
+    
+    /* Light mode variables */
+    .light-mode {
+      --red: #ff1111;
+      --yellow: #ffaa00;
+      --black: #000000;
+      --bg: #f8f9fa;
+      --text: #1a1a1a;
+      --muted: #6c757d;
+      --card: #ffffff;
+      --card-hi: #f8f9fa;
+      --border: 1px solid rgba(0,0,0,.12);
+      --glass: rgba(0,0,0,.04);
+      --shadow: 0 12px 32px rgba(0,0,0,.08);
+    }
+    
+    /* Theme toggle button */
+    .theme-toggle {
+      background: var(--card);
+      border: var(--border);
+      border-radius: 12px;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all var(--trans);
+      color: var(--text);
+    }
+    
+    .theme-toggle:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+      background: var(--card-hi);
+    }
+    
+    .theme-toggle svg {
+      width: 20px;
+      height: 20px;
+    }
+    
+    .theme-toggle .sun-icon {
+      display: none;
+    }
+    
+    .light-mode .theme-toggle .moon-icon {
+      display: none;
+    }
+    
+    .light-mode .theme-toggle .sun-icon {
+      display: block;
+    }
     </style>
 </head>
 <body>
@@ -522,8 +575,42 @@ require 'config/config.php'; // To get $base_url
       </svg>
       <input type="search" name="q" placeholder="தேடல்…" aria-label="தேடல்" />
     </form>
+    <button class="theme-toggle" id="themeToggle" aria-label="Change theme">
+      <svg class="moon-icon" viewBox="0 0 24 24" fill="none">
+        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.6"/>
+      </svg>
+      <svg class="sun-icon" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.6"/>
+      </svg>
+    </button>
   </div>
 </header>
+
+<script>
+// Theme toggle functionality
+const themeToggle = document.getElementById('themeToggle');
+const body = document.body;
+
+// Check for saved theme or prefer color scheme
+const savedTheme = localStorage.getItem('theme');
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+if (savedTheme === 'light' || (!savedTheme && !prefersDark)) {
+    body.classList.add('light-mode');
+}
+
+themeToggle.addEventListener('click', () => {
+    body.classList.toggle('light-mode');
+    
+    // Save preference
+    if (body.classList.contains('light-mode')) {
+        localStorage.setItem('theme', 'light');
+    } else {
+        localStorage.setItem('theme', 'dark');
+    }
+});
+</script>
 
 <!-- Category Navigation -->
 <nav class="catbar" aria-label="Categories">
@@ -811,7 +898,30 @@ function sortVideos(videos, sortBy) {
     }
 }
 
-// Initialize the page
+    // Theme toggle functionality
+    const themeToggle = document.getElementById('themeToggle');
+    const body = document.body;
+    
+    // Check for saved theme or prefer color scheme
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    if (savedTheme === 'light' || (!savedTheme && !prefersDark)) {
+        body.classList.add('light-mode');
+    }
+    
+    themeToggle.addEventListener('click', () => {
+        body.classList.toggle('light-mode');
+        
+        // Save preference
+        if (body.classList.contains('light-mode')) {
+            localStorage.setItem('theme', 'light');
+        } else {
+            localStorage.setItem('theme', 'dark');
+        }
+    });
+    
+    // Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
     // Convert PHP videos to JavaScript array
     const videoData = <?php echo json_encode($videos ?: []); ?>;

@@ -57,11 +57,114 @@ if (!empty($categoryIds)) {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title><?php echo htmlspecialchars($news['title']); ?> - Liked தமிழ்</title>
   
-  <!-- Same CSS as index.php -->
+  <style>
+    :root {
+      --red: #ff1111;
+      --yellow: #fffc00;
+      --black: #000000;
+      --bg: #0a0a0a;
+      --text: #f5f7fa;
+      --muted: #b8bfc8;
+      --card: #121314;
+      --card-hi: #16181a;
+      --border: 1px solid rgba(255,255,255,.06);
+      --glass: rgba(255,255,255,.06);
+      --shadow: 0 12px 32px rgba(0,0,0,.45);
+      --radius: 16px;
+      --radius-sm: 12px;
+      --radius-xs: 10px;
+      --trans: 240ms cubic-bezier(.2,.8,.2,1);
+    }
+    
+    /* Light mode variables */
+    .light-mode {
+      --red: #ff1111;
+      --yellow: #ffaa00;
+      --black: #000000;
+      --bg: #f8f9fa;
+      --text: #1a1a1a;
+      --muted: #6c757d;
+      --card: #ffffff;
+      --card-hi: #f8f9fa;
+      --border: 1px solid rgba(0,0,0,.12);
+      --glass: rgba(0,0,0,.04);
+      --shadow: 0 12px 32px rgba(0,0,0,.08);
+    }
+    
+    body {
+      margin: 0;
+      font-family: "Noto Sans Tamil", Inter, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.6;
+      transition: background-color var(--trans), color var(--trans);
+    }
+    
+    /* Dark mode specific background */
+    body:not(.light-mode) {
+      background:
+        radial-gradient(800px 420px at 10% -10%, rgba(255,17,17,.12), transparent 42%),
+        radial-gradient(600px 380px at 95% 0%, rgba(255,252,0,.10), transparent 52%),
+        var(--bg);
+    }
+    
+    /* Theme toggle button */
+    .theme-toggle {
+      background: var(--card);
+      border: var(--border);
+      border-radius: 12px;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all var(--trans);
+      color: var(--text);
+    }
+    
+    .theme-toggle:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+      background: var(--card-hi);
+    }
+    
+    .theme-toggle svg {
+      width: 20px;
+      height: 20px;
+    }
+    
+    .theme-toggle .sun-icon {
+      display: none;
+    }
+    
+    .light-mode .theme-toggle .moon-icon {
+      display: none;
+    }
+    
+    .light-mode .theme-toggle .sun-icon {
+      display: block;
+    }
+  </style>
 </head>
 <body>
 
   <!-- App bar - same as index.php -->
+  <header>
+    <div>
+      <a href="index.php">Liked தமிழ்</a>
+      <!-- Theme Toggle -->
+      <button class="theme-toggle" id="themeToggle" aria-label="Change theme">
+        <svg class="moon-icon" viewBox="0 0 24 24" fill="none">
+          <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.6"/>
+        </svg>
+        <svg class="sun-icon" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.6"/>
+        </svg>
+      </button>
+    </div>
+  </header>
 
   <!-- Article Content -->
   <main class="article-container">
@@ -110,6 +213,31 @@ if (!empty($categoryIds)) {
       </div>
     </section>
   <?php endif; ?>
+
+<script>
+// Theme toggle functionality
+const themeToggle = document.getElementById('themeToggle');
+const body = document.body;
+
+// Check for saved theme or prefer color scheme
+const savedTheme = localStorage.getItem('theme');
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+if (savedTheme === 'light' || (!savedTheme && !prefersDark)) {
+    body.classList.add('light-mode');
+}
+
+themeToggle.addEventListener('click', () => {
+    body.classList.toggle('light-mode');
+    
+    // Save preference
+    if (body.classList.contains('light-mode')) {
+        localStorage.setItem('theme', 'light');
+    } else {
+        localStorage.setItem('theme', 'dark');
+    }
+});
+</script>
 
 </body>
 </html>

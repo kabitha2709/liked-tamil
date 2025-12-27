@@ -329,6 +329,9 @@ function getNewsCategories($news) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $current_category ? htmlspecialchars($current_category['name']) . ' - ' : ''; ?>Liked தமிழ்</title>
     
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="Liked-tamil-news-logo-1 (2).png">
+    
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -336,20 +339,53 @@ function getNewsCategories($news) {
     
     <style>
         :root {
-            --red: #ff1111;
-            --yellow: #fffc00;
-            --black: #000000;
-            --bg: #0a0a0a;
-            --text: #f5f7fa;
-            --muted: #b8bfc8;
-            --card: #121314;
-            --card-hi: #16181a;
-            --border: 1px solid rgba(255,255,255,.06);
-            --glass: rgba(255,255,255,.06);
-            --shadow: 0 12px 32px rgba(0,0,0,.45);
+            --primary: #ff1111;
+            --primary-dark: #cc0f0f;
+            --secondary: #fffc00;
+            --secondary-dark: #e6e300;
+            --bg-dark: #0a0a0a;
+            --bg-light: #f8f9fa;
+            --card-dark: #121314;
+            --card-light: #ffffff;
+            --card-hi-dark: #16181a;
+            --card-hi-light: #f0f1f3;
+            --text-dark: #f5f7fa;
+            --text-light: #1a1a1a;
+            --muted-dark: #b8bfc8;
+            --muted-light: #6c757d;
+            --border-dark: rgba(255,255,255,.06);
+            --border-light: rgba(0,0,0,.1);
+            --glass-dark: rgba(255,255,255,.06);
+            --glass-light: rgba(0,0,0,.05);
+            --shadow-dark: 0 12px 32px rgba(0,0,0,.45);
+            --shadow-light: 0 8px 24px rgba(0,0,0,.1);
             --radius: 16px;
             --radius-sm: 12px;
             --trans: 240ms cubic-bezier(.2,.8,.2,1);
+        }
+
+        /* Light mode variables */
+        body.light-mode {
+            --bg: var(--bg-light);
+            --card: var(--card-light);
+            --card-hi: var(--card-hi-light);
+            --text: var(--text-light);
+            --muted: var(--muted-light);
+            --border: 1px solid var(--border-light);
+            --glass: var(--glass-light);
+            --shadow: var(--shadow-light);
+        }
+
+        /* Dark mode variables (default) */
+        body:not(.light-mode) {
+            --bg: var(--bg-dark);
+            --card: var(--card-dark);
+            --card-hi: var(--card-hi-dark);
+            --text: var(--text-dark);
+            --muted: var(--muted-dark);
+            --border: 1px solid var(--border-dark);
+            --glass: var(--glass-dark);
+            --shadow: var(--shadow-dark);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -357,15 +393,12 @@ function getNewsCategories($news) {
         body {
             font-family: "Noto Sans Tamil", Inter, system-ui, -apple-system, sans-serif;
             color: var(--text);
-            background:
-                radial-gradient(800px 420px at 10% -10%, rgba(255,17,17,.12), transparent 42%),
-                radial-gradient(600px 380px at 95% 0%, rgba(255,252,0,.10), transparent 52%),
-                var(--bg);
-            background-attachment: fixed;
+            background: var(--bg);
             line-height: 1.6;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            transition: background-color var(--trans), color var(--trans);
         }
 
         /* Main content wrapper */
@@ -374,44 +407,97 @@ function getNewsCategories($news) {
             width: 100%;
         }
 
-        /* App bar */
+        /* App bar - Updated with theme toggle */
         .appbar {
             position: sticky; top: 0; z-index: 90;
             backdrop-filter: saturate(1.25) blur(12px);
             background: linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.25));
             border-bottom: var(--border);
         }
+        
+        .light-mode .appbar {
+            background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.85));
+            border-bottom: 1px solid rgba(0,0,0,.08);
+        }
+        
         .appbar-wrap {
             display: grid; grid-template-columns: auto 1fr auto; gap: 16px;
             align-items: center; padding: 12px clamp(14px, 3vw, 24px);
             max-width: 1200px; margin: 0 auto;
         }
+        
         .brand {
             display:flex; align-items:center; gap: 12px; text-decoration:none; color: var(--text);
         }
+        
         .logo {
             width: 40px;
             height: 40px;
             border-radius: 8px;
             object-fit: cover;
+            background: var(--secondary);
+            padding: 2px;
         }
+        
         .title {
             font-weight: 800; font-size: clamp(18px, 2.4vw, 24px); letter-spacing: .2px;
             font-family: "Noto Sans Tamil", sans-serif;
+            color: var(--text);
         }
+        
         .search {
             display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px;
             background: var(--glass); border: var(--border);
             max-width: 400px; width: 100%;
         }
+        
         .search input {
             flex:1; background:transparent; border:0; color: var(--text); outline:none;
             font-family: "Noto Sans Tamil", sans-serif; font-size: 14px;
         }
+        
         .search input::placeholder {
-            color: rgba(255,255,255,.6);
+            color: var(--muted);
         }
-        .actions { display:flex; gap: 10px; }
+        
+        .actions { 
+            display:flex; 
+            gap: 10px; 
+            align-items: center;
+        }
+        
+        /* Theme Toggle Button */
+        .theme-toggle {
+            background: var(--glass);
+            border: var(--border);
+            color: var(--text);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--trans);
+            font-size: 20px;
+        }
+        
+        .theme-toggle:hover {
+            transform: translateY(-2px);
+            background: var(--card-hi);
+            box-shadow: var(--shadow);
+        }
+        
+        .light-mode .theme-toggle .moon-icon,
+        .dark-mode .theme-toggle .sun-icon {
+            display: none;
+        }
+        
+        .light-mode .theme-toggle .sun-icon,
+        .dark-mode .theme-toggle .moon-icon {
+            display: block;
+        }
+        
         .btn {
             display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:12px;
             background: var(--card); border: var(--border); color: var(--text); cursor:pointer;
@@ -419,32 +505,47 @@ function getNewsCategories($news) {
             text-decoration: none; font-family: "Noto Sans Tamil", sans-serif; font-weight: 600;
             font-size: 14px; white-space: nowrap;
         }
-        .btn:hover { transform: translateY(-2px); box-shadow: var(--shadow); background: var(--card-hi); }
+        
+        .btn:hover { 
+            transform: translateY(-2px); 
+            box-shadow: var(--shadow); 
+            background: var(--card-hi); 
+        }
+        
         .btn.primary {
-            background: linear-gradient(180deg, var(--red), #cc0f0f);
+            background: linear-gradient(180deg, var(--primary), var(--primary-dark));
             color: #fff; border: 0;
         }
+        
         .btn.primary:hover {
             background: linear-gradient(180deg, #ff3333, #e00f0f);
         }
+        
         .icon { width: 20px; height: 20px; }
 
         /* Category bar */
         .catbar {
-            background: linear-gradient(180deg, rgba(255,252,0,.08), transparent);
+            background: var(--card);
             border-top: var(--border); border-bottom: var(--border);
             position: sticky;
-            top: 64px; /* Adjust based on appbar height */
+            top: 64px;
             z-index: 80;
         }
+        
+        .light-mode .catbar {
+            background: var(--card);
+        }
+        
         .catbar-wrap {
             max-width: 1200px; margin: 0 auto; padding: 10px clamp(14px, 3vw, 24px);
             display:flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
             -webkit-overflow-scrolling: touch;
         }
+        
         .catbar-wrap::-webkit-scrollbar {
             display: none;
         }
+        
         .chip {
             flex: 0 0 auto;
             display:inline-flex; align-items:center; justify-content: center; gap:8px; 
@@ -456,44 +557,67 @@ function getNewsCategories($news) {
             font-family: "Noto Sans Tamil", sans-serif;
             min-height: 36px;
         }
-        .chip:hover { transform: translateY(-2px); background: rgba(255,17,17,.18); }
+        
+        .chip:hover { 
+            transform: translateY(-2px); 
+            background: rgba(255,17,17,.18); 
+            color: var(--text);
+        }
+        
+        .light-mode .chip:hover {
+            background: rgba(255,17,17,.1);
+        }
+        
         .chip.active { 
-            background: linear-gradient(180deg, var(--red), #d10f0f); 
+            background: linear-gradient(180deg, var(--primary), var(--primary-dark)); 
             color: #fff; border: 0; 
             box-shadow: 0 4px 12px rgba(255,17,17,.25);
         }
 
-        /* Breaking news ticker */
+        /* Breaking news ticker - Updated colors */
         .ticker {
-            background: var(--yellow); color: var(--black);
-            border-bottom: 2px solid rgba(0,0,0,.25);
+            background: var(--secondary); 
+            color: #000;
+            border-bottom: var(--border);
             position: relative;
             overflow: hidden;
         }
+        
+        .light-mode .ticker {
+            border-bottom: 1px solid rgba(0,0,0,.1);
+        }
+        
         .ticker-wrap {
             max-width: 1200px; margin: 0 auto; 
             padding: 8px clamp(14px, 3vw, 24px);
             display: grid; grid-template-columns: auto 1fr auto; 
             gap: 12px; align-items: center;
         }
+        
         .tag-chip {
-            background: var(--black); color: var(--yellow);
+            background: #000; color: var(--secondary);
             border-radius: 999px; padding:6px 10px; font-weight: 700; 
             border: 1px solid rgba(255,255,255,.08);
             font-size: 12px; font-family: "Noto Sans Tamil", sans-serif;
+            white-space: nowrap;
         }
+        
         .marquee { 
             overflow: hidden; height: 28px; position: relative;
         }
+        
         .marquee-track {
             display: inline-flex; gap: 28px; white-space: nowrap;
             animation: track 24s linear infinite;
         }
+        
         .marquee:hover .marquee-track { animation-play-state: paused; }
+        
         @keyframes track { 
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
         }
+        
         .dot { 
             width:6px; height:6px; border-radius:50%; display:inline-block; 
             background: rgba(0,0,0,.5); margin: 0 10px;
@@ -503,28 +627,38 @@ function getNewsCategories($news) {
         .category-header {
             max-width: 1200px; margin: 30px auto 20px; padding: 0 clamp(14px, 3vw, 24px);
         }
+        
         .category-title {
             font-weight: 800; font-size: clamp(28px, 3vw, 36px); 
-            color: var(--yellow); margin-bottom: 10px;
+            color: var(--primary); margin-bottom: 10px;
             font-family: "Noto Sans Tamil", sans-serif;
             line-height: 1.2;
         }
+        
+        .light-mode .category-title {
+            color: var(--primary);
+        }
+        
         .category-meta {
             display: flex; gap: 20px; color: var(--muted); font-size: 14px;
             flex-wrap: wrap;
         }
+        
         .category-subcategories {
             margin-top: 15px; display: flex; flex-wrap: wrap; gap: 8px;
         }
+        
         .subcategory-chip {
             padding: 6px 12px; border-radius: 999px;
-            background: rgba(255,252,0,.1); color: var(--yellow);
+            background: rgba(255,17,17,.1); color: var(--primary);
             font-size: 13px; font-weight: 600; text-decoration: none;
             transition: transform var(--trans), background var(--trans);
             font-family: "Noto Sans Tamil", sans-serif;
+            border: 1px solid rgba(255,17,17,.2);
         }
+        
         .subcategory-chip:hover {
-            transform: translateY(-2px); background: rgba(255,252,0,.2);
+            transform: translateY(-2px); background: rgba(255,17,17,.2);
         }
 
         /* News Grid */
@@ -532,16 +666,20 @@ function getNewsCategories($news) {
             max-width: 1200px; margin: 20px auto 40px; 
             padding: 0 clamp(14px, 3vw, 24px);
         }
+        
         .section-head { 
             display: flex; justify-content: space-between; align-items: center; 
             margin-bottom: 20px; 
         }
+        
         .section-title { 
             font-weight: 800; font-size: clamp(20px, 2.2vw, 26px); 
             font-family: "Noto Sans Tamil", sans-serif;
+            color: var(--text);
         }
+        
         .news-count {
-            background: var(--yellow); color: var(--black);
+            background: var(--primary); color: #fff;
             padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700;
             font-family: "Noto Sans Tamil", sans-serif;
         }
@@ -573,20 +711,31 @@ function getNewsCategories($news) {
             text-decoration: none; color: inherit;
             height: 100%;
         }
+        
         .news-card:hover { 
             transform: translateY(-4px); 
             box-shadow: 0 14px 40px rgba(0,0,0,.50); 
             background: var(--card-hi);
         }
         
+        .light-mode .news-card:hover {
+            box-shadow: 0 14px 40px rgba(0,0,0,.15);
+        }
+        
         .news-thumb {
             position: relative; aspect-ratio: 16/9; overflow: hidden;
             background: linear-gradient(45deg, #2a2a2a, #1a1a1a);
         }
+        
+        .light-mode .news-thumb {
+            background: linear-gradient(45deg, #e0e0e0, #f0f0f0);
+        }
+        
         .news-thumb img {
             width: 100%; height: 100%; object-fit: cover;
             transition: transform .7s ease;
         }
+        
         .news-card:hover .news-thumb img { transform: scale(1.08); }
         
         .news-badge {
@@ -601,9 +750,14 @@ function getNewsCategories($news) {
             white-space: nowrap;
         }
         
+        .light-mode .news-badge {
+            background: rgba(0,0,0,.85);
+        }
+        
         .news-content { 
             padding: 20px; flex: 1; display: flex; flex-direction: column; 
         }
+        
         .news-title { 
             font-weight: 700; font-size: 18px; line-height: 1.4; 
             margin-bottom: 12px; color: var(--text);
@@ -613,6 +767,7 @@ function getNewsCategories($news) {
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
+        
         .news-excerpt {
             font-size: 14px; color: var(--muted); line-height: 1.5;
             margin-bottom: 15px; flex: 1;
@@ -621,13 +776,15 @@ function getNewsCategories($news) {
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
+        
         .news-meta {
             display: flex; justify-content: space-between; align-items: center;
             font-size: 12px; color: var(--muted); padding-top: 12px;
-            border-top: 1px solid rgba(255,255,255,.1);
+            border-top: 1px solid var(--border);
             flex-wrap: wrap;
             gap: 8px;
         }
+        
         .news-meta span {
             font-family: "Noto Sans Tamil", sans-serif;
         }
@@ -638,10 +795,12 @@ function getNewsCategories($news) {
             color: var(--muted); background: var(--glass);
             border-radius: var(--radius-sm); margin: 20px 0;
         }
+        
         .no-news h3 { 
             font-size: 24px; margin-bottom: 10px; 
             font-family: "Noto Sans Tamil", sans-serif;
         }
+        
         .no-news p { margin-bottom: 20px; }
         
         /* Pagination */
@@ -649,6 +808,7 @@ function getNewsCategories($news) {
             display: flex; justify-content: center; align-items: center; gap: 8px; 
             margin: 40px 0 60px; flex-wrap: wrap;
         }
+        
         .page {
             padding: 10px 16px; border-radius: 10px;
             background: var(--glass); border: var(--border);
@@ -659,23 +819,26 @@ function getNewsCategories($news) {
             font-weight: 600;
             font-size: 14px;
         }
+        
         .page:hover { 
             transform: translateY(-2px); 
             background: var(--card-hi); 
             box-shadow: var(--shadow);
         }
+        
         .page.active { 
-            background: linear-gradient(180deg, var(--red), #cc0f0f); 
+            background: linear-gradient(180deg, var(--primary), var(--primary-dark)); 
             color: #fff; border: 0;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(255,17,17,.25);
         }
+        
         .page.disabled { 
             opacity: 0.5; cursor: not-allowed; 
             pointer-events: none;
         }
         
-        /* Mobile Footer */
+        /* Mobile Footer - Updated colors */
         .mobile-footer {
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 99;
             backdrop-filter: blur(12px) saturate(1.1);
@@ -688,10 +851,10 @@ function getNewsCategories($news) {
         @media (max-width: 768px) {
             .mobile-footer { display: block; }
             body { padding-bottom: 70px; }
-            .search, .actions { display: none; }
-            .appbar-wrap { grid-template-columns: auto 1fr; }
+            .search, .actions .btn:not(.theme-toggle) { display: none; }
+            .appbar-wrap { grid-template-columns: auto 1fr auto; }
             .catbar {
-                top: 56px; /* Adjust for smaller appbar on mobile */
+                top: 56px;
             }
         }
         
@@ -699,15 +862,18 @@ function getNewsCategories($news) {
             max-width: 1200px; margin: 0 auto; padding: 8px clamp(12px, 4vw, 18px); 
             display: flex; justify-content: space-between; gap: 4px;
         }
+        
         .foot-item {
             flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;
             color: #fff; text-decoration: none; padding: 8px 4px; border-radius: 12px;
             transition: transform var(--trans), background var(--trans);
         }
+        
         .foot-item:hover, .foot-item.active { 
             background: rgba(0,0,0,.18); transform: translateY(-2px); 
         }
-        .foot-icon { width: 22px; height: 22px; }
+        
+        .foot-icon { width: 22px; height: 22px; stroke: #fff; }
         .foot-label { 
             font-size: 11px; font-weight: 700; 
             font-family: "Noto Sans Tamil", sans-serif;
@@ -740,7 +906,7 @@ function getNewsCategories($news) {
         }
         
         .subscription-content h3 {
-            color: var(--yellow);
+            color: var(--primary);
             margin-bottom: 20px;
             text-align: center;
             font-family: "Noto Sans Tamil", sans-serif;
@@ -773,7 +939,7 @@ function getNewsCategories($news) {
         }
         
         .subscription-form button {
-            background: linear-gradient(180deg, var(--red), #cc0f0f);
+            background: linear-gradient(180deg, var(--primary), var(--primary-dark));
             color: white;
             border: none;
             padding: 14px 24px;
@@ -809,12 +975,12 @@ function getNewsCategories($news) {
         }
         
         .close-modal:hover {
-            background: rgba(255,255,255,.1);
+            background: var(--glass);
             color: var(--text);
         }
         
         .subscription-success {
-            color: var(--yellow);
+            color: var(--primary);
             text-align: center;
             padding: 10px;
             font-family: "Noto Sans Tamil", sans-serif;
@@ -880,7 +1046,7 @@ function getNewsCategories($news) {
         button:focus,
         input:focus,
         a:focus {
-            outline: 2px solid var(--yellow);
+            outline: 2px solid var(--secondary);
             outline-offset: 2px;
         }
         
@@ -890,28 +1056,44 @@ function getNewsCategories($news) {
             pointer-events: none;
         }
         
+        /* Theme transition */
+        * {
+            transition: background-color var(--trans), border-color var(--trans), color var(--trans);
+        }
+        
     </style>
 </head>
-<body>
+<body class="dark-mode">
     <div class="main-wrapper">
 
         <!-- App bar -->
         <header class="appbar">
             <div class="appbar-wrap">
                 <a href="index.php" class="brand">
-                    <img src="Liked-tamil-news-logo-1 (2).png" alt="Portal Logo" class="logo" />
+                    <img src="Liked-tamil-news-logo-1 (2).png" alt="Liked தமிழ் Logo" class="logo" />
                     <span class="title">Liked தமிழ்</span>
                 </a>
+                
                 <!-- Search Form -->
                 <form method="GET" action="search.php" class="search" role="search">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none">
-                        <path d="M11 5a6 6 0 016 6c0 1.3-.41 2.5-1.11 3.48l4.32 4.32-1.41 1.41-4.32-4.32A6 6 0 1111 5z" stroke="currentColor" stroke-width="1.5"/>
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M11 5a6 6 0 016 6c0 1.3-.41 2.5-1.11 3.48l4.32 4.32-1.41 1.41-4.32-4.32A6 6 0 1111 5z" stroke-width="1.5"/>
                     </svg>
                     <input type="search" name="q" placeholder="தேடல்…" aria-label="தேடல்" value="<?php echo isset($_GET['q']) ? htmlspecialchars($_GET['q']) : ''; ?>" />
                     <?php if (!empty($category_id) && $category_id > 0): ?>
                         <input type="hidden" name="category" value="<?php echo (int)$category_id; ?>" />
                     <?php endif; ?>
                 </form>
+                
+                <div class="actions">
+                    <!-- Theme Toggle Button -->
+                    <button class="theme-toggle" id="themeToggle" aria-label="Theme Toggle">
+                        <span class="sun-icon">☀️</span>
+                        <span class="moon-icon">🌙</span>
+                    </button>
+                    <a href="login.php" class="btn">உள்நுழைக</a>
+                    <a href="register.php" class="btn primary">பதிவு</a>
+                </div>
             </div>
         </header>
 
@@ -1153,25 +1335,25 @@ function getNewsCategories($news) {
         <div class="foot-wrap">
             <a href="index.php" class="foot-item">
                 <svg class="foot-icon" viewBox="0 0 24 24" fill="none">
-                    <path d="M3 10l9-7 9 7v9a2 2 0 01-2 2H5a2 2 0 01-2-2v-9z" stroke="#fff" stroke-width="1.6"/>
+                    <path d="M3 10l9-7 9 7v9a2 2 0 01-2 2H5a2 2 0 01-2-2v-9z" stroke-width="1.6"/>
                 </svg>
                 <span class="foot-label">முகப்பு</span>
             </a>
             <a href="categories.php" class="foot-item active">
                 <svg class="foot-icon" viewBox="0 0 24 24" fill="none">
-                    <path d="M4 6h16M4 12h16M4 18h16" stroke="#fff" stroke-width="1.6"/>
+                    <path d="M4 6h16M4 12h16M4 18h16" stroke-width="1.6"/>
                 </svg>
                 <span class="foot-label">பிரிவுகள்</span>
             </a>
             <a href="search.php" class="foot-item">
                 <svg class="foot-icon" viewBox="0 0 24 24" fill="none">
-                    <path d="M11 5a6 6 0 016 6c0 1.3-.41 2.5-1.11 3.48l4.32 4.32-1.41 1.41-4.32-4.32A6 6 0 1111 5z" stroke="#fff" stroke-width="1.6"/>
+                    <path d="M11 5a6 6 0 016 6c0 1.3-.41 2.5-1.11 3.48l4.32 4.32-1.41 1.41-4.32-4.32A6 6 0 1111 5z" stroke-width="1.6"/>
                 </svg>
                 <span class="foot-label">தேடல்</span>
             </a>
             <a href="about.php" class="foot-item">
                 <svg class="foot-icon" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="6" stroke="#fff" stroke-width="1.6"/>
+                    <circle cx="12" cy="12" r="6" stroke-width="1.6"/>
                 </svg>
                 <span class="foot-label">சுயவிவரம்</span>
             </a>
@@ -1179,6 +1361,31 @@ function getNewsCategories($news) {
     </footer>
 
     <script>
+        // Theme Toggle Functionality
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        
+        // Check for saved theme or prefer-color-scheme
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (savedTheme === 'light' || (!savedTheme && !prefersDark)) {
+            body.classList.remove('dark-mode');
+            body.classList.add('light-mode');
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            if (body.classList.contains('light-mode')) {
+                body.classList.remove('light-mode');
+                body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.remove('dark-mode');
+                body.classList.add('light-mode');
+                localStorage.setItem('theme', 'light');
+            }
+        });
+        
         // Subscription modal functions
         function openSubscription() {
             document.getElementById('subscriptionModal').style.display = 'flex';
@@ -1207,7 +1414,7 @@ function getNewsCategories($news) {
             document.querySelectorAll('img').forEach(img => {
                 img.addEventListener('error', function() {
                     this.src = 'https://picsum.photos/id/' + Math.floor(Math.random() * 1000) + '/800/500';
-                    this.onerror = null; // Prevent infinite loop
+                    this.onerror = null;
                 });
             });
             
@@ -1260,6 +1467,19 @@ function getNewsCategories($news) {
                     window.location.href = target;
                 }, 300);
             });
+        });
+        
+        // Theme system preference listener
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            if (!localStorage.getItem('theme')) {
+                if (e.matches) {
+                    body.classList.remove('light-mode');
+                    body.classList.add('dark-mode');
+                } else {
+                    body.classList.remove('dark-mode');
+                    body.classList.add('light-mode');
+                }
+            }
         });
         
     </script>
