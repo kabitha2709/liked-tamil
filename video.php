@@ -4,9 +4,11 @@ require_once 'config/database.php';
 $database = new Database();
 $db = $database->getConnection();
 
-// Fetch all videos from news table where video column is not empty
-$query = "SELECT id, title, video, published_at, image FROM news 
-          WHERE video IS NOT NULL AND video != '' AND status = 'published' 
+// Fetch all videos from news table where video or embedded_video_url is not empty
+$query = "SELECT id, title, video, published_at, image, embedded_video_url FROM news 
+          WHERE ((video IS NOT NULL AND video != '') OR 
+                (embedded_video_url IS NOT NULL AND embedded_video_url != ''))
+          AND status = 'published' 
           ORDER BY published_at DESC";
 $stmt = $db->prepare($query);
 $stmt->execute();
@@ -471,6 +473,8 @@ require 'config/config.php'; // To get $base_url
       border: 1px solid var(--border-color);
       text-decoration: none;
       color: inherit;
+      cursor: pointer;
+      position: relative;
     }
     
     .video-card:hover {
@@ -490,7 +494,7 @@ require 'config/config.php'; // To get $base_url
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: transform var(--transition-slow);
+      transition: transform var(--transition-slow), opacity var(--transition-base);
     }
     
     .video-card:hover .video-thumbnail img {
@@ -512,6 +516,7 @@ require 'config/config.php'; // To get $base_url
       justify-content: center;
       cursor: pointer;
       transition: all var(--transition-base);
+      z-index: 3;
     }
     
     .play-btn svg {
@@ -523,6 +528,19 @@ require 'config/config.php'; // To get $base_url
     .video-card:hover .play-btn {
       background: var(--primary-red);
       transform: translate(-50%, -50%) scale(1.1);
+    }
+    
+    .video-duration {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0, 0, 0, 0.8);
+      color: var(--white);
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 500;
+      z-index: 2;
     }
     
     .video-info {
@@ -592,15 +610,29 @@ require 'config/config.php'; // To get $base_url
     
     .video-modal.active {
       display: flex;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
     
     .modal-content {
       width: 100%;
-      max-width: 900px;
+      max-width: 1200px;
       background: var(--bg-card);
       border-radius: var(--radius-lg);
       padding: var(--space-xl);
       position: relative;
+      max-height: 90vh;
+      overflow: hidden;
+      animation: slideUp 0.3s ease;
+    }
+    
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
     }
     
     .modal-header {
@@ -615,6 +647,10 @@ require 'config/config.php'; // To get $base_url
       font-weight: 700;
       color: var(--text-primary);
       font-family: var(--font-heading);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
     
     .close-modal {
@@ -626,6 +662,11 @@ require 'config/config.php'; // To get $base_url
       padding: var(--space-xs);
       border-radius: var(--radius-sm);
       transition: all var(--transition-fast);
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     
     .close-modal:hover {
@@ -633,7 +674,14 @@ require 'config/config.php'; // To get $base_url
       background: var(--glass-bg);
     }
     
+    .modal-body {
+      display: flex;
+      gap: var(--space-lg);
+      height: calc(90vh - 120px);
+    }
+    
     .modal-video-container {
+      flex: 2;
       position: relative;
       padding-bottom: 56.25%; /* 16:9 aspect ratio */
       height: 0;
@@ -642,13 +690,204 @@ require 'config/config.php'; // To get $base_url
       background: var(--black);
     }
     
-    .modal-video-container iframe {
+    .modal-video-container iframe,
+    .modal-video-container video {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       border: none;
+      border-radius: var(--radius-md);
+    }
+    
+    .modal-sidebar {
+      flex: 1;
+      max-width: 350px;
+      overflow-y: auto;
+      padding-right: var(--space-sm);
+    }
+    
+    /* Scrollbar styling for modal sidebar */
+    .modal-sidebar::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .modal-sidebar::-webkit-scrollbar-track {
+      background: var(--bg-primary);
+      border-radius: var(--radius-full);
+    }
+    
+    .modal-sidebar::-webkit-scrollbar-thumb {
+      background: var(--primary-red);
+      border-radius: var(--radius-full);
+    }
+    
+    .sidebar-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: var(--space-md);
+      font-family: var(--font-heading);
+      padding-bottom: var(--space-sm);
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .video-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+    
+    .video-list-item {
+      display: flex;
+      gap: var(--space-sm);
+      padding: var(--space-sm);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      border: 1px solid transparent;
+      background: var(--bg-hover);
+    }
+    
+    .video-list-item:hover {
+      background: var(--glass-bg);
+      border-color: var(--border-color);
+      transform: translateX(4px);
+    }
+    
+    .video-list-item.active {
+      background: var(--glass-bg);
+      border-color: var(--primary-red);
+    }
+    
+    .video-list-thumbnail {
+      width: 80px;
+      height: 45px;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      flex-shrink: 0;
+      position: relative;
+    }
+    
+    .video-list-thumbnail img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .video-list-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .video-list-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.3;
+      margin-bottom: var(--space-xs);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    
+    .video-list-meta {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+    
+    /* Video controls */
+    .video-controls {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+      padding: var(--space-lg) var(--space-md) var(--space-md);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      opacity: 0;
+      transition: opacity var(--transition-base);
+      z-index: 10;
+    }
+    
+    .modal-video-container:hover .video-controls {
+      opacity: 1;
+    }
+    
+    .control-btn {
+      background: rgba(0, 0, 0, 0.7);
+      border: none;
+      color: var(--white);
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition-fast);
+    }
+    
+    .control-btn:hover {
+      background: var(--primary-red);
+      transform: scale(1.1);
+    }
+    
+    .video-time {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      color: var(--white);
+      font-size: 0.875rem;
+    }
+    
+    .video-progress {
+      flex: 1;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      margin: 0 var(--space-md);
+      cursor: pointer;
+    }
+    
+    .video-progress-filled {
+      height: 100%;
+      background: var(--primary-red);
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+    
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+      .modal-body {
+        flex-direction: column;
+        height: auto;
+        max-height: calc(90vh - 120px);
+        overflow-y: auto;
+      }
+      
+      .modal-video-container {
+        flex: none;
+        margin-bottom: var(--space-lg);
+      }
+      
+      .modal-sidebar {
+        flex: none;
+        max-width: none;
+        max-height: 300px;
+      }
+      
+      .modal-title {
+        font-size: 1.25rem;
+      }
     }
     
     /* ===== Desktop Footer ===== */
@@ -802,6 +1041,71 @@ require 'config/config.php'; // To get $base_url
     .mobile-footer {
       animation: slideUp 0.3s ease-out;
     }
+    
+    /* Video preview overlay */
+    .video-preview {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      opacity: 0;
+      transition: opacity var(--transition-base);
+    }
+    
+    .video-card.preview-active .video-preview {
+      opacity: 1;
+    }
+    
+    .video-card.preview-active .video-thumbnail img {
+      opacity: 0.5;
+    }
+    
+    .video-card.preview-active .play-btn {
+      opacity: 0;
+    }
+    
+    /* Loading animation */
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid var(--border-color);
+      border-radius: 50%;
+      border-top-color: var(--primary-red);
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Video quality selector */
+    .quality-selector {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      z-index: 10;
+    }
+    
+    .quality-btn {
+      background: none;
+      border: none;
+      color: var(--white);
+      padding: var(--space-xs) var(--space-sm);
+      cursor: pointer;
+      font-size: 0.75rem;
+      transition: background var(--transition-fast);
+    }
+    
+    .quality-btn:hover,
+    .quality-btn.active {
+      background: var(--primary-red);
+    }
     </style>
 </head>
 <body>
@@ -904,14 +1208,38 @@ require 'config/config.php'; // To get $base_url
                         <?php
                         // Get image URL
                         $imageSrc = '';
-                        if (!empty($video['image'])) {
+                        $youtubeId = '';
+                        $videoType = 'local';
+                        
+                        // Check if it's a YouTube video
+                        if (!empty($video['embedded_video_url']) && strpos($video['embedded_video_url'], 'youtube.com') !== false) {
+                            preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/', 
+                                       $video['embedded_video_url'], 
+                                       $matches);
+                            if (isset($matches[1])) {
+                                $youtubeId = $matches[1];
+                                $imageSrc = 'https://img.youtube.com/vi/' . $youtubeId . '/hqdefault.jpg';
+                                $videoType = 'youtube';
+                            }
+                        }
+                        
+                        // If no YouTube thumbnail, use uploaded image
+                        if (empty($imageSrc) && !empty($video['image'])) {
                             if (filter_var($video['image'], FILTER_VALIDATE_URL)) {
                                 $imageSrc = $video['image'];
                             } else {
-                                $imageSrc = $base_url . 'uploads/news/' . htmlspecialchars($video['image']);
+                                // Check for video-specific image first
+                                $videoImagePath = $base_url . 'uploads/videos/' . htmlspecialchars($video['image']);
+                                $newsImagePath = $base_url . 'uploads/news/' . htmlspecialchars($video['image']);
+                                
+                                // Default to news image
+                                $imageSrc = $newsImagePath;
                             }
-                        } else {
-                            $imageSrc = 'https://images.unsplash.com/photo-1588681664899-f142ff2dc9b1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+                        }
+                        
+                        // Default thumbnail if no image found
+                        if (empty($imageSrc)) {
+                            $imageSrc = 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
                         }
                         
                         // Format time ago in Tamil
@@ -927,8 +1255,17 @@ require 'config/config.php'; // To get $base_url
                         } else {
                             $timeAgo = $interval->i . ' நிமிடம் முன்';
                         }
+                        
+                        // Get video URL (use embedded URL for YouTube, local video URL for local videos)
+                        $videoUrl = !empty($video['embedded_video_url']) ? $video['embedded_video_url'] : $video['video'];
                         ?>
-                        <div class="video-card" data-video-url="<?php echo htmlspecialchars($video['video']); ?>" data-video-title="<?php echo htmlspecialchars($video['title']); ?>">
+                        <div class="video-card" 
+                             data-video-id="<?php echo $video['id']; ?>"
+                             data-video-url="<?php echo htmlspecialchars($video['video'] ?? ''); ?>"
+                             data-embedded-url="<?php echo htmlspecialchars($video['embedded_video_url'] ?? ''); ?>"
+                             data-video-title="<?php echo htmlspecialchars($video['title']); ?>"
+                             data-video-type="<?php echo $videoType; ?>"
+                             data-youtube-id="<?php echo $youtubeId; ?>">
                             <div class="video-thumbnail">
                                 <img src="<?php echo $imageSrc; ?>" alt="<?php echo htmlspecialchars($video['title']); ?>" loading="lazy">
                                 <button class="play-btn">
@@ -936,6 +1273,10 @@ require 'config/config.php'; // To get $base_url
                                         <polygon points="5 3 19 12 5 21 5 3" />
                                     </svg>
                                 </button>
+                                <div class="video-duration" id="duration-<?php echo $video['id']; ?>">
+                                    <?php echo $videoType === 'youtube' ? 'YouTube' : 'வீடியோ'; ?>
+                                </div>
+                                <div class="video-preview" id="preview-<?php echo $video['id']; ?>"></div>
                             </div>
                             <div class="video-info">
                                 <h3 class="video-card-title"><?php echo htmlspecialchars($video['title']); ?></h3>
@@ -1055,10 +1396,45 @@ require 'config/config.php'; // To get $base_url
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title" id="modalVideoTitle">வீடியோ</h3>
-                <button class="close-modal" id="closeVideoModal">&times;</button>
+                <button class="close-modal" id="closeVideoModal">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
             </div>
-            <div class="modal-video-container">
-                <iframe id="modalVideoPlayer" allowfullscreen></iframe>
+            <div class="modal-body">
+                <div class="modal-video-container">
+                    <div id="videoPlayerContainer"></div>
+                    <div class="video-controls" id="videoControls">
+                        <button class="control-btn" id="playPauseBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="5 3 19 12 5 21 5 3" id="playIcon" />
+                                <rect x="6" y="4" width="4" height="16" rx="1" id="pauseIcon" style="display: none;" />
+                                <rect x="14" y="4" width="4" height="16" rx="1" id="pauseIcon2" style="display: none;" />
+                            </svg>
+                        </button>
+                        <div class="video-time">
+                            <span id="currentTime">0:00</span>
+                            <span>/</span>
+                            <span id="totalTime">0:00</span>
+                        </div>
+                        <div class="video-progress" id="progressBar">
+                            <div class="video-progress-filled" id="progressFilled"></div>
+                        </div>
+                        <button class="control-btn" id="fullscreenBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-sidebar">
+                    <h4 class="sidebar-title">மற்ற வீடியோக்கள்</h4>
+                    <div class="video-list" id="modalVideoList">
+                        <!-- Other videos will be populated here -->
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1066,6 +1442,9 @@ require 'config/config.php'; // To get $base_url
     <script>
         // Initialize variables
         const videoData = <?php echo json_encode($videos ?: []); ?>;
+        let currentVideoPlayer = null;
+        let currentVideoType = null;
+        let previewTimeouts = {};
         
         // Search functionality
         function toggleSearch() {
@@ -1083,8 +1462,14 @@ require 'config/config.php'; // To get $base_url
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 const searchModal = document.getElementById('searchModal');
+                const videoModal = document.getElementById('videoModal');
+                
                 if (searchModal.classList.contains('active')) {
                     toggleSearch();
+                }
+                
+                if (videoModal.classList.contains('active')) {
+                    closeVideoModal();
                 }
             }
         });
@@ -1119,24 +1504,81 @@ require 'config/config.php'; // To get $base_url
         });
 
         // Video modal functionality
-        function openVideoModal(videoUrl, videoTitle) {
+        function openVideoModal(videoId) {
+            const video = videoData.find(v => v.id == videoId);
+            if (!video) return;
+            
             const modal = document.getElementById('videoModal');
-            const videoPlayer = document.getElementById('modalVideoPlayer');
             const modalTitle = document.getElementById('modalVideoTitle');
             const closeBtn = document.getElementById('closeVideoModal');
+            const videoList = document.getElementById('modalVideoList');
+            const videoContainer = document.getElementById('videoPlayerContainer');
             
-            // Convert YouTube URL to embed URL if needed
-            let embedUrl = videoUrl;
-            if (videoUrl.includes('youtube.com/watch?v=')) {
-                const videoId = videoUrl.split('v=')[1].split('&')[0];
-                embedUrl = `https://www.youtube.com/embed/${videoId}`;
-            } else if (videoUrl.includes('youtu.be/')) {
-                const videoId = videoUrl.split('youtu.be/')[1].split('?')[0];
-                embedUrl = `https://www.youtube.com/embed/${videoId}`;
+            modalTitle.textContent = video.title;
+            
+            // Clear previous player
+            videoContainer.innerHTML = '';
+            
+            // Create video player based on type
+            if (video.embedded_video_url && video.embedded_video_url.includes('youtube.com')) {
+                // YouTube video
+                const youtubeId = extractYouTubeId(video.embedded_video_url);
+                if (youtubeId) {
+                    const iframe = document.createElement('iframe');
+                    iframe.id = 'youtubePlayer';
+                    iframe.src = `https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&enablejsapi=1`;
+                    iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+                    iframe.setAttribute('allowfullscreen', 'true');
+                    iframe.style.width = '100%';
+                    iframe.style.height = '100%';
+                    videoContainer.appendChild(iframe);
+                    
+                    currentVideoType = 'youtube';
+                    currentVideoPlayer = iframe;
+                    
+                    // Load YouTube API if not already loaded
+                    if (!window.YT) {
+                        const tag = document.createElement('script');
+                        tag.src = "https://www.youtube.com/iframe_api";
+                        const firstScriptTag = document.getElementsByTagName('script')[0];
+                        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+                    }
+                }
+            } else if (video.video) {
+                // Local video file
+                const videoElement = document.createElement('video');
+                videoElement.id = 'localVideoPlayer';
+                videoElement.src = getVideoUrl(video.video);
+                videoElement.controls = true;
+                videoElement.autoplay = true;
+                videoElement.style.width = '100%';
+                videoElement.style.height = '100%';
+                videoContainer.appendChild(videoElement);
+                
+                currentVideoType = 'local';
+                currentVideoPlayer = videoElement;
+                
+                // Setup local video controls
+                setupLocalVideoControls(videoElement);
             }
             
-            videoPlayer.src = embedUrl;
-            modalTitle.textContent = videoTitle;
+            // Populate other videos list
+            videoList.innerHTML = '';
+            videoData.forEach((v, index) => {
+                if (v.id != videoId) {
+                    const listItem = createVideoListItem(v);
+                    videoList.appendChild(listItem);
+                }
+            });
+            
+            // Highlight current video in list
+            const listItems = videoList.querySelectorAll('.video-list-item');
+            listItems.forEach(item => {
+                if (parseInt(item.dataset.videoId) === videoId) {
+                    item.classList.add('active');
+                }
+            });
+            
             modal.classList.add('active');
             document.body.style.overflow = 'hidden';
             
@@ -1150,22 +1592,280 @@ require 'config/config.php'; // To get $base_url
                 }
             };
             
-            // Close modal with Escape key
-            document.addEventListener('keydown', function closeOnEscape(e) {
-                if (e.key === 'Escape') {
-                    closeVideoModal();
-                    document.removeEventListener('keydown', closeOnEscape);
+            // Handle YouTube API ready
+            if (window.YT && currentVideoType === 'youtube') {
+                window.onYouTubeIframeAPIReady = function() {
+                    if (currentVideoPlayer) {
+                        new YT.Player(currentVideoPlayer.id, {
+                            events: {
+                                'onReady': onPlayerReady,
+                                'onStateChange': onPlayerStateChange
+                            }
+                        });
+                    }
+                };
+            }
+        }
+        
+        function extractYouTubeId(url) {
+            const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[7].length == 11) ? match[7] : null;
+        }
+        
+        function getVideoUrl(videoPath) {
+            // Check if it's already a full URL
+            if (videoPath.startsWith('http')) {
+                return videoPath;
+            }
+            
+            // Check if it's a local file path
+            if (videoPath.includes('uploads/')) {
+                return '<?php echo $base_url; ?>' + videoPath;
+            }
+            
+            // Assume it's in videos folder
+            return '<?php echo $base_url; ?>uploads/videos/' + videoPath;
+        }
+        
+        function createVideoListItem(video) {
+            const listItem = document.createElement('div');
+            listItem.className = 'video-list-item';
+            listItem.dataset.videoId = video.id;
+            
+            // Get thumbnail URL
+            let imageSrc = '';
+            if (video.embedded_video_url && video.embedded_video_url.includes('youtube.com')) {
+                const youtubeId = extractYouTubeId(video.embedded_video_url);
+                if (youtubeId) {
+                    imageSrc = `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
                 }
+            } else if (video.image) {
+                if (video.image.startsWith('http')) {
+                    imageSrc = video.image;
+                } else {
+                    imageSrc = '<?php echo $base_url; ?>uploads/news/' + video.image;
+                }
+            } else {
+                imageSrc = 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+            }
+            
+            // Format time ago
+            const publishTime = new Date(video.published_at);
+            const now = new Date();
+            const diffTime = Math.abs(now - publishTime);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            let timeAgo = '';
+            
+            if (diffDays > 0) {
+                timeAgo = diffDays + ' நாட்கள் முன்';
+            } else if (Math.ceil(diffTime / (1000 * 60 * 60)) > 0) {
+                timeAgo = Math.ceil(diffTime / (1000 * 60 * 60)) + ' மணி முன்';
+            } else {
+                timeAgo = Math.ceil(diffTime / (1000 * 60)) + ' நிமிடம் முன்';
+            }
+            
+            listItem.innerHTML = `
+                <div class="video-list-thumbnail">
+                    <img src="${imageSrc}" alt="${video.title}" loading="lazy">
+                </div>
+                <div class="video-list-info">
+                    <div class="video-list-title">${video.title}</div>
+                    <div class="video-list-meta">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                        <span>${timeAgo}</span>
+                    </div>
+                </div>
+            `;
+            
+            listItem.addEventListener('click', () => {
+                openVideoModal(video.id);
             });
+            
+            return listItem;
         }
         
         function closeVideoModal() {
             const modal = document.getElementById('videoModal');
-            const videoPlayer = document.getElementById('modalVideoPlayer');
+            
+            // Stop video playback
+            if (currentVideoPlayer) {
+                if (currentVideoType === 'youtube') {
+                    // YouTube player
+                    if (currentVideoPlayer.contentWindow) {
+                        currentVideoPlayer.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+                    }
+                    currentVideoPlayer.src = '';
+                } else if (currentVideoType === 'local') {
+                    // Local video player
+                    currentVideoPlayer.pause();
+                    currentVideoPlayer.src = '';
+                }
+                
+                currentVideoPlayer = null;
+                currentVideoType = null;
+            }
             
             modal.classList.remove('active');
-            videoPlayer.src = ''; // Stop video playback
             document.body.style.overflow = '';
+        }
+        
+        // YouTube Player API functions
+        function onPlayerReady(event) {
+            // Player is ready
+        }
+        
+        function onPlayerStateChange(event) {
+            // Handle player state changes
+        }
+        
+        // Local video controls
+        function setupLocalVideoControls(videoElement) {
+            const playPauseBtn = document.getElementById('playPauseBtn');
+            const currentTimeEl = document.getElementById('currentTime');
+            const totalTimeEl = document.getElementById('totalTime');
+            const progressBar = document.getElementById('progressBar');
+            const progressFilled = document.getElementById('progressFilled');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            const playIcon = document.getElementById('playIcon');
+            const pauseIcon = document.getElementById('pauseIcon');
+            const pauseIcon2 = document.getElementById('pauseIcon2');
+            
+            // Format time in MM:SS
+            function formatTime(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+            }
+            
+            // Update time display
+            function updateTime() {
+                currentTimeEl.textContent = formatTime(videoElement.currentTime);
+                totalTimeEl.textContent = formatTime(videoElement.duration);
+                progressFilled.style.width = (videoElement.currentTime / videoElement.duration * 100) + '%';
+            }
+            
+            // Play/Pause toggle
+            playPauseBtn.addEventListener('click', () => {
+                if (videoElement.paused) {
+                    videoElement.play();
+                    playIcon.style.display = 'none';
+                    pauseIcon.style.display = 'block';
+                    pauseIcon2.style.display = 'block';
+                } else {
+                    videoElement.pause();
+                    playIcon.style.display = 'block';
+                    pauseIcon.style.display = 'none';
+                    pauseIcon2.style.display = 'none';
+                }
+            });
+            
+            // Update video time on play
+            videoElement.addEventListener('play', () => {
+                playIcon.style.display = 'none';
+                pauseIcon.style.display = 'block';
+                pauseIcon2.style.display = 'block';
+            });
+            
+            // Update video time on pause
+            videoElement.addEventListener('pause', () => {
+                playIcon.style.display = 'block';
+                pauseIcon.style.display = 'none';
+                pauseIcon2.style.display = 'none';
+            });
+            
+            // Update time as video plays
+            videoElement.addEventListener('timeupdate', updateTime);
+            
+            // Set total time when metadata is loaded
+            videoElement.addEventListener('loadedmetadata', () => {
+                totalTimeEl.textContent = formatTime(videoElement.duration);
+            });
+            
+            // Seek video when progress bar is clicked
+            progressBar.addEventListener('click', (e) => {
+                const rect = progressBar.getBoundingClientRect();
+                const percent = (e.clientX - rect.left) / rect.width;
+                videoElement.currentTime = percent * videoElement.duration;
+            });
+            
+            // Toggle fullscreen
+            fullscreenBtn.addEventListener('click', () => {
+                const container = document.querySelector('.modal-video-container');
+                
+                if (!document.fullscreenElement) {
+                    if (container.requestFullscreen) {
+                        container.requestFullscreen();
+                    } else if (container.webkitRequestFullscreen) {
+                        container.webkitRequestFullscreen();
+                    } else if (container.msRequestFullscreen) {
+                        container.msRequestFullscreen();
+                    }
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen();
+                    } else if (document.msExitFullscreen) {
+                        document.msExitFullscreen();
+                    }
+                }
+            });
+            
+            // Update time initially
+            updateTime();
+        }
+        
+        // Video preview on hover (YouTube only)
+        function startVideoPreview(card) {
+            const videoId = card.dataset.videoId;
+            const videoType = card.dataset.videoType;
+            const youtubeId = card.dataset.youtubeId;
+            const previewContainer = document.getElementById(`preview-${videoId}`);
+            
+            // Only preview YouTube videos
+            if (videoType !== 'youtube' || !youtubeId) return;
+            
+            // Clear any existing timeout
+            if (previewTimeouts[videoId]) {
+                clearTimeout(previewTimeouts[videoId]);
+            }
+            
+            // Start preview after delay
+            previewTimeouts[videoId] = setTimeout(() => {
+                // Create iframe for preview
+                const iframe = document.createElement('iframe');
+                iframe.src = `https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${youtubeId}&rel=0&enablejsapi=1&start=10`;
+                iframe.style.width = '100%';
+                iframe.style.height = '100%';
+                iframe.style.border = 'none';
+                iframe.setAttribute('allow', 'autoplay; encrypted-media');
+                iframe.setAttribute('allowfullscreen', 'false');
+                
+                previewContainer.innerHTML = '';
+                previewContainer.appendChild(iframe);
+                card.classList.add('preview-active');
+            }, 500); // 500ms delay before starting preview
+        }
+        
+        function stopVideoPreview(card) {
+            const videoId = card.dataset.videoId;
+            
+            // Clear timeout if preview hasn't started yet
+            if (previewTimeouts[videoId]) {
+                clearTimeout(previewTimeouts[videoId]);
+                delete previewTimeouts[videoId];
+            }
+            
+            // Stop preview if active
+            const previewContainer = document.getElementById(`preview-${videoId}`);
+            if (previewContainer) {
+                previewContainer.innerHTML = '';
+                card.classList.remove('preview-active');
+            }
         }
 
         // Video sorting functionality
@@ -1183,28 +1883,97 @@ require 'config/config.php'; // To get $base_url
                     return sortedVideos;
             }
         }
+        
+        function renderVideos(videos) {
+            const videoContainer = document.getElementById('video-container');
+            videoContainer.innerHTML = '';
+            
+            if (videos.length === 0) {
+                videoContainer.innerHTML = `
+                    <div class="no-videos">
+                        <h3>வீடியோக்கள் இல்லை</h3>
+                        <p>தற்போது வீடியோ செய்திகள் எதுவும் இல்லை. பின்னர் சரிபார்க்கவும்.</p>
+                        <a href="index.php" style="display: inline-flex; align-items: center; gap: var(--space-xs); padding: var(--space-sm) var(--space-md); background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red)); color: var(--white); border: none; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; transition: all var(--transition-base);">
+                            முகப்பு பக்கத்திற்குச் செல்லவும்
+                        </a>
+                    </div>
+                `;
+                return;
+            }
+            
+            videos.forEach(video => {
+                // Create video card HTML (same as PHP generated)
+                // This is a simplified version - you might want to reuse the PHP template logic
+                const videoCard = document.createElement('div');
+                videoCard.className = 'video-card';
+                videoCard.dataset.videoId = video.id;
+                videoCard.innerHTML = `
+                    <div class="video-thumbnail">
+                        <img src="${video.image}" alt="${video.title}" loading="lazy">
+                        <button class="play-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="5 3 19 12 5 21 5 3" />
+                            </svg>
+                        </button>
+                        <div class="video-duration">வீடியோ</div>
+                        <div class="video-preview" id="preview-${video.id}"></div>
+                    </div>
+                    <div class="video-info">
+                        <h3 class="video-card-title">${video.title}</h3>
+                        <div class="video-meta">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                            <span>${video.published_at}</span>
+                        </div>
+                    </div>
+                `;
+                
+                videoContainer.appendChild(videoCard);
+            });
+            
+            // Reattach event listeners
+            attachVideoEventListeners();
+        }
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
             // Add event listeners to play buttons
-            document.querySelectorAll('.play-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const videoCard = this.closest('.video-card');
-                    const videoUrl = videoCard.getAttribute('data-video-url');
-                    const videoTitle = videoCard.getAttribute('data-video-title');
-                    openVideoModal(videoUrl, videoTitle);
-                });
-            });
-            
-            // Add click event to entire video card
             document.querySelectorAll('.video-card').forEach(card => {
+                const playBtn = card.querySelector('.play-btn');
+                
+                playBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const videoId = card.dataset.videoId;
+                    openVideoModal(videoId);
+                });
+                
+                // Click on card (except play button)
                 card.addEventListener('click', function(e) {
                     if (!e.target.closest('.play-btn')) {
-                        const videoUrl = this.getAttribute('data-video-url');
-                        const videoTitle = this.getAttribute('data-video-title');
-                        openVideoModal(videoUrl, videoTitle);
+                        const videoId = card.dataset.videoId;
+                        openVideoModal(videoId);
                     }
                 });
+                
+                // Hover preview for YouTube videos
+                card.addEventListener('mouseenter', function() {
+                    startVideoPreview(this);
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    stopVideoPreview(this);
+                });
+                
+                // Touch events for mobile
+                card.addEventListener('touchstart', function(e) {
+                    this.classList.add('touch-active');
+                }, { passive: true });
+                
+                card.addEventListener('touchend', function(e) {
+                    this.classList.remove('touch-active');
+                }, { passive: true });
             });
             
             // Sort functionality
@@ -1239,9 +2008,15 @@ require 'config/config.php'; // To get $base_url
             
             // Ensure content fits screen
             function adjustContentHeight() {
-                const headerHeight = document.querySelector('.header').offsetHeight;
-                const categoryNavHeight = document.querySelector('.category-nav').offsetHeight;
-                const mobileFooterHeight = document.querySelector('.mobile-footer').offsetHeight;
+                const header = document.querySelector('.header');
+                const categoryNav = document.querySelector('.category-nav');
+                const mobileFooter = document.querySelector('.mobile-footer');
+                
+                if (!header || !categoryNav) return;
+                
+                const headerHeight = header.offsetHeight;
+                const categoryNavHeight = categoryNav.offsetHeight;
+                const mobileFooterHeight = mobileFooter?.offsetHeight || 0;
                 
                 const totalStickyHeight = headerHeight + categoryNavHeight;
                 const mainContent = document.querySelector('.main-content');
@@ -1256,10 +2031,71 @@ require 'config/config.php'; // To get $base_url
             // Run after page loads
             setTimeout(adjustContentHeight, 100);
             window.addEventListener('resize', adjustContentHeight);
+            
+            // Initialize video previews
+            document.querySelectorAll('.video-card[data-video-type="youtube"]').forEach(card => {
+                card.dataset.previewActive = 'false';
+            });
         });
+
+        // Helper function to reattach event listeners
+        function attachVideoEventListeners() {
+            document.querySelectorAll('.video-card').forEach(card => {
+                const playBtn = card.querySelector('.play-btn');
+                
+                playBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const videoId = card.dataset.videoId;
+                    openVideoModal(videoId);
+                });
+                
+                card.addEventListener('click', function(e) {
+                    if (!e.target.closest('.play-btn')) {
+                        const videoId = card.dataset.videoId;
+                        openVideoModal(videoId);
+                    }
+                });
+                
+                card.addEventListener('mouseenter', function() {
+                    startVideoPreview(this);
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    stopVideoPreview(this);
+                });
+            });
+        }
 
         function openSubscription() {
             alert('சந்தா செயல்பாடு விரைவில் கிடைக்கும்');
+        }
+        
+        // Fullscreen change handler
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+        
+        function handleFullscreenChange() {
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            if (fullscreenBtn) {
+                if (document.fullscreenElement || 
+                    document.webkitFullscreenElement || 
+                    document.mozFullScreenElement || 
+                    document.msFullscreenElement) {
+                    fullscreenBtn.innerHTML = `
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 9l6 6m0-6l-6 6M4 4h3a1 1 0 0 1 1 1v3m0 6v3a1 1 0 0 1-1 1H4m16 0h-3a1 1 0 0 1-1-1v-3m0-6V5a1 1 0 0 1 1-1h3" />
+                        </svg>
+                    `;
+                } else {
+                    fullscreenBtn.innerHTML = `
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                        </svg>
+                    `;
+                }
+            }
         }
     </script>
 </body>
