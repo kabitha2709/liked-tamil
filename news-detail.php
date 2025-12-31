@@ -584,6 +584,10 @@ $shareUrl = urlencode($currentUrl);
             z-index: -1;
             pointer-events: none;
         }
+
+        .light-mode::before {
+            display: none; /* Remove gradient in light mode */
+        }
         
         /* ===== Header Fixes ===== */
         .header {
@@ -594,6 +598,13 @@ $shareUrl = urlencode($currentUrl);
             backdrop-filter: blur(20px) saturate(180%);
             border-bottom: 1px solid var(--border-color);
             padding: var(--space-sm) 0;
+            transition: background-color var(--transition-base), border-color var(--transition-base);
+        }
+
+        .light-mode .header {
+            background: rgba(248, 249, 250, 0.98);
+            backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid var(--border-color);
         }
         
         .header-content {
@@ -618,6 +629,12 @@ $shareUrl = urlencode($currentUrl);
             object-fit: contain;
             border-radius: var(--radius-sm);
             max-width: 150px;
+            filter: brightness(1);
+            transition: filter var(--transition-base);
+        }
+
+        .light-mode .logo {
+            filter: brightness(0.9); /* Slightly darker logo for light mode */
         }
         
         @media (min-width: 640px) {
@@ -636,6 +653,7 @@ $shareUrl = urlencode($currentUrl);
             overflow: hidden;
             text-overflow: ellipsis;
             flex-shrink: 1;
+            transition: color var(--transition-base);
         }
         
         @media (min-width: 640px) {
@@ -748,6 +766,13 @@ $shareUrl = urlencode($currentUrl);
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
+            transition: background-color var(--transition-base), border-color var(--transition-base);
+        }
+
+        .light-mode .category-nav {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
         }
         
         .category-nav::-webkit-scrollbar {
@@ -1726,7 +1751,6 @@ $shareUrl = urlencode($currentUrl);
             <div class="header-content">
                 <a href="index.php" class="logo-container">
                     <img src="Liked-tamil-news-logo-1 (2).png" alt="Liked தமிழ்" class="logo" />
-                    <h1 class="site-title">Liked தமிழ்</h1>
                 </a>
                 
                 <div class="header-actions">
@@ -1736,22 +1760,16 @@ $shareUrl = urlencode($currentUrl);
                             <line x1="21" y1="21" x2="16.65" y2="16.65" />
                         </svg>
                     </button>
-                    
-                    <button class="subscribe-btn" onclick="openSubscription()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                            <polyline points="22,6 12,13 2,6" />
-                        </svg>
-                        சந்தா
-                    </button>
+            
                     <button class="theme-toggle" id="themeToggle" aria-label="Change theme">
-                        <svg class="moon-icon" viewBox="0 0 24 24" fill="none">
-                            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.6"/>
-                        </svg>
                         <svg class="sun-icon" viewBox="0 0 24 24" fill="none">
                             <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.6"/>
                             <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.6"/>
                         </svg>
+                        <svg class="moon-icon" viewBox="0 0 24 24" fill="none">
+                            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.6"/>
+                        </svg>
+                        
                     </button>
                 </div>
             </div>
@@ -1889,8 +1907,6 @@ $shareUrl = urlencode($currentUrl);
                         <?php if (empty($comments)): ?>
                             <div class="no-comments">
                                 <div class="no-comments-icon">💬</div>
-                                <h3>இன்னும் கருத்துகள் இல்லை</h3>
-                                <p>முதல் கருத்தைப் பதிவிட நீங்கள் தயாரா?</p>
                             </div>
                         <?php else: ?>
                             <?php foreach ($comments as $comment): ?>

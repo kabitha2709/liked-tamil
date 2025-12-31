@@ -1037,7 +1037,6 @@ require 'config/config.php';
             <div class="header-content">
                 <a href="index.php" class="logo-container">
                     <img src="Liked-tamil-news-logo-1 (2).png" alt="Liked தமிழ்" class="logo" />
-                    <h1 class="site-title">Liked தமிழ்</h1>
                 </a>
                 
                 <!-- Desktop Search Form -->
@@ -1058,22 +1057,15 @@ require 'config/config.php';
                         </svg>
                     </button>
                     
-                    <button class="subscribe-btn" onclick="openSubscription()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                            <polyline points="22,6 12,13 2,6" />
-                        </svg>
-                        சந்தா
-                    </button>
-                    
                     <button class="theme-toggle" id="themeToggle" aria-label="Change theme">
-                        <svg class="moon-icon" viewBox="0 0 24 24" fill="none">
-                            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.6"/>
-                        </svg>
                         <svg class="sun-icon" viewBox="0 0 24 24" fill="none">
                             <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.6"/>
                             <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.6"/>
                         </svg>
+                        <svg class="moon-icon" viewBox="0 0 24 24" fill="none">
+                            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.6"/>
+                        </svg>
+                        
                     </button>
                 </div>
             </div>

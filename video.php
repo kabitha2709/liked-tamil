@@ -811,7 +811,6 @@ require 'config/config.php'; // To get $base_url
             <div class="header-content">
                 <a href="index.php" class="logo-container">
                     <img src="Liked-tamil-news-logo-1 (2).png" alt="Liked தமிழ்" class="logo" />
-                    <h1 class="site-title">Liked தமிழ்</h1>
                 </a>
                 
                 <div class="header-actions">
@@ -966,13 +965,7 @@ require 'config/config.php'; // To get $base_url
     <footer class="desktop-footer">
         <div class="container">
             <div style="text-align: center;">
-                <p>&copy; <?php echo date('Y'); ?> Liked தமிழ். அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.</p>
-                <div style="display: flex; justify-content: center; gap: var(--space-lg); margin-top: var(--space-sm);">
-                    <a href="about.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">எங்களைப் பற்றி</a>
-                    <a href="contact.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">தொடர்பு கொள்ள</a>
-                    <a href="privacy.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">தனியுரிமைக் கொள்கை</a>
-                    <a href="terms.php" style="color: var(--accent-yellow); text-decoration: none; transition: color var(--transition-fast);">பயன்பாட்டு விதிமுறைகள்</a>
-                </div>
+        <p>&copy; <?php echo date('Y'); ?> Liked தமிழ். அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.|உங்கள் நம்பகமான செய்தி மூலம்</p>        
             </div>
         </div>
     </footer>
@@ -1018,7 +1011,7 @@ require 'config/config.php'; // To get $base_url
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
             </svg>
-            <span class="mobile-nav-label">சுயவிவரம்</span>
+            <span class="mobile-nav-label">அறிமுகம்</span>
         </a>
     </footer>
 

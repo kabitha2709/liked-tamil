@@ -444,15 +444,23 @@ function getNewsCategories($news) {
             pointer-events: none;
         }
         
-        /* ===== Header Fixes ===== */
+        /* ===== HEADER STYLES ===== */
+        /* Default header (light mode) */
         .header {
             position: sticky;
             top: 0;
             z-index: 1000;
-            background: rgba(10, 10, 10, 0.98);
+            background: rgba(255, 255, 255, 0.98); /* White background */
             backdrop-filter: blur(20px) saturate(180%);
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.12); /* Light border */
             padding: var(--space-sm) 0;
+            transition: all var(--transition-base);
+        }
+        
+        /* Dark mode header */
+        body:not(.light-mode) .header {
+            background: rgba(10, 10, 10, 0.98); /* Dark background */
+            border-bottom: 1px solid var(--border-color); /* Dark border */
         }
         
         .header-content {
@@ -490,11 +498,17 @@ function getNewsCategories($news) {
             font-family: var(--font-heading);
             font-size: 1.25rem;
             font-weight: 800;
-            color: var(--text-primary);
+            color: #1a1a1a; /* Dark text for light mode */
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             flex-shrink: 1;
+            transition: color var(--transition-base);
+        }
+        
+        /* Dark mode site title */
+        body:not(.light-mode) .site-title {
+            color: var(--text-primary); /* Light text for dark mode */
         }
         
         @media (min-width: 640px) {
@@ -513,7 +527,7 @@ function getNewsCategories($news) {
         .search-btn {
             background: transparent;
             border: none;
-            color: var(--text-secondary);
+            color: #495057; /* Secondary color for light mode */
             width: 40px;
             height: 40px;
             border-radius: var(--radius-full);
@@ -525,14 +539,24 @@ function getNewsCategories($news) {
         }
         
         .search-btn:hover {
-            color: var(--text-primary);
+            color: #1a1a1a; /* Darker on hover in light mode */
+            background: rgba(0, 0, 0, 0.04);
+        }
+        
+        /* Dark mode search button */
+        body:not(.light-mode) .search-btn {
+            color: var(--text-secondary); /* Light secondary for dark mode */
+        }
+        
+        body:not(.light-mode) .search-btn:hover {
+            color: var(--text-primary); /* Lighter on hover in dark mode */
             background: var(--glass-bg);
         }
         
         /* Theme toggle button */
         .theme-toggle {
-            background: var(--glass-bg);
-            border: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.04); /* Light mode background */
+            border: 1px solid rgba(0, 0, 0, 0.12); /* Light border */
             border-radius: var(--radius-full);
             width: 40px;
             height: 40px;
@@ -541,11 +565,24 @@ function getNewsCategories($news) {
             justify-content: center;
             cursor: pointer;
             transition: all var(--transition-fast);
-            color: var(--text-secondary);
+            color: #495057; /* Secondary color */
         }
         
         .theme-toggle:hover {
             transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            background: rgba(0, 0, 0, 0.08);
+            color: #1a1a1a;
+        }
+        
+        /* Dark mode theme toggle */
+        body:not(.light-mode) .theme-toggle {
+            background: var(--glass-bg); /* Dark background */
+            border: 1px solid var(--border-color); /* Dark border */
+            color: var(--text-secondary); /* Light secondary */
+        }
+        
+        body:not(.light-mode) .theme-toggle:hover {
             box-shadow: var(--shadow-sm);
             background: var(--bg-hover);
             color: var(--text-primary);
@@ -560,39 +597,16 @@ function getNewsCategories($news) {
             display: none;
         }
         
-        .light-mode .theme-toggle .moon-icon {
-            display: none;
+        .theme-toggle .moon-icon {
+            display: block;
         }
         
         .light-mode .theme-toggle .sun-icon {
             display: block;
         }
         
-        .subscribe-btn {
+        .light-mode .theme-toggle .moon-icon {
             display: none;
-        }
-        
-        @media (min-width: 768px) {
-            .subscribe-btn {
-                display: inline-flex;
-                align-items: center;
-                gap: var(--space-xs);
-                padding: var(--space-sm) var(--space-md);
-                background: linear-gradient(135deg, var(--primary-red), var(--primary-dark-red));
-                color: var(--white);
-                border: none;
-                border-radius: var(--radius-md);
-                font-family: var(--font-body);
-                font-weight: 600;
-                font-size: 0.875rem;
-                cursor: pointer;
-                transition: all var(--transition-base);
-            }
-            
-            .subscribe-btn:hover {
-                transform: translateY(-2px);
-                box-shadow: var(--shadow-md);
-            }
         }
         
         /* ===== Category Navigation Fixes ===== */
@@ -600,13 +614,20 @@ function getNewsCategories($news) {
             position: sticky;
             top: 60px; /* Match header height */
             z-index: 900;
-            background: rgba(18, 18, 18, 0.98);
+            background: rgba(255, 255, 255, 0.98); /* Light mode background */
             backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.12); /* Light border */
             padding: var(--space-sm) 0;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
+            transition: all var(--transition-base);
+        }
+        
+        /* Dark mode category nav */
+        body:not(.light-mode) .category-nav {
+            background: rgba(18, 18, 18, 0.98);
+            border-bottom: 1px solid var(--border-color);
         }
         
         .category-nav::-webkit-scrollbar {
@@ -634,15 +655,22 @@ function getNewsCategories($news) {
             align-items: center;
             gap: var(--space-xs);
             padding: var(--space-sm) var(--space-md);
-            background: var(--glass-bg);
-            border: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.04); /* Light mode background */
+            border: 1px solid rgba(0, 0, 0, 0.12); /* Light border */
             border-radius: var(--radius-full);
-            color: var(--text-secondary);
+            color: #495057; /* Secondary color for light mode */
             font-family: var(--font-body);
             font-weight: 500;
             font-size: 0.875rem;
             white-space: nowrap;
             transition: all var(--transition-base);
+        }
+        
+        /* Dark mode category link */
+        body:not(.light-mode) .category-link {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
         }
         
         .category-link:hover,
@@ -716,7 +744,7 @@ function getNewsCategories($news) {
             border-color: transparent;
         }
         
-        /* News Grid */
+        /* ===== NEWS GRID WITH THEME SUPPORT ===== */
         .news-grid {
             display: grid;
             gap: var(--space-lg);
@@ -735,13 +763,27 @@ function getNewsCategories($news) {
             }
         }
         
+        /* Mobile grid view - ALWAYS show grid on mobile */
+        @media (max-width: 639px) {
+            .news-grid {
+                grid-template-columns: 1fr; /* Single column on very small screens */
+            }
+        }
+        
+        @media (min-width: 375px) and (max-width: 639px) {
+            .news-grid {
+                grid-template-columns: repeat(2, 1fr); /* 2 columns on mobile */
+            }
+        }
+        
+        /* Default news card style (light mode - DEFAULT) */
         .news-card {
-            background: var(--bg-card);
+            background: #ffffff; /* Default white background */
             border-radius: var(--radius-lg);
             overflow: hidden;
-            box-shadow: var(--shadow-md);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); /* Light shadow */
             transition: all var(--transition-base);
-            border: 1px solid var(--border-color);
+            border: 1px solid rgba(0, 0, 0, 0.12); /* Light border */
             height: 100%;
             display: flex;
             flex-direction: column;
@@ -749,8 +791,19 @@ function getNewsCategories($news) {
         
         .news-card:hover {
             transform: translateY(-4px);
-            box-shadow: var(--shadow-lg);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
             border-color: var(--primary-red);
+        }
+        
+        /* Dark mode news card */
+        body:not(.light-mode) .news-card {
+            background: var(--bg-card); /* Dark background */
+            box-shadow: var(--shadow-md); /* Dark shadow */
+            border: 1px solid var(--border-color); /* Dark border */
+        }
+        
+        body:not(.light-mode) .news-card:hover {
+            box-shadow: var(--shadow-lg);
         }
         
         .news-image {
@@ -759,6 +812,12 @@ function getNewsCategories($news) {
             height: 180px;
             overflow: hidden;
             flex-shrink: 0;
+        }
+        
+        @media (max-width: 767px) {
+            .news-image {
+                height: 150px; /* Slightly smaller on mobile */
+            }
         }
         
         .news-image img {
@@ -793,38 +852,70 @@ function getNewsCategories($news) {
             flex-direction: column;
         }
         
+        @media (max-width: 767px) {
+            .news-content {
+                padding: var(--space-md); /* Less padding on mobile */
+            }
+        }
+        
         .news-title {
             font-size: 1.125rem;
             font-weight: 700;
             line-height: 1.4;
             margin-bottom: var(--space-sm);
-            color: var(--text-primary);
+            color: #1a1a1a; /* Dark text for light mode */
             display: -webkit-box;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
             flex: 1;
+            transition: color var(--transition-base);
+        }
+        
+        @media (max-width: 767px) {
+            .news-title {
+                font-size: 1rem;
+                -webkit-line-clamp: 2; /* Show 2 lines on mobile */
+            }
+        }
+        
+        /* Dark mode news title */
+        body:not(.light-mode) .news-title {
+            color: var(--text-primary); /* Light text for dark mode */
         }
         
         .news-excerpt {
             font-size: 0.875rem;
-            color: var(--text-secondary);
+            color: #495057; /* Secondary text for light mode */
             line-height: 1.5;
             margin-bottom: var(--space-md);
             display: -webkit-box;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            transition: color var(--transition-base);
+        }
+        
+        /* Dark mode news excerpt */
+        body:not(.light-mode) .news-excerpt {
+            color: var(--text-secondary); /* Light secondary text */
         }
         
         .news-meta {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            color: var(--text-secondary);
+            color: #495057; /* Secondary text for light mode */
             font-size: 0.75rem;
             padding-top: var(--space-md);
-            border-top: 1px solid var(--border-color);
+            border-top: 1px solid rgba(0, 0, 0, 0.12); /* Light border */
+            transition: all var(--transition-base);
+        }
+        
+        /* Dark mode news meta */
+        body:not(.light-mode) .news-meta {
+            color: var(--text-secondary); /* Light secondary text */
+            border-top: 1px solid var(--border-color); /* Dark border */
         }
         
         /* No News Message */
@@ -898,14 +989,21 @@ function getNewsCategories($news) {
             left: 0;
             right: 0;
             z-index: 1000;
-            background: rgba(10, 10, 10, 0.98);
+            background: rgba(255, 255, 255, 0.98); /* Light mode background */
             backdrop-filter: blur(20px);
-            border-top: 1px solid var(--border-color);
+            border-top: 1px solid rgba(0, 0, 0, 0.12); /* Light border */
             padding: var(--space-sm) 0;
             display: flex;
             justify-content: space-around;
             align-items: center;
             height: 70px;
+            transition: all var(--transition-base);
+        }
+        
+        /* Dark mode mobile footer */
+        body:not(.light-mode) .mobile-footer {
+            background: rgba(10, 10, 10, 0.98);
+            border-top: 1px solid var(--border-color);
         }
         
         @media (min-width: 768px) {
@@ -925,7 +1023,12 @@ function getNewsCategories($news) {
             flex: 1;
             max-width: 80px;
             text-decoration: none;
-            color: var(--text-secondary);
+            color: #495057; /* Secondary color for light mode */
+        }
+        
+        /* Dark mode mobile nav item */
+        body:not(.light-mode) .mobile-nav-item {
+            color: var(--text-secondary); /* Light secondary for dark mode */
         }
         
         .mobile-nav-item.active {
@@ -964,6 +1067,7 @@ function getNewsCategories($news) {
         
         /* ===== Responsive Adjustments ===== */
         @media (max-width: 767px) {
+            /* Header adjustments */
             .header {
                 height: 60px;
             }
@@ -976,6 +1080,7 @@ function getNewsCategories($news) {
                 font-size: 1rem;
             }
             
+            /* Category nav */
             .category-nav {
                 height: 50px;
                 top: 60px;
@@ -985,21 +1090,26 @@ function getNewsCategories($news) {
                 font-size: 1.75rem;
             }
             
-            .news-image {
-                height: 150px;
-            }
-            
-            .news-content {
-                padding: var(--space-md);
-            }
-            
-            .news-title {
-                font-size: 1rem;
-                -webkit-line-clamp: 2;
-            }
+            /* News grid mobile adjustments already handled above */
             
             .mobile-footer {
                 height: 70px;
+            }
+        }
+        
+        @media (max-width: 374px) {
+            /* Extra small devices */
+            .logo {
+                max-width: 100px;
+            }
+            
+            .site-title {
+                font-size: 0.9rem;
+            }
+            
+            .category-link {
+                padding: var(--space-xs) var(--space-sm);
+                font-size: 0.75rem;
             }
         }
         
@@ -1025,7 +1135,6 @@ function getNewsCategories($news) {
             <div class="header-content">
                 <a href="index.php" class="logo-container">
                     <img src="Liked-tamil-news-logo-1 (2).png" alt="Liked தமிழ்" class="logo" />
-                    <h1 class="site-title">Liked தமிழ்</h1>
                 </a>
                 
                 <div class="header-actions">
@@ -1036,20 +1145,13 @@ function getNewsCategories($news) {
                         </svg>
                     </button>
                     
-                    <button class="subscribe-btn" onclick="openSubscription()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                            <polyline points="22,6 12,13 2,6" />
-                        </svg>
-                        சந்தா
-                    </button>
                     <button class="theme-toggle" id="themeToggle" aria-label="Change theme">
-                        <svg class="moon-icon" viewBox="0 0 24 24" fill="none">
-                            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.6"/>
-                        </svg>
                         <svg class="sun-icon" viewBox="0 0 24 24" fill="none">
                             <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.6"/>
                             <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.6"/>
+                        </svg>
+                        <svg class="moon-icon" viewBox="0 0 24 24" fill="none">
+                            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.6"/>
                         </svg>
                     </button>
                 </div>
@@ -1100,14 +1202,6 @@ function getNewsCategories($news) {
                             <span><?php echo count($category_subcategories); ?> உட்பிரிவுகள்</span>
                         <?php endif; ?>
                     </div>
-                    
-                    <?php if (!empty($category_subcategories)): ?>
-                        <div class="category-subcategories">
-                            <?php foreach ($category_subcategories as $subcat): ?>
-                                <a href="#" class="subcategory-chip"><?php echo htmlspecialchars($subcat); ?></a>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
                 </div>
 
                 <?php if (!empty($category_news)): ?>
@@ -1405,19 +1499,31 @@ function getNewsCategories($news) {
 
         document.getElementById('searchToggle')?.addEventListener('click', toggleSearch);
 
-        // Theme toggle functionality
+        // Theme toggle functionality - UPDATED
         const themeToggle = document.getElementById('themeToggle');
         const body = document.body;
         
         // Check for saved theme or prefer color scheme
+        // Default is light mode
         const savedTheme = localStorage.getItem('theme');
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         
-        if (savedTheme === 'light' || (!savedTheme && !prefersDark)) {
-            body.classList.add('light-mode');
+        // Apply theme based on saved preference
+        if (savedTheme === 'dark') {
+            body.classList.remove('light-mode'); // Dark mode
+        } else if (savedTheme === 'light') {
+            body.classList.add('light-mode'); // Light mode
+        } else {
+            // No saved preference, use system preference
+            if (prefersDark) {
+                body.classList.remove('light-mode'); // Dark mode (system preference)
+            } else {
+                body.classList.add('light-mode'); // Light mode (system preference)
+            }
         }
         
         themeToggle.addEventListener('click', () => {
+            // Toggle the light-mode class
             body.classList.toggle('light-mode');
             
             // Save preference
